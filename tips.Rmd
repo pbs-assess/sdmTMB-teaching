@@ -1,0 +1,20 @@
+---
+title: "Tips"
+author: "Sean Anderson"
+output: html_document
+---
+
+- UTMS!
+- Scale of response
+- Scale of predictors
+- Experiment with low resolution meshes
+- You may not need a super high resolution mesh
+- Plot, plot, plot
+- Start simple
+- Don't get too caught up on model configuration
+- These are complex models; they may take a while to fit and it's very easy to find a configuration that will not converge.
+- There are a lot of things possible that I have not covered:
+  - Time-varying spatial variance
+  - Spatially varying slopes
+  - Interpolation over missing years
+  - Forecasting on future years

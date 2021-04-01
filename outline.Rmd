@@ -1,0 +1,70 @@
+---
+title: "Outline"
+author: "Sean Anderson"
+output: html_document
+---
+
+# Who
+
+- Me, Eric, Philina, Lewis, ...
+
+# When
+
+- Started with the groundfish data synopsis report
+
+# What
+
+> sdmTMB is an R package that implements spatial and spatiotemporal predictive-process GLMMs (Generalized Linear Mixed Effects Models) using Template Model Builder (TMB), R-INLA, and Gaussian Markov random fields. One common application is for species distribution models (SDMs).
+
+Spatial and spatiotemporal -> works with data collected in space with one time slice or data collected in space with multiple time slices
+
+GLMM -> works with the common distributions (Gaussian, poisson, negative binomial, gamma, binomial) and also less common ones (Tweedie, lognormal, Student-t) and links: identity (linear), log, logit.
+
+TMB -> very fast; a robust optimizer; pure R + C++... you don't have to write the template yourself
+
+R-INLA -> uses the SPDE approach for speed; compatible with with standard INLA meshes (including barriers, e.g. land) + anisotropy
+
+Gaussian Markov random fields -> a fancy name for estimating a wiggly surface that accounts for spatial and/or spatiotemporal correlation
+
+# Why
+
+## Why all these fancy spatial/spatiotemporal models?
+
+- There are a lot of ecological/fisheries data sets and problems that lend themselves to spatial and spatiotemporal models.
+- These models are typically complicated and slow to fit.
+
+## Why sdmTMB over INLA?
+
+- INLA is a general purpose approximate Bayesian tool
+- sdmTMB should be faster for the same model
+- Nicer code interface!! (but bruinla somewhat improves on pure INLA)
+- Extra flexibility: e.g. breakpt(x1) or logistic(x2), time-varying coefficients, spatially varying slopes, time-varying spatial variance, anisotropy, anything you can imagine
+- Tweedie (but now in INLA?)
+- Built-in functionality for population index or center of gravity calculations
+
+## Why random fields (RF) (e.g., sdmTMB) over GAMs/mgcv?
+
+- mgcv is a super powerful general tool; this is specialized to spatial/spatiotemporal RF models
+- somewhat a trick question: sdmTMB can take mgcv splines (but not penalized!); mgcv can work with random fields
+- Some models in sdmTMB are not possible in mgcv
+- Random fields have some added enterpretability over penalized splines: range + variance estimates that characterize the 'wiggliness' in meaningful values
+- Fast correlation boundaries
+- Uncertainty on derived variables
+- `¯\_(ツ)_/¯`
+
+How...
+
+- vignettes: 
+
+
+Examples:
+- predict(), newdata
+- residuals()
+- family(link)
+- s(x, k = 4)
+- time_varying = ~ 0 + x2
+- anisotropy
+- total biomass by time step
+- centre of gravity
+- boundary
+- 

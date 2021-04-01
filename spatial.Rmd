@@ -1,0 +1,123 @@
+---
+title: "A simple spatial example"
+author: "Sean Anderson"
+output: html_document
+---
+
+```{r}
+library(sdmTMB)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+d <- dplyr::filter(pcod, year == 2017)
+spde <- make_mesh(d, c("X", "Y"), cutoff = 10)
+plot(spde)
+```
+
+```{r}
+m <- sdmTMB(
+  data = d, 
+  formula = density ~ s(log(depth), k = 3),
+  spde = spde, 
+  silent = FALSE,
+  family = tweedie(link = "log")
+)
+```
+
+```{r}
+print(m)
+```
+
+`?tidy.sdmTMB`
+
+```{r}
+tidy(m)
+tidy(m, conf.int = TRUE)
+tidy(m, effects = "ran_pars", conf.int = TRUE)
+```
+
+## Predictions at original data locations
+
+```{r}
+predictions <- predict(m)
+head(predictions)
+```
+
+```{r}
+predictions$resids <- residuals(m) # randomized quantile residuals
+ggplot(predictions, aes(X, Y, col = resids)) + 
+  scale_colour_gradient2() +
+  geom_point() + facet_wrap(~year)
+```
+
+```{r}
+hist(predictions$resids)
+qqnorm(predictions$resids)
+abline(a = 0, b = 1)
+```
+
+## Predictions onto new data
+
+```{r}
+head(qcs_grid)
+ggplot(qcs_grid, aes(X, Y, fill = -depth)) +
+  geom_raster() +
+  scale_fill_viridis_c() +
+  coord_fixed()
+```
+
+```{r}
+predictions <- predict(m, newdata = qcs_grid)
+```
+
+```{r}
+# A short function for plotting our predictions:
+plot_map <- function(dat, column = est) {
+  ggplot(dat, aes(X, Y, fill = {{column}})) +
+    geom_raster() +
+    coord_fixed()
+}
+
+plot_map(predictions, exp(est)) +
+  scale_fill_viridis_c(trans = "sqrt") +
+  ggtitle("Prediction (fixed effects + all random effects)")
+```
+
+```{r}
+plot_map(predictions, exp(est_non_rf)) +
+  ggtitle("Prediction (fixed effects [depth]") +
+  scale_fill_viridis_c(trans = "sqrt")
+```
+
+```{r}
+plot_map(predictions, est_rf) +
+  ggtitle("All random field estimates") +
+  scale_fill_gradient2()
+```
+
+```{r}
+plot_map(predictions, omega_s) +
+  ggtitle("Spatial random effects only") +
+  scale_fill_gradient2()
+```
+
+## Visualizing a marginal effect
+
+```{r}
+nd <- data.frame(
+  depth = seq(min(d$depth), max(d$depth), length.out = 200))
+head(nd)
+```
+
+```{r}
+p <- predict(m, newdata = nd, se_fit = TRUE, re_form = NA)
+ggplot(p, aes(
+  x = depth, y = exp(est),
+  ymin = exp(est - 1.96 * est_se), 
+  ymax = exp(est + 1.96 * est_se))) +
+  geom_ribbon(alpha = 0.4) +
+  geom_line()
+```
+
