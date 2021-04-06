@@ -23,7 +23,7 @@ spde <- make_mesh(d, c("X", "Y"), cutoff = 10)
 plot(spde)
 ```
 
-We can fit a model similarly to how we would use glm(), or glmmTMB, or lmer():
+We can fit a model similarly to how we would use glm(), or glmmTMB(), or lmer():
 
 ```{r}
 m <- sdmTMB(
@@ -39,7 +39,7 @@ m <- sdmTMB(
 print(m)
 ```
 
-There is a built-in tidy() method, that makes the broom package. This returns the model estimates in an easy to use data frame:
+There is a built-in tidy() method, that is based on the broom package. This returns the model estimates in an easy-to-use data frame:
 
 `?tidy.sdmTMB`
 
@@ -60,7 +60,7 @@ head(predictions)
 
 The output is a data frame. It has the original data and a number of other columns:
 
-- `est`: Estimate in link space (everything is in link space)
+- `est`: Estimate in link space
 - `est_non_rf`: Estimate from everything that isn't a random field
 - `est_rf`: Estimate from all random fields combined
 - `omega_s`: Spatial (intercept) random field that is constant through time
@@ -84,7 +84,7 @@ abline(a = 0, b = 1)
 
 ## Predictions onto new data
 
-We can also predict on new data. Here we will predict on a grid that is overlaid on the groundfish Queen Charlotte Sound synoptic survey domain:
+We can predict on new data. Here we will predict on a grid that is overlaid on the groundfish Queen Charlotte Sound synoptic survey domain:
 
 ```{r}
 head(qcs_grid)
@@ -104,7 +104,7 @@ Here's a short function for plotting our predictions:
 
 ```{r}
 plot_map <- function(dat, column = est) {
-  ggplot(dat, aes(X, Y, fill = {{column}})) +
+  ggplot(dat, aes(X, Y, fill = {{column}})) + # {{}} uses tidyeval
     geom_raster() +
     coord_fixed()
 }
@@ -148,7 +148,7 @@ nd <- data.frame(
 head(nd)
 ```
 
-Make the prediction. Note `re_form = NA` to avoid including the spatial component, which we don't want, and would be much slower if we did include it.
+Make the prediction. Note `re_form = NA` to avoid including the (random effect, 're') spatial component, which we don't want. It would be much slower if we did include it and we'd end up with a different height curve for each point in space.
 
 ```{r}
 p <- predict(m, newdata = nd, se_fit = TRUE, re_form = NA)
