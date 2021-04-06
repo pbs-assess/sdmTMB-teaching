@@ -28,7 +28,7 @@ We can fit a model similarly to how we would use glm(), or glmmTMB(), or lmer():
 ```{r}
 m <- sdmTMB(
   data = d, 
-  formula = density ~ s(log(depth), k = 3),
+  formula = density ~ s(log(depth), k = 3), # specify the 'k'!
   spde = spde, 
   silent = FALSE, # toggles whether you see progress while fitting
   family = tweedie(link = "log")
