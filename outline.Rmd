@@ -22,7 +22,7 @@ GLMM -> works with the common distributions (Gaussian, poisson, negative binomia
 
 TMB -> very fast; a robust optimizer; pure R + C++... you don't have to write the template yourself
 
-R-INLA -> uses the SPDE approach for speed; compatible with with standard INLA meshes (including barriers, e.g. land) + anisotropy
+R-INLA -> uses the SPDE approach for speed; compatible with standard INLA meshes (including barriers, e.g. land) + anisotropy
 
 Gaussian Markov random fields -> a fancy name for estimating a wiggly surface that accounts for spatial and/or spatiotemporal correlation
 

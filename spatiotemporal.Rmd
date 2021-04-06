@@ -10,33 +10,36 @@ library(ggplot2)
 library(dplyr)
 ```
 
-Pick one year of data to model for this spatial example:
+Filter the Pacific Cod data for this example:
 
 ```{r}
-d <- dplyr::filter(pcod, year > 2010)
+d <- dplyr::filter(pcod, year > 2008)
 ```
 
-We need to make a mesh, which has "knots", to it our model. These are a smaller number of locations than the data that the model will keep track of for computational efficiency. There are a number of ways of making meshes, which we can get into later.
+Make a mesh:
 
 ```{r}
-spde <- make_mesh(d, c("X", "Y"), cutoff = 10)
+spde <- make_mesh(d, c("X", "Y"), cutoff = 20)
 plot(spde)
 ```
 
-We can fit a model similarly to how we would use glm(), or glmmTMB, or lmer():
+Fit the model. `~ 0` means omit the intercept.
 
 ```{r}
-m <- sdmTMB(
+m1 <- sdmTMB(
   data = d, 
-  formula = density ~ s(log(depth), k = 3),
+  formula = density ~ 0 + as.factor(year) + s(depth_scaled, k = 3),
   spde = spde, 
-  silent = FALSE, # toggles whether you see progress while fitting
+  silent = FALSE,
+  time = "year",
+  include_spatial = TRUE,
+  ar1_fields = TRUE,
   family = tweedie(link = "log")
 )
 ```
 
 ```{r}
-print(m)
+print(m1)
 ```
 
 There is a built-in tidy() method, that makes the broom package. This returns the model estimates in an easy to use data frame:
@@ -44,10 +47,25 @@ There is a built-in tidy() method, that makes the broom package. This returns th
 `?tidy.sdmTMB`
 
 ```{r}
-tidy(m)
-tidy(m, conf.int = TRUE)
-tidy(m, effects = "ran_pars", conf.int = TRUE)
+tidy(m1)
+tidy(m1, conf.int = TRUE)
+tidy(m1, effects = "ran_pars")
 ```
+
+Comparison with omitting depth covariate:
+
+```{r}
+m2 <- sdmTMB(
+  data = d, 
+  formula = density ~ 0 + as.factor(year) + s(depth_scaled, k = 3),
+  spde = spde, 
+  silent = FALSE,
+  time = "year",
+  include_spatial = TRUE,
+  ar1_fields = TRUE,
+  family = tweedie(link = "log")
+)
+
 
 ## Predictions at original data locations
 

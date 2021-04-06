@@ -113,7 +113,7 @@ When we ran our `predict.sdmTBM()` function, it also returned a report from TMB 
 
 ```{r get-index}
  # not bias correcting for vignette-building speed:
-ind <- get_index(predictions, bias_correct = FALSE)
+ind <- get_index(predictions, bias_correct = FALSE, )
 ```
 
 ```{r plot-index}
