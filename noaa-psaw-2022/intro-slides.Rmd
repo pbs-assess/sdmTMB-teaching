@@ -86,7 +86,7 @@ background-size: 35%
 
 # Random field
 
-<img src="images/rf-wikipedia.png" width="600" />
+<img src="images/rf-wikipedia.png" width="550px" />
 
 ---
 background-image: url("images/beaker.png")
