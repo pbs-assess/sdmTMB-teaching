@@ -1,20 +1,24 @@
 ---
 title: "Introduction to sdmTMB"
-subtitle: "Subheading here"
+subtitle: "NOAA PSAW Seminar Series"
 author: "Names Here"
 institute: ""
 date: "2022-03-02"
 output:
   xaringan::moon_reader:
-    css: ["default", "default-fonts", "theme.css"]
+    css: ["xaringan-themer.css", "theme.css"]
     lib_dir: libs
     nature:
-      highlightStyle: github
+      highlightStyle: tomorrow
       highlightLines: true
       countIncrementalSlides: false
 ---
 
+    <!-- # css: ["default", "default-fonts", "theme.css"] -->
+
 <!-- Previous slides: https://www.dropbox.com/s/gu43n4gvqmo0uzy/sdmTMB-intro-2021.pdf?dl=1 -->
+
+<!-- Build with: xaringan::inf_mr() -->
 
 ```{r options, include=FALSE}
 knitr::opts_chunk$set(
@@ -32,6 +36,20 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#202020",
+  header_font_google = google_font("Raleway"),
+  text_font_google   = google_font("Open Sans"),
+  code_font_google   = google_font("Fira Mono"),
+  base_font_size = "20px",
+  header_h1_font_size = "2.4rem",
+  text_font_size = "1.5rem",
+  code_font_size = "1.3rem"
+)
+```
+
 ```{r libs, include=FALSE}
 library(ggplot2)
 library(dplyr)
@@ -40,6 +58,14 @@ theme_set(theme_light())
 ```
 
 # What we're going to cover
+
+* point 1
+
+* point 2
+
+```r
+plot(1, 1)
+```
 
 ---
 
@@ -117,7 +143,7 @@ background-size: 30%
 
 --
 
-* A helpful side product is you get meaningful parameter estimates like spatial variance and the distance at data points are effectively uncorrelated ("range")
+* As a bonus, it provides use covariance parameter estimates: spatial variance and the distance at data points are effectively uncorrelated ("range")
 
 ---
 
@@ -132,6 +158,7 @@ class: center, middle, inverse
 
 # The Pacific Cod dataset
 
+.medium[
 ```{r, echo=TRUE}
 library(dplyr)
 library(ggplot2)
@@ -140,6 +167,7 @@ pcod %>%
   select(year, X, Y, depth, density, present) %>% 
   head()
 ```
+]
 
 ---
 
@@ -176,7 +204,7 @@ fit <- sdmTMB(
 
 ```{r pcod-spatial-rf, echo=TRUE}
 fit <- sdmTMB(
-  present ~ poly(depth, 2),
+  present ~ s(depth, k = 5),
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
@@ -188,33 +216,41 @@ fit <- sdmTMB(
 
 # Inspecting the model output
 
+.medium[
 ```{r, echo=TRUE, highlight.output=c(1)}
 summary(fit)
 ```
+]
 
 ---
 
 # Inspecting the model output
 
+.medium[
 ```{r, echo=TRUE, highlight.output=2:5}
 summary(fit)
 ```
+]
 
 ---
 
 # Inspecting the model output
 
+.medium[
 ```{r, echo=TRUE, highlight.output=6:9}
 summary(fit)
 ```
+]
 
 ---
 
 # Inspecting the model output
 
+.medium[
 ```{r, echo=TRUE, highlight.output=11:13}
 summary(fit)
 ```
+]
 
 ---
 
@@ -222,24 +258,106 @@ summary(fit)
 
 ```{r, echo=TRUE}
 # Main effects:
-tidy(fit, conf.int = TRUE) %>% 
-  as_tibble()
+tidy(fit)
 
 # Variance-related terms:
-tidy(fit, effects = "ran_pars", conf.int = TRUE) %>% 
+tidy(fit, effects = "ran_pars")
+```
+
+<!-- TODO: sigma_O missing!? -->
+
+---
+
+# Extracting parameters in a data frame
+
+.medium[
+```{r, echo=TRUE}
+tidy(fit, conf.int = TRUE) %>% 
   as_tibble()
 ```
+]
 
 ---
 
 # Making predictions
 
+.medium[
 ```{r, echo=TRUE}
 p <- predict(fit)
-p <- predict(fit, newdata = qcs_grid)
+select(p, X, Y, est:omega_s) %>% 
+  glimpse()
+```
+]
+
+.small[
+* `est`: Overall estimate **in link space**
+* `est_non_rf`: Estimate of non-random-field components
+* `est_rf`: Estimate of random-field components
+* `omega_s`: Spatial random field
+]
+
+---
+
+# Making predictions on new data
+
+
+```{r, echo=TRUE}
+select(qcs_grid, X, Y, depth) %>% 
+  head()
+nd <- filter(qcs_grid, year == 2017)
+p <- predict(fit, newdata = nd)
 ```
 
 ---
+
+# Plotting predictions on new data
+
+```{r, echo=TRUE, fig.width=7}
+ggplot(p, aes(X, Y, fill = plogis(est))) +
+  geom_raster() +
+  scale_fill_viridis_c()
+```
+
+---
+
+# Plotting main effect contributions
+
+```{r, echo=TRUE, fig.width=7}
+ggplot(p, aes(X, Y, fill = plogis(est_non_rf))) +
+  geom_raster() +
+    scale_fill_viridis_c()
+```
+
+---
+
+# Plotting spatial random effects
+
+```{r, echo=TRUE, fig.width=7}
+ggplot(p, aes(X, Y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2()
+```
+
+---
+
+# Plotting depth effect
+
+.medium[
+```{r, echo=TRUE}
+nd <- data.frame(depth = seq(30, 300, length.out = 100))
+p <- predict(fit, newdata = nd, se_fit = TRUE, re_form = ~ 0)
+```
+```{r, fig.width=5, echo=TRUE}
+p$lwr <- plogis(p$est - 1.96 * p$est_se)
+p$upr <- plogis(p$est + 1.96 * p$est_se)
+ggplot(p, aes(nd$depth, plogis(est), ymin = lwr, ymax = upr)) +
+  geom_ribbon(alpha = 0.2) +
+  geom_line() + xlab("Depth (m)") + ylab("")
+```
+]
+
+---
+
 
 # sdmTMB formulas
 

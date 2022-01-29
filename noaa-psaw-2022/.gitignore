@@ -2,3 +2,4 @@ libs/
 *cache*
 figure-html
 slides-demo.Rmd
+xaringan-themer.css
