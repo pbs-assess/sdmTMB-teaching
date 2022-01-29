@@ -13,13 +13,13 @@ library(dplyr)
 Pick one year of data to model for this spatial example:
 
 ```{r}
-d <- dplyr::filter(pcod, year > 2010)
+d <- dplyr::filter(pcod, year == 2017)
 ```
 
 We need to make a mesh, which has "knots", to it our model. These are a smaller number of locations than the data that the model will keep track of for computational efficiency. There are a number of ways of making meshes, which we can get into later.
 
 ```{r}
-spde <- make_mesh(d, c("X", "Y"), cutoff = 10)
+spde <- make_mesh(d, c("X", "Y"), cutoff = 5)
 plot(spde)
 ```
 
@@ -120,7 +120,7 @@ plot_map(predictions, exp(est)) +
 
 ```{r}
 plot_map(predictions, exp(est_non_rf)) +
-  ggtitle("Prediction (fixed effects [depth]") +
+  ggtitle("Prediction (fixed effects [depth])") +
   scale_fill_viridis_c(trans = "sqrt")
 ```
 
