@@ -1,0 +1,17 @@
+.remark-slide-content {
+  font-size: 28px;
+}
+
+.large { font-size: 130% }
+.small { font-size: 70% }
+
+/* https://community.rstudio.com/t/using-multiple-font-sizes-for-code-chunks/26405/5 */
+.large .remark-code { /*Change made here*/
+  font-size: 80% !important;
+}
+.medium .remark-code { /*Change made here*/
+  font-size: 75% !important;
+}
+.small .remark-code { /*Change made here*/
+  font-size: 30% !important;
+}

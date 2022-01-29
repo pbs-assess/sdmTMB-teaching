@@ -1,2 +1,4 @@
 libs/
 *cache*
+figure-html
+slides-demo.Rmd

@@ -1,0 +1,281 @@
+---
+title: "Introduction to sdmTMB"
+subtitle: "Subheading here"
+author: "Names Here"
+institute: ""
+date: "2022-03-02"
+output:
+  xaringan::moon_reader:
+    css: ["default", "default-fonts", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r options, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 9,
+  fig.asp = 0.7,
+  cache = TRUE,
+  autodep = TRUE,
+  cache.comments = TRUE,
+  fig.align = "center",
+  echo = FALSE
+)
+```
+
+```{r libs, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
+theme_set(theme_light())
+```
+
+# What we're going to cover
+
+---
+
+# Who we are
+
+---
+
+# What is a random field?
+
+```{r sim-rf-dat}
+predictor_dat <- expand.grid(
+  x = seq(0, 1, length.out = 100), 
+  y = seq(0, 1, length.out = 100), 
+  year = seq_len(6)
+)
+mesh <- make_mesh(predictor_dat, xy_cols = c("x", "y"), cutoff = 0.05)
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(),
+  range = 0.5,
+  sigma_E = 0.2,
+  phi = 0.1,
+  sigma_O = NULL,
+  seed = 1,
+  B = 0
+)
+```
+
+```{r random-field-demo}
+ggplot(sim_dat, aes(x, y, fill = mu)) + 
+  facet_wrap(vars(year)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed(expand = FALSE)
+```
+
+---
+background-image: url("images/eagle.png")
+background-position: bottom right
+background-size: 35%
+
+# Random field
+
+<img src="images/rf-wikipedia.png" width="600" />
+
+---
+background-image: url("images/beaker.png")
+background-position: bottom right
+background-size: 35%
+
+# Random field
+
+
+* .huge[A 2 dimensional "Gaussian Process"] 
+
+--
+
+* A realization from a multivariate normal distribution with some covariance function
+
+---
+background-image: url("images/elmo.png")
+background-position: bottom right
+background-size: 30%
+
+# Random field
+
+* A way of estimating a wiggly surface to account for spatial and/or spatiotemporal correlation in data.
+
+--
+
+* Alternatively, a way of estimating a wiggly surface to account for "latent" or unobserved variables.
+
+--
+
+* A helpful side product is you get meaningful parameter estimates like spatial variance and the distance at data points are effectively uncorrelated ("range")
+
+---
+
+# sdmTMB workflow
+
+---
+class: center, middle, inverse
+
+# A basic spatial example
+
+---
+
+# The Pacific Cod dataset
+
+```{r, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(sdmTMB)
+pcod %>% 
+  select(year, X, Y, depth, density, present) %>% 
+  head()
+```
+
+---
+
+# Building a mesh
+
+```{r}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+plot(mesh)
+```
+
+---
+
+# Fitting a basic GLM
+
+```{r pcod-glm, echo=TRUE}
+fit_glm <- glm(
+  present ~ poly(depth, 2),
+  data = pcod,
+  family = binomial(link = "logit")
+)
+
+fit <- sdmTMB(
+  present ~ poly(depth, 2),
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "off"
+)
+```
+
+---
+
+# Adding spatial random fields
+
+```{r pcod-spatial-rf, echo=TRUE}
+fit <- sdmTMB(
+  present ~ poly(depth, 2),
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"   #<<
+)
+```
+
+---
+
+# Inspecting the model output
+
+```{r, echo=TRUE, highlight.output=c(1)}
+summary(fit)
+```
+
+---
+
+# Inspecting the model output
+
+```{r, echo=TRUE, highlight.output=2:5}
+summary(fit)
+```
+
+---
+
+# Inspecting the model output
+
+```{r, echo=TRUE, highlight.output=6:9}
+summary(fit)
+```
+
+---
+
+# Inspecting the model output
+
+```{r, echo=TRUE, highlight.output=11:13}
+summary(fit)
+```
+
+---
+
+# Extracting parameters in a data frame
+
+```{r, echo=TRUE}
+# Main effects:
+tidy(fit, conf.int = TRUE) %>% 
+  as_tibble()
+
+# Variance-related terms:
+tidy(fit, effects = "ran_pars", conf.int = TRUE) %>% 
+  as_tibble()
+```
+
+---
+
+# Making predictions
+
+```{r, echo=TRUE}
+p <- predict(fit)
+p <- predict(fit, newdata = qcs_grid)
+```
+
+---
+
+# sdmTMB formulas
+
+.large[
+```r
+# linear effect of x1:
+formula = y ~ x1 
+
+# add smoother effect of x2:
+formula = y ~ x1 + s(x2)
+
+# add random intercept by group g:
+formula = y ~ x1 + s(x2) + (1 | g)
+```
+]
+
+---
+
+# Smoothers (as in mgcv)
+
+.large[
+```r
+# smoother effect of x:
+formula = y ~ s(x)
+
+# basis dimension of 5:
+formula = y ~ s(x, k = 5)
+
+# bivariate smoother effect of x & y:
+formula = y ~ s(x, y)
+
+# smoother effect of x1 varying by x2:
+formula = y ~ s(x1, by = x2)
+```
+]
+
+---
+
+# Getting help
+
+---
