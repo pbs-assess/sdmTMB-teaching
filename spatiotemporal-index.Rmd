@@ -36,10 +36,12 @@ plot(pcod_spde)
 Let's fit a GLMM. Note that if we want to use this model for index standardization then we need to include `0 + as.factor(year)` or `-1 + as.factor(year)` so that we have a factor predictor that represents the mean estimate for each time slice.
 
 ```{r model}
-m <- sdmTMB(
+m1 <- sdmTMB(
   data = pcod, 
   formula = density ~ 0 + as.factor(year),
   silent = FALSE,
+  ar1_fields = TRUE,
+  include_spatial = FALSE,
   time = "year", spde = pcod_spde, family = tweedie(link = "log"))
 ```
 
@@ -63,7 +65,7 @@ glimpse(qcs_grid)
 Now make the predictions on new data:
 
 ```{r predictions}
-predictions <- predict(m, newdata = qcs_grid, return_tmb_object = TRUE)
+predictions <- predict(m1, newdata = qcs_grid, return_tmb_object = TRUE)
 ```
 
 Let's make a small function to make maps.
@@ -81,7 +83,7 @@ There are four kinds of predictions that we get out of the model. First we will 
 
 ```{r plot-all-effects, fig.width = 8}
 plot_map(predictions$data, "exp(est)") +
-  scale_fill_viridis_c(trans = "sqrt") +
+  scale_fill_viridis_c(trans = "log10") +
   ggtitle("Prediction (fixed effects + all random effects)")
 ```
 
@@ -113,7 +115,7 @@ When we ran our `predict.sdmTBM()` function, it also returned a report from TMB 
 
 ```{r get-index}
  # not bias correcting for vignette-building speed:
-ind <- get_index(predictions, bias_correct = FALSE, )
+ind <- get_index(predictions, bias_correct = FALSE)
 ```
 
 ```{r plot-index}
@@ -127,7 +129,7 @@ ggplot(ind, aes(year, est*scale)) + geom_line() +
 These are our biomass estimates:
 
 ```{r index-table, results='asis'}
-mutate(ind, 
+mutate(ind,
   est = est * scale,
   lwr = lwr * scale,
   upr = upr * scale,
