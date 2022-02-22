@@ -57,21 +57,68 @@ library(sdmTMB)
 theme_set(theme_light())
 ```
 
-# What we're going to cover
 
-* point 1
+# Course overview
 
-* point 2
-
-```r
-plot(1, 1)
-```
+* Fitting Spatial and Spatiotemporal Models with `sdmTMB`
 
 ---
 
 # Who we are
 
+* Eric Ward, Northwest Fisheries Science Center (Seattle)
+* Sean Anderson, Fisheries and Oceans Canada (Nanaimo)
+* Lewis Barnett, Alaska Fisheries Science Center (Seattle) 
+* Philina English, Fisheries and Oceans Canada (Nanaimo)
+
+* Code  
+[https://pbs-assess.github.io/sdmTMB/index.html](https://pbs-assess.github.io/sdmTMB/index.html)
+
 ---
+
+# Plan for the 2-session course
+
+* Session 1 (March 3): describe models, and walk through code with us
+
+* Session 2 (March 10): have `sdmTMB` installed, run models and explore advanced features
+
+* Each day, we have ~ 1.5 - 2 hours of content, and will plan to take a 10-15 minute break halfway through.
+
+* Have questions? Use the chat, ask during our break, or at the end. Thanks!
+
+---
+
+# Types of spatial data  
+
+* Lattice: gridded data, e.g. interpolated SST from satellite observations 
+
+* Areal: data collected in neighboring spatial areas, e.g. commercial catch records by state / county
+
+* Georeferenced: data where observations are associated with latitude longitude 
+  * Locations may be unique, or repeated (stations)
+---
+
+# Why is space important? 
+<!-- TODO: introduce stationarity? Isotropy/anisotropy? -->
+
+* Data covary spatially (neighbors that are closer are more similar)
+
+* Relationship between distance and covariance can be described with a spatial covariance function
+
+* Covariance function in 2D may be
+  * isotropic (same covariance in each direction)
+  * anisotropic (different in each direction)
+
+* Assumed stationary through time (for now)
+---
+
+# Matérn covariance
+
+* Flexible, can be exponential (0.5) or Gaussian (~ infinity)
+
+<img src="images/matern.png" height = "400px" width="400px" />
+---
+
 
 # What is a random field?
 
@@ -144,6 +191,45 @@ background-size: 30%
 --
 
 * As a bonus, it provides use covariance parameter estimates: spatial variance and the distance at data points are effectively uncorrelated ("range")
+
+<!-- TODO: include nugget / sill? Show slide with semivariogram image? -->
+---
+
+# Many ways to simulate random fields in R
+
+* `RandomFields::RFsimulate()` simulates univariate / multivariate fields
+* `fields::sim.rf()` simulates random fields on a grid
+* `geoR::grf()` simulates random fields with irregular observations
+* `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
+
+* `sdmTMB::sdmTMB_sim()` simulates univariate fields with `sdmTMB`
+---
+
+# sdmTMB origins
+
+* Need for reproducible code and methods for assessments [(Anderson et al. 2019)](https://publications.gc.ca/collections/collection_2020/mpo-dfo/fs70-5/Fs70-5-2019-041-eng.pdf)
+
+<img src="images/yellowtail_synopsis.png" width="450px" height = "400px"/>
+---
+
+# sdmTMB highlights
+
+* `sdmTMB` software is user-friendly R package for modeling spatial processes. 
+  * Familiar syntax to widely used packages; `glm`, `mgcv`, etc
+  * Performs fast maximum likelihood estimation via `TMB` 
+  * Widely applicable to many stock assessments, bycatch models, etc. that include spatially referenced data
+
+---
+
+# sdmTMB limitations
+
+* `sdmTMB` fits a variety of models with univariate responses
+
+* Cannot: 
+  * fit multivariate models [VAST](https://github.com/James-Thorson-NOAA/VAST)
+  * spatial dynamic factor analysis 
+  * zero-inflated or hurdle models
+  * log Gaussian Cox processes
 
 ---
 
