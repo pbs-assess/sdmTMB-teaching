@@ -608,7 +608,7 @@ fit <- sdmTMB(
   cpue ~ depth + offset,
   family = gaussian(),
   data = dat,
-  spatiotemporal = "IID",
+  spatiotemporal = "iid",
   ...
 )
 ```
@@ -617,20 +617,25 @@ fit <- sdmTMB(
 
 # Types of spatiotemporal fields
 
-* Independent ("IID")
+* None (`spatiotemporal = "off"`)
 
-* Random walk ("RW")
+* Independent (`spatiotemporal = "iid"`)
 
-* Autoregressive ("AR1")
+* Random walk (`spatiotemporal = "rw"`)
+
+* Autoregressive (`spatiotemporal = "ar1"`)
 
 ---
 
 # Spatiotemporal fields
 
-* Why include spatiotemporal fields? 
+* Why include spatiotemporal fields?
+  * If there are 'latent' spatial processes that vary through time
+  * E.g., effect of water temperature on abundance if temperature wasn't in the model
+  * Represents all the missing variables that vary through time
 
 * Why would a field be IID vs RW/AR1?
-  * do we expect hotspots to persist over time?
+  * Do we expect hotspots to persist or adapt slowly over time?
 
 ---
 
@@ -657,6 +662,7 @@ pcod %>%
 
 # Fitting a basic GLM
 
+.medium[
 ```{r pcod-glm, echo=TRUE}
 fit_glm <- glm(
   present ~ 1,
@@ -664,14 +670,16 @@ fit_glm <- glm(
   family = binomial(link = "logit")
 )
 
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
   present ~ 1,
   data = pcod,
-  mesh = make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10),
+  mesh = mesh,
   family = binomial(link = "logit"),
   spatial = "off"
 )
 ```
+]
 
 ---
 
@@ -685,6 +693,22 @@ fit <- sdmTMB(
 * How do you know your model hasn’t converged? Who is Hessian and why hasn’t he converged?
 * What warnings do you need to worry about? 
 * Overall magnitude of errors / observation error etc. 
+
+---
+
+class: center, middle, inverse
+
+# Troubleshooting
+
+---
+
+# Who is Hessian and why are they not positive definite??
+
+* A Hessian matrix is a matrix of second derivatives of a function (here the negative log likelihoood surface)
+* The inverse of the negative Hessian is the covariance matrix
+* Warning means the curvature of the negative log-likelihood surface is inconsistent with the model having found the best fit.
+* Overparameterized? Variance estimated near zero?
+* See <https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html>
 
 ---
 
