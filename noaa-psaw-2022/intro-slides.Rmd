@@ -98,7 +98,7 @@ theme_set(theme_light())
 
 class: center, middle, inverse
 
-# Covariance functions & gaussian processes for time series
+# Covariance functions & Gaussian processes for time series
 
 ---
 
@@ -107,20 +107,23 @@ class: center, middle, inverse
 * Using messy data to approximate underlying truth
 
 ```{r sim-gp, fig.height=4}
-
-x = seq(1,50)
-d = as.matrix(dist(x, diag=TRUE))
+x <- seq(1, 50)
+d <- as.matrix(dist(x, diag = TRUE))
 set.seed(123)
-df = data.frame(x = x,
-                true = c(rmvnorm(1, mu = 0, Sigma = 1*exp(-0.05*d))))
-df$y = rnorm(df$true, df$true, 0.1)
+df <- data.frame(
+  x = x,
+  true = c(spam::rmvnorm(1, mu = 0, Sigma = 1 * exp(-0.05 * d)))
+)
+df$y <- rnorm(df$true, df$true, 0.1)
 
-g1 = ggplot(df, aes(x,y)) + 
-  geom_point(col="red",alpha=0.7) + 
-  theme_bw() + xlab("") + ylab("Observations")
-g2 = g1 + geom_line(aes(x,true))
+g1 <- ggplot(df, aes(x, y)) +
+  geom_point(col = "red", alpha = 0.7) +
+  theme_bw() +
+  xlab("") +
+  ylab("Observations")
+g2 <- g1 + geom_line(aes(x, true))
 
-gridExtra::grid.arrange(g1,g2,ncol=1)
+gridExtra::grid.arrange(g1, g2, ncol = 1)
 ```
 
 ??? 
@@ -130,11 +133,11 @@ There's many flexible approaches to modeling latent dynamics (state space models
 
 # Gaussian processes 101
 
-* Dynamics of $\textbf{y}_t$ can be approximated with a Gaussian Process if $E[\textbf{y}_t] \sim MVN(\mu, \Sigma)$
+* Dynamics of $\textbf{y}_t$ can be approximated with a Gaussian process if $E[\textbf{y}_t] \sim MVN(\mu, \Sigma)$
 
 * $\mu$ may be fixed, e.g. 0
 
-* $\Sigma$ contains many parameters. Instead of estimating them jointly, elements can be approximated a covariance function
+* $\Sigma$ contains many parameters. Instead of estimating them jointly, elements can be approximated by a covariance function
   * $\Sigma_{i,j} = f(x_{i}, x_{j})$
   * $n (n-1)/2$ parameters -> 2-3 parameters
 
@@ -164,23 +167,27 @@ There's many flexible approaches to modeling latent dynamics (state space models
 # Predictive process models 
 
 ```{r show-gp, fig.height=4}
-
-x = seq(1,50)
-d = as.matrix(dist(x, diag=TRUE))
+x <- seq(1, 50)
+d <- as.matrix(dist(x, diag = TRUE))
 set.seed(123)
-df = data.frame(x = x,
-                true = c(rmvnorm(1, mu = 0, Sigma = 1*exp(-0.05*d))))
-df$y = rnorm(df$true, df$true, 0.1)
-
-g1 = ggplot(df, aes(x,y)) + 
-  geom_point(col="red",alpha=0.7) + 
-  theme_bw() + xlab("") + ylab("Observations") + 
+df <- data.frame(
+  x = x,
+  true = c(spam::rmvnorm(1, mu = 0, Sigma = 1 * exp(-0.05 * d)))
+)
+df$y <- rnorm(df$true, df$true, 0.1)
+g1 <- ggplot(df, aes(x, y)) +
+  geom_point(col = "red", alpha = 0.7) +
+  theme_bw() +
+  xlab("") +
+  ylab("Observations") +
   geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 25))
-g2 = ggplot(df, aes(x,y)) + 
-  geom_point(col="red",alpha=0.7) + 
-  theme_bw() + xlab("") + ylab("Observations") + 
+g2 <- ggplot(df, aes(x, y)) +
+  geom_point(col = "red", alpha = 0.7) +
+  theme_bw() +
+  xlab("") +
+  ylab("Observations") +
   geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7))
-gridExtra::grid.arrange(g1,g2,ncol=1)
+gridExtra::grid.arrange(g1, g2, ncol = 1)
 ```
 
 ---
