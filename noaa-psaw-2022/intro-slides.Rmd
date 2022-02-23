@@ -293,7 +293,7 @@ background-size: 30%
 
 --
 
-* As a bonus, it provides use covariance parameter estimates: spatial variance and the distance at data points are effectively uncorrelated ("range")
+* As a bonus, it provides useful covariance parameter estimates: spatial variance and the distance at data points are effectively uncorrelated ("range")
 
 <!-- TODO: include nugget / sill? Show slide with semivariogram image? -->
 ---
@@ -326,22 +326,28 @@ Homework: try to work through some of these yourself. Make some plots, and see h
 
 # INLA and the SPDE approach
 
-* SPDE uses sparse precision matrices $\Sigma^{-1}$ with Matérn covariance 
+.small[
+* SPDE: stochastic partial differential equation
+
+* The solution to a specific SPDE is a Gaussian random field (GRF) with Matérn covariance
+
+* This, and sparse precision matrices, let us efficiently fit approximations to GRFs to large spatial datasets
 
 * INLA is software that performs data wrangling for SPDE estimation
-  * INLA also performs fast approximate Bayesian estimation (Laplace approximation)
+  * INLA also performs approximate Bayesian estimation
   * sdmTMB uses INLA to wrangle matrices, but uses TMB for maximum likelihood estimation
+]
 
 ---
 
 # Introducing meshes
 
-* Approximations to GMRF via SPDE approach are 'meshes'
+* Implementing the SPDE with INLA requires constructing a 'mesh'
 
 ```{r mesh-example, fig.width=6.5}
 mesh <- make_mesh(pcod, xy_cols = c("X","Y"), cutoff = 10)
 ggplot() + inlabru::gg(mesh$mesh) +
-  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.3, pch = 20) +
+  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
   coord_equal()
 ```
 
@@ -365,7 +371,7 @@ class: center, middle, inverse
 * sdmTMB is a user-friendly R package for modeling spatial processes. 
   * Familiar syntax to widely used functions/packages; `glm()`, mgcv, glmmTMB, etc.
   
-  * Performs fast maximum likelihood estimation via TMB
+  * Performs fast (marginal) maximum likelihood estimation via TMB
   
   * Widely applicable to many stock assessments, bycatch models, etc. that include spatially referenced data
 
@@ -394,10 +400,13 @@ class: center, middle, inverse
 
 ---
 
+# Formula interface
+
 * sdmTMB uses a similar interface to widely used R packages  
 
 * Example: model CPUE as a function of depth
-  * formula used to specify fixed effects
+
+* A formula is used to specify fixed effects
 
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
@@ -493,7 +502,7 @@ cpue ~ logistic(temperature)
 df <- data.frame(x = seq(1, 100))
 slope <- 0.1
 df$y <- 3.0 / (1 + exp(-0.1 * (df$x - 50)))
-g1 <- ggplot(df, aes(x, y)) +
+ggplot(df, aes(x, y)) +
   geom_line(col = "red") +
   xlab("Temperature") +
   ylab("CPUE") +
@@ -566,9 +575,11 @@ class: center, middle, inverse
 
 # Spatial vs. spatiotemporal fields
 
-* A spatial field can be thought of as an intercept—common across all time slices
+* A spatial field can be thought of as an intercept—common across all time slices 
+  * a wiggly spatial process that is constant in time
 
 * Spatiotemporal variation represents separate fields estimated for each time slice (possibly correlated)
+  * wiggly spatial processes that change through time
 
 * Refer to vignette for math notation
 ---
