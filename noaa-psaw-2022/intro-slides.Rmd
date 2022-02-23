@@ -163,6 +163,25 @@ There's many flexible approaches to modeling latent dynamics (state space models
 
 # Predictive process models 
 
+```{r show-gp, fig.height=4}
+
+x = seq(1,50)
+d = as.matrix(dist(x, diag=TRUE))
+set.seed(123)
+df = data.frame(x = x,
+                true = c(rmvnorm(1, mu = 0, Sigma = 1*exp(-0.05*d))))
+df$y = rnorm(df$true, df$true, 0.1)
+
+g1 = ggplot(df, aes(x,y)) + 
+  geom_point(col="red",alpha=0.7) + 
+  theme_bw() + xlab("") + ylab("Observations") + 
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 25))
+g2 = ggplot(df, aes(x,y)) + 
+  geom_point(col="red",alpha=0.7) + 
+  theme_bw() + xlab("") + ylab("Observations") + 
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7))
+gridExtra::grid.arrange(g1,g2,ncol=1)
+```
 
 ---
 
@@ -399,6 +418,53 @@ cpue ~ s(temperature, by=year)
 cpue ~ s(month, bs="cc", k=12)
 ```
 ]
+
+---
+
+# Other non-linear functions for threshold analyses
+
+* Breakpoint models 
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ breakpt(temperature)
+```
+]  
+
+```{r}
+df = data.frame(x = 1:100)
+slope = 0.1
+df$y = ifelse(df$x < 50, slope*df$x, slope*50)
+ggplot(df, aes(x, y)) + 
+  geom_line(col="red")+
+  xlab("Temperature") + 
+  ylab("CPUE") + 
+  ggtitle("Breakpoint function") + 
+  theme_bw()
+```
+
+---
+
+# Other non-linear functions for threshold analyses
+
+* Logistic models 
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ logistic(temperature)
+```
+]  
+
+```{r}
+df = data.frame(x = 1:100)
+slope = 0.1
+df$y = 3.0 / (1 + exp(-0.1*(df$x -50)))
+#df$y = ifelse(df$x < 50, slope*df$x, slope*50)
+ggplot(df, aes(x, y)) + 
+  geom_line(col="red")+
+  xlab("Temperature") + 
+  ylab("CPUE") + 
+  ggtitle("Logistic function") + 
+  theme_bw()
+```
 
 ---
 
