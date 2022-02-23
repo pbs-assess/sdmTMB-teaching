@@ -71,9 +71,6 @@ theme_set(theme_light())
 * Lewis Barnett, Alaska Fisheries Science Center (Seattle) 
 * Philina English, Fisheries and Oceans Canada (Nanaimo)
 
-* Code  
-[https://pbs-assess.github.io/sdmTMB/index.html](https://pbs-assess.github.io/sdmTMB/index.html)
-
 ---
 
 # Plan for the 2-session course
@@ -85,6 +82,23 @@ theme_set(theme_light())
 * Each day, we have ~ 1.5 - 2 hours of content, and will plan to take a 10-15 minute break halfway through.
 
 * Have questions? Use the chat, ask during our break, or at the end. Thanks!
+
+---
+
+# Resources
+
+* `sdmTMB` Readme [https://github.com/pbs-assess/sdmTMB](https://github.com/pbs-assess/sdmTMB)
+* `sdmTMB` documentation
+[https://pbs-assess.github.io/sdmTMB/index.html](https://pbs-assess.github.io/sdmTMB/index.html)
+
+*  New features to suggest? 
+  * Add to list of 'issues' 
+
+---
+
+class: center, middle, inverse
+
+# A brief overview of spatial processes
 
 ---
 
@@ -109,6 +123,9 @@ g2 = g1 + geom_line(aes(x,true))
 gridExtra::grid.arrange(g1,g2,ncol=1)
 ```
 
+??? 
+There's many flexible approaches to modeling latent dynamics (state space models, etc). GPs are one of those, without constraints (e.g. stationarity in time, ARMA properties, etc)
+
 ---
 
 # Gaussian processes 101
@@ -117,7 +134,8 @@ gridExtra::grid.arrange(g1,g2,ncol=1)
 
 * $\mu$ may be fixed, e.g. 0
 
-* $\Sigma$ may contain many parameters. Instead of estimating them jointly, elements can be approximated a covariance function 
+* $\Sigma$ contains many parameters. Instead of estimating them jointly, elements can be approximated a covariance function
+  * $\Sigma_{i,j} = f(x_{i}, x_{j})$
   * $n (n-1)/2$ parameters -> 2-3 parameters
 
 * Which to choose? 
@@ -130,6 +148,28 @@ gridExtra::grid.arrange(g1,g2,ncol=1)
 * Flexible, can be exponential (= 0.5) or Gaussian (~ infinity)
 
 <img src="images/matern.png" height = "400px" width="400px" />
+---
+
+# Predictive process models 
+
+* High dimensional datasets (here, time) may still be computationally challenging
+
+* GP predictive process models:
+  * Estimate values at a subset of locations in the time series
+  *   'knots', 'vertices', or 'control points'
+  * Use covariance function to interpolate from knots to locations of observations
+
+---
+
+# Predictive process models 
+
+
+---
+
+class: center, middle, inverse
+
+# Spatial data & random fields
+
 ---
 
 # Moving from 1 to 2 dimensions (data types) 
@@ -240,6 +280,14 @@ background-size: 30%
 * `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
 
 * `sdmTMB::sdmTMB_sim()` simulates univariate fields with `sdmTMB`
+
+---
+
+---
+class: center, middle, inverse
+
+# A gentle introduction to sdmTMB
+
 ---
 
 # sdmTMB origins
@@ -274,7 +322,13 @@ background-size: 30%
 
 # sdmTMB workflow
 
+<img src="images/sdmTMB_workflow.png" height = "500px" width="900px" />
+
 ---
+
+
+
+
 class: center, middle, inverse
 
 # A basic spatial example
