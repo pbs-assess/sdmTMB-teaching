@@ -98,7 +98,7 @@ theme_set(theme_light())
 
 class: center, middle, inverse
 
-# A brief overview of spatial processes
+# Covariance functions & gaussian processes for time series
 
 ---
 
@@ -218,7 +218,7 @@ class: center, middle, inverse
 
 # What is a random field?
 
-```{r sim-rf-dat}
+```{r sim-rf-dat, message=FALSE, warning=FALSE}
 predictor_dat <- expand.grid(
   x = seq(0, 1, length.out = 100), 
   y = seq(0, 1, length.out = 100), 
@@ -303,7 +303,42 @@ background-size: 30%
 Homework: try to work through some of these yourself. Make some plots, and see how changing the covariance affects the smoothness of these fields.
 ---
 
+# Estimating random fields 
+
+* Georeferenced data often involve 1000s or more points  
+
+* Like in the 1-D setting, we need to approximate the spatial field 
+  * Options include nearest neighbor methods, covariance tapering, etc.
+  * Including more neighbors increases complexity
+  
+* `sdmTMB` uses an approach from INLA
+  * for `VAST` users, this is the same
+  * [INLA books](https://www.r-inla.org/learnmore/books)
+
 ---
+
+# INLA and the SPDE approach
+
+* SPDE uses sparse precision matrices $\Sigma^{-1}$ with Matérn covariance 
+
+* INLA is software that performs data wrangling for SPDE estimation
+  * INLA also performs fast Bayesian estimation (Laplace approximation)
+  * `sdmTMB` uses INLA to wrangle matrices, but uses `TMB` for maximum likelihood estimation
+
+---
+
+# Introducing meshes
+
+* Approximations to GMRF via SPDE approach are 'meshes'
+
+```{r}
+data("pcod")
+mesh = make_mesh(pcod, xy_cols = c("X","Y"), cutoff = 10)
+```
+
+
+---
+
 class: center, middle, inverse
 
 # A gentle introduction to sdmTMB
@@ -348,7 +383,7 @@ class: center, middle, inverse
 
 class: center, middle, inverse
 
-# Syntax and formulas
+# Syntax and formulas: non-spatial model components
 
 ---
 
@@ -388,7 +423,7 @@ cpue ~ poly(depth, degree=2)
 * smooth splines using `s()` from `mgcv`
 .medium[
 ```{r echo=TRUE, eval=FALSE}
-cpue ~ s(depth, k=4)
+cpue ~ s(depth)
 ```
 ]
 
@@ -430,17 +465,20 @@ cpue ~ breakpt(temperature)
 ```
 ]  
 
-```{r}
+```{r make-breakpt}
 df = data.frame(x = 1:100)
 slope = 0.1
 df$y = ifelse(df$x < 50, slope*df$x, slope*50)
-ggplot(df, aes(x, y)) + 
+g1 = ggplot(df, aes(x, y)) + 
   geom_line(col="red")+
   xlab("Temperature") + 
   ylab("CPUE") + 
   ggtitle("Breakpoint function") + 
   theme_bw()
+ggsave("images/breakpoint.png", plot=g1, height = 3)
 ```
+
+<img src="images/breakpoint.png" height = "300px" width="900px" />
 
 ---
 
@@ -458,13 +496,141 @@ df = data.frame(x = 1:100)
 slope = 0.1
 df$y = 3.0 / (1 + exp(-0.1*(df$x -50)))
 #df$y = ifelse(df$x < 50, slope*df$x, slope*50)
-ggplot(df, aes(x, y)) + 
+g1 = ggplot(df, aes(x, y)) + 
   geom_line(col="red")+
   xlab("Temperature") + 
   ylab("CPUE") + 
   ggtitle("Logistic function") + 
   theme_bw()
+ggsave("images/logistic.png", plot=g1, height = 3)
 ```
+
+<img src="images/logistic.png" height = "300px" width="900px" />
+---
+
+# Families
+
+* Many of the same families used in `glm`, `glmmTMB`, `mgcv` can be used here
+
+* Includes: `gaussian()`, `Gamma()`, `binomial()`, `poisson()`, `Beta()`, `nbinom2()`, 
+`student()`, `tweedie()`
+
+* beta / binomial distribution have logit links, most others = log
+
+---
+
+# Tweedie
+
+* Different values of $\phi$ allow for a wide variety of shapes, including zero-inflated data  
+
+```{r sim-tweedie}
+set.seed(123)
+r1 = fishMod::rTweedie(10000, mu=3, phi=0.1, p=1.3)
+r2 = fishMod::rTweedie(10000, mu=3, phi=1, p=1.3)
+r3 = fishMod::rTweedie(10000, mu=3, phi=10, p=1.3)
+df = data.frame(y = c(r1,r2,r3), phi = sort(rep(c("0.1","1","10"),length(r1))))
+
+ggplot(df, aes(y)) + geom_histogram(bins=200) + theme_bw() + ylab("Density") + 
+  facet_wrap(~phi, ncol=1, scale="free_y") + coord_cartesian(xlim=c(0,20))
+```
+
+---
+
+# Additional arguments: weights and offsets
+
+* Like `glm`, `glmmTMB`, `sdmTMB` allows the use of offsets and weights
+
+.medium[
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  cpue ~ depth + offset,
+  family = gaussian(),
+  data = dat,
+  weights = my_weights,
+  ...
+)
+```
+]
+
+---
+
+class: center, middle, inverse
+
+# Syntax and formulas: spatial model components
+
+---
+
+# Contrasting spatial v spatiotemporal fields
+
+* Spatial field can be thought of as an intercept, common across all time slices
+
+* Spatiotemporal variation represents separate fields estimated for each time slice
+
+* Refer to vignette for math notation
+---
+
+# Spatial fields can be turned on / off
+
+* By default `sdmTMB` estimates a spatial field  
+
+.medium[
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  cpue ~ depth + offset,
+  family = gaussian(),
+  data = dat,
+  spatial = FALSE,
+  ...
+)
+```
+]
+
+---
+
+# Why not estimate a spatial field?
+
+* Shared process across time slices isn't of interest
+
+* Magnitude of spatiotemporal variability >> spatial variation
+
+* Confounding with other parameters (more later)
+
+---
+
+# Spatiotemporal fields can be turned on / off
+
+* By default `sdmTMB` estimates a spatiotemporal field  
+
+.medium[
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  cpue ~ depth + offset,
+  family = gaussian(),
+  data = dat,
+  spatiotemporal = "off",
+  ...
+)
+```
+]
+
+---
+
+# Types of spatiotemporal fields
+
+* Independent ("IID")
+
+* Random walk ("RW")
+
+* Autoregressive ("AR1")
+
+---
+
+# Spatiotemporal fields
+
+* Why include spatiotemporal fields? 
+
+* Why would a field be IID vs RW/AR1?
+  * do we expect hotspots to persist over time?
 
 ---
 
@@ -505,34 +671,6 @@ fit <- sdmTMB(
   family = binomial(link = "logit"),
   spatial = "off"
 )
-```
-
----
-
-# Families
-
-* Many of the same families used in `glm`, `glmmTMB`, `mgcv` can be used here
-
-* Includes: `gaussian()`, `Gamma()`, `binomial()`, `poisson()`, `Beta()`, `nbinom2()`, 
-`student()`, `tweedie()`
-
-* beta / binomial distribution have logit links, most others = log
-
----
-
-# Tweedie
-
-* Different values of $\phi$ allow for a wide variety of shapes, including zero-inflated data  
-
-```{r sim-tweedie}
-set.seed(123)
-r1 = fishMod::rTweedie(10000, mu=3, phi=0.1, p=1.3)
-r2 = fishMod::rTweedie(10000, mu=3, phi=1, p=1.3)
-r3 = fishMod::rTweedie(10000, mu=3, phi=10, p=1.3)
-df = data.frame(y = c(r1,r2,r3), phi = sort(rep(c("0.1","1","10"),length(r1))))
-
-ggplot(df, aes(y)) + geom_histogram(bins=200) + theme_bw() + ylab("Density") + 
-  facet_wrap(~phi, ncol=1, scale="free_y") + coord_cartesian(xlim=c(0,20))
 ```
 
 ---
