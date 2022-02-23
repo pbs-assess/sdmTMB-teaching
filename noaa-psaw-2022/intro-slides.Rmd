@@ -278,9 +278,10 @@ background-size: 30%
 * `fields::sim.rf()` simulates random fields on a grid
 * `geoR::grf()` simulates random fields with irregular observations
 * `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
-
 * `sdmTMB::sdmTMB_sim()` simulates univariate fields with `sdmTMB`
 
+???
+Homework: try to work through some of these yourself. Make some plots, and see how changing the covariance affects the smoothness of these fields.
 ---
 
 ---
@@ -299,7 +300,7 @@ class: center, middle, inverse
 
 # sdmTMB highlights
 
-* `sdmTMB` software is user-friendly R package for modeling spatial processes. 
+* `sdmTMB` is a user-friendly R package for modeling spatial processes. 
   * Familiar syntax to widely used packages; `glm`, `mgcv`, etc
   
   * Performs fast maximum likelihood estimation via `TMB` 
@@ -326,8 +327,80 @@ class: center, middle, inverse
 
 ---
 
+class: center, middle, inverse
 
+# Syntax and formulas
 
+---
+
+* `sdmTMB` uses a similar interface to widely used R packages  
+
+* Example: model CPUE as a function of depth
+  * formula used to specify fixed effects
+.medium[
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  cpue ~ depth,
+  family = gaussian(),
+  data = dat,
+  ...
+)
+```
+]
+
+---
+
+# Other formulas from Rverse
+
+* transformations using `I()` notation
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ depth + I(depth^2)
+```
+]
+
+* polynomial functions using `poly` 
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ poly(depth, degree=2)
+```
+]
+
+* smooth splines using `s()` from `mgcv`
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ s(depth, k=4)
+```
+]
+
+---
+
+# Types of smooths in sdmTMB
+
+* All smooths are penalized ("P-splines")
+
+* Smooths can be > 1 dimension
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ s(temperature, oxygen)
+```
+]
+
+* Smooths can be by group
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ s(temperature, by=year)
+```
+]
+
+* Smooths can use other types of splines from `mgcv`
+.medium[
+```{r echo=TRUE, eval=FALSE}
+cpue ~ s(month, bs="cc", k=12)
+```
+]
+
+---
 
 class: center, middle, inverse
 
@@ -395,10 +468,6 @@ df = data.frame(y = c(r1,r2,r3), phi = sort(rep(c("0.1","1","10"),length(r1))))
 ggplot(df, aes(y)) + geom_histogram(bins=200) + theme_bw() + ylab("Density") + 
   facet_wrap(~phi, ncol=1, scale="free_y") + coord_cartesian(xlim=c(0,20))
 ```
-
----
-
-# Formula, syntax, args, etc
 
 ---
 
