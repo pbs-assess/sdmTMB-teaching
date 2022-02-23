@@ -77,9 +77,9 @@ theme_set(theme_light())
 
 * Session 1 (March 3): describe models, and walk through code with us
 
-* Session 2 (March 10): have `sdmTMB` installed, run models and explore advanced features
+* Session 2 (March 10): have sdmTMB installed, run models and explore advanced features
 
-* Each day, we have ~ 1.5 - 2 hours of content, and will plan to take a 10-15 minute break halfway through.
+* Each day, we have ~1.5–2 hours of content, and will plan to take a 10–15 minute break halfway through.
 
 * Have questions? Use the chat, ask during our break, or at the end. Thanks!
 
@@ -87,12 +87,13 @@ theme_set(theme_light())
 
 # Resources
 
-* `sdmTMB` Readme [https://github.com/pbs-assess/sdmTMB](https://github.com/pbs-assess/sdmTMB)
-* `sdmTMB` documentation
-[https://pbs-assess.github.io/sdmTMB/index.html](https://pbs-assess.github.io/sdmTMB/index.html)
+* sdmTMB GitHub repository:  
+  [https://github.com/pbs-assess/sdmTMB](https://github.com/pbs-assess/sdmTMB)
+* sdmTMB documentation:  
+  [https://pbs-assess.github.io/sdmTMB/index.html](https://pbs-assess.github.io/sdmTMB/index.html)
 
-*  New features to suggest? 
-  * Add to list of 'issues' 
+*  New features to suggest? Add to issue tracker:  
+  [https://github.com/pbs-assess/sdmTMB/issues](https://github.com/pbs-assess/sdmTMB/issues)
 
 ---
 
@@ -104,9 +105,9 @@ class: center, middle, inverse
 
 # Gaussian processes 101
 
-* Using messy data to approximate underlying truth
+* Using Gaussian processes (GPs) to approximate underlying truth
 
-```{r sim-gp, fig.height=4}
+```{r sim-gp, fig.asp=0.5}
 x <- seq(1, 50)
 d <- as.matrix(dist(x, diag = TRUE))
 set.seed(123)
@@ -123,23 +124,23 @@ g1 <- ggplot(df, aes(x, y)) +
   ylab("Observations")
 g2 <- g1 + geom_line(aes(x, true))
 
-gridExtra::grid.arrange(g1, g2, ncol = 1)
+# gridExtra::grid.arrange(g1, g2, ncol = 1)
+print(g2)
 ```
 
-??? 
-There's many flexible approaches to modeling latent dynamics (state space models, etc). GPs are one of those, without constraints (e.g. stationarity in time, ARMA properties, etc)
+<!-- * There are many approaches to modeling 'latent' dynamics. GPs are one of those, without constraints (e.g. stationarity in time, ARMA properties, etc) -->
 
 ---
 
 # Gaussian processes 101
 
-* Dynamics of $\textbf{y}_t$ can be approximated with a Gaussian process if $E[\textbf{y}_t] \sim MVN(\mu, \Sigma)$
+* Dynamics of $\textbf{y}_t$ (observations at time $t$) can be approximated with a Gaussian process if $E[\textbf{y}_t] \sim \mathrm{MVN}(\mu, \Sigma)$
 
-* $\mu$ may be fixed, e.g. 0
+* $\mu$ may be fixed (e.g., $\mu = 0$)
 
-* $\Sigma$ contains many parameters. Instead of estimating them jointly, elements can be approximated by a covariance function
+* $\Sigma$ contains many parameters. Instead of estimating them all, elements can be approximated by a covariance function:
   * $\Sigma_{i,j} = f(x_{i}, x_{j})$
-  * $n (n-1)/2$ parameters -> 2-3 parameters
+  * 2–3 parameters instead of $n (n-1)/2$ parameters
 
 * Which to choose? 
 
@@ -204,8 +205,8 @@ class: center, middle, inverse
 
 * Areal: data collected in neighboring spatial areas, e.g. commercial catch records by state / county
 
-* Georeferenced: data where observations are associated with latitude longitude 
-  * Locations may be unique, or repeated (stations)
+* Georeferenced: data where observations are associated with latitude and longitude 
+  * Locations may be unique or repeated (stations)
 ---
 
 # Why is space important? 
@@ -219,7 +220,7 @@ class: center, middle, inverse
   * isotropic (same covariance in each direction)
   * anisotropic (different in each direction)
 
-* Assumed stationary
+<!-- * Assumed stationary -->
 
 ---
 
@@ -304,7 +305,7 @@ background-size: 30%
 * `fields::sim.rf()` simulates random fields on a grid
 * `geoR::grf()` simulates random fields with irregular observations
 * `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
-* `sdmTMB::sdmTMB_sim()` simulates univariate fields with `sdmTMB`
+* `sdmTMB::sdmTMB_simulate()` simulates univariate fields with `sdmTMB`
 
 ???
 Homework: try to work through some of these yourself. Make some plots, and see how changing the covariance affects the smoothness of these fields.
@@ -312,15 +313,15 @@ Homework: try to work through some of these yourself. Make some plots, and see h
 
 # Estimating random fields 
 
-* Georeferenced data often involve 1000s or more points  
+* Georeferenced data often involve 1000s or more points
 
 * Like in the 1-D setting, we need to approximate the spatial field 
   * Options include nearest neighbor methods, covariance tapering, etc.
   * Including more neighbors increases complexity
   
-* `sdmTMB` uses an approach from INLA
-  * for `VAST` users, this is the same
-  * [INLA books](https://www.r-inla.org/learnmore/books)
+* sdmTMB uses an approach from INLA
+  * for VAST users, this is the same
+  * INLA books: [https://www.r-inla.org/learnmore/books](https://www.r-inla.org/learnmore/books)
 
 ---
 
@@ -329,8 +330,8 @@ Homework: try to work through some of these yourself. Make some plots, and see h
 * SPDE uses sparse precision matrices $\Sigma^{-1}$ with Matérn covariance 
 
 * INLA is software that performs data wrangling for SPDE estimation
-  * INLA also performs fast Bayesian estimation (Laplace approximation)
-  * `sdmTMB` uses INLA to wrangle matrices, but uses `TMB` for maximum likelihood estimation
+  * INLA also performs fast approximate Bayesian estimation (Laplace approximation)
+  * sdmTMB uses INLA to wrangle matrices, but uses TMB for maximum likelihood estimation
 
 ---
 
@@ -338,11 +339,12 @@ Homework: try to work through some of these yourself. Make some plots, and see h
 
 * Approximations to GMRF via SPDE approach are 'meshes'
 
-```{r}
-data("pcod")
-mesh = make_mesh(pcod, xy_cols = c("X","Y"), cutoff = 10)
+```{r mesh-example, fig.width=6.5}
+mesh <- make_mesh(pcod, xy_cols = c("X","Y"), cutoff = 10)
+ggplot() + inlabru::gg(mesh$mesh) +
+  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.3, pch = 20) +
+  coord_equal()
 ```
-
 
 ---
 
