@@ -646,7 +646,7 @@ fit <- sdmTMB(
   * Represents all the missing variables that vary through time
 
 * Why would a field be IID vs RW/AR1?
-  * Do we expect hotspots to persist or adapt slowly over time?
+  * Do we expect hotspots to be independent with each time slice or adapt slowly over time?
 
 ---
 
@@ -859,7 +859,8 @@ p <- predict(fit, newdata = nd)
 ```{r, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = plogis(est))) +
   geom_raster() +
-  scale_fill_viridis_c()
+  scale_fill_viridis_c() +
+  coord_fixed()
 ```
 
 ---
@@ -869,7 +870,8 @@ ggplot(p, aes(X, Y, fill = plogis(est))) +
 ```{r, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = plogis(est_non_rf))) +
   geom_raster() +
-    scale_fill_viridis_c()
+  scale_fill_viridis_c() +
+  coord_fixed()
 ```
 
 ---
@@ -879,7 +881,8 @@ ggplot(p, aes(X, Y, fill = plogis(est_non_rf))) +
 ```{r, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = omega_s)) +
   geom_raster() +
-  scale_fill_gradient2()
+  scale_fill_gradient2() +
+  coord_fixed()
 ```
 
 ---
@@ -902,6 +905,132 @@ ggplot(p, aes(nd$depth, plogis(est), ymin = lwr, ymax = upr)) +
 
 ---
 
+# Extending to a spatiotemporal model
+
+The Pacific Cod dataset:
+
+.medium[
+```{r, echo=TRUE}
+pcod %>% 
+  select(year, X, Y, depth, density, present) %>% 
+  head()
+```
+]
+
+---
+
+# Our previous spatial model fit
+
+```{r pcod-spatial-rf-reminder, echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  present ~ s(depth, k = 5),
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+```
+
+---
+
+# Switching to density
+
+```{r pcod-spatial-rf-density, echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  density ~ s(depth, k = 5),
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on"
+)
+```
+
+---
+
+# Adding spatiotemporal fields
+
+```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
+fit <- sdmTMB(
+  density ~ s(depth, k = 5) + as.factor(year), #<<
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",
+  time = "year", #<<
+  spatiotemporal = "iid", #<<
+  silent = FALSE # slower; show progress!
+)
+```
+
+---
+
+# Inspecting the model fit
+
+```{r pcod-st-print1, echo=TRUE}
+print(fit)
+```
+
+---
+
+# Predicting on the survey grid
+
+```{r pcod-st-pred, echo=TRUE}
+p <- predict(fit, newdata = qcs_grid)
+```
+
+.small[
+* `est`: Overall estimate **in link space**
+* `est_non_rf`: Estimate of non-random-field components
+* `est_rf`: Estimate of random-field components
+* `omega_s`: Spatial random field
+* `epsilon_st`: **Spatiotemporal random field**
+]
+
+---
+
+# Plotting overall predictions
+
+```{r pcod-st-plot-est, echo=TRUE, fig.width=7}
+ggplot(p, aes(X, Y, fill = exp(est))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt") +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+---
+
+# Plotting main effect contributions
+
+```{r pcod-st-plot-non-rf, echo=TRUE, fig.width=7}
+ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt") +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+---
+
+# Plotting spatial random effects
+
+```{r pcod-st-plot-omega, echo=TRUE, fig.width=7}
+ggplot(p, aes(X, Y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+# Plotting spatiotemporal random effects
+
+```{r pcod-st-plot-eps, echo=TRUE, fig.width=7}
+ggplot(p, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  facet_wrap(~year) +
+  coord_fixed()
+```
 
 # sdmTMB formulas
 
