@@ -26,7 +26,7 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
-theme_set(theme_light())
+theme_set(theme_bw())
 ```
 
 ---
@@ -41,14 +41,8 @@ class: center, middle, inverse
 
 .medium[
 ```{r, echo=TRUE}
-library(dplyr)
-library(ggplot2)
-library(spatstat)
-data(bei)
-
-as.data.frame(bei) %>%
-  select(x, y) %>%
-  head()
+dat <- data.frame(x = spatstat.data::bei$x, y = spatstat.data::bei$y)
+head(dat)
 ```
 ]
 
@@ -60,28 +54,27 @@ as.data.frame(bei) %>%
   * Hubbell's (2001) unified neutral theory of biodiversity
   
 ```{r plot-trees, fig.asp=0.5}
-ggplot(as.data.frame(bei), aes(x, y)) +
+ggplot(dat, aes(x, y)) +
   geom_point(col = "darkblue", alpha = 0.1) +
-  theme_bw()
+  coord_cartesian(expand = FALSE)
 ```
 
 ---
 
 # Lattice representation
 
-* Used in INLA book, other R packages ('spatstat')  
+* Used in INLA book and other R packages ('spatstat')  
 
 ```{r plot-trees-grid, fig.asp=0.5}
 # scale controls resolution
 scale <- 50
-bei_grid <- as.data.frame(spatstat.data::bei)
-bei_grid$x <- scale * floor(bei_grid$x / scale)
-bei_grid$y <- scale * floor(bei_grid$y / scale)
+dat$x <- scale * floor(dat$x / scale)
+dat$y <- scale * floor(dat$y / scale)
 
-bei_grid <- dplyr::group_by(bei_grid, x, y) %>%
+dat <- dplyr::group_by(dat, x, y) %>%
   dplyr::summarise(n = n())
 
-ggplot(bei_grid, aes(x, y, fill = n)) +
+ggplot(dat, aes(x, y, fill = n)) +
   geom_tile() +
   theme_bw() +
   coord_fixed(expand = FALSE) +
@@ -97,7 +90,7 @@ ggplot(bei_grid, aes(x, y, fill = n)) +
 * Zero-truncated (locations of measured trees)
 
 ```{r tree-hist, fig.asp=0.5}
-ggplot(bei_grid, aes(n)) +
+ggplot(dat, aes(n)) +
   geom_histogram(bins = 100, col = "darkblue") +
   theme_bw() +
   xlab("# Trees") +
@@ -108,11 +101,12 @@ ggplot(bei_grid, aes(n)) +
 
 # What type of distribution?
 
+* Likely best fit as a point process model for presence-only analysis (e.g., [Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352))
+  * could be done with a Poisson family and weights in sdmTMB
 * For simplicity, we could ignore truncation and use `nbinom2()`
-
-* `sdmTMB` has several additional families for censored data
+* sdmTMB has several additional families for censored data:
   * `truncated_nbinom1()`
-  * `truncated_nbinom2()` 
+  * `truncated_nbinom2()`
   * `censored_poisson()`
   
 ---
@@ -120,9 +114,9 @@ ggplot(bei_grid, aes(n)) +
 # Creating a mesh
 
 .small[
-```{r make-mesh, echo=TRUE, out.width='500px', fig.asp=0.5}
+```{r make-mesh, echo=TRUE, out.width='340px', fig.asp=0.8}
 mesh <- make_mesh(
-  bei_grid, 
+  dat, 
   xy_cols = c("x", "y"), 
   cutoff = 80 # min. distance between knots in X-Y units
 )
@@ -141,7 +135,7 @@ plot(mesh)
 ```{r fig.asp=0.5, echo=TRUE}
 ggplot() +
   inlabru::gg(mesh$mesh) + #<<
-  geom_point(data = bei_grid, aes(x = x, y = y, col = n)) +
+  geom_point(data = dat, aes(x = x, y = y, col = n)) +
   coord_equal()
 ```
 ]
@@ -153,9 +147,9 @@ ggplot() +
 ```{r fit-model, echo=TRUE}
 fit <- sdmTMB(
   n ~ 1,
-  data = bei_grid,
+  data = dat,
   mesh = mesh,
-  family = nbinom2(link = "log"),
+  family = truncated_nbinom2(link = "log"),
 )
 ```
 
@@ -256,8 +250,8 @@ select(p, x, y, est:omega_s) %>%
 ```{r echo = TRUE}
 # makes all combinations of x and y:
 newdf <- expand.grid( 
-  x = unique(bei_grid$x),
-  y = unique(bei_grid$y)
+  x = unique(dat$x),
+  y = unique(dat$y)
 )
 head(newdf)
 ```
@@ -274,27 +268,29 @@ p <- predict(fit, newdata = newdf)
 
 ---
 
-# Plotting predictions on new data
+# Predictions in link (log) space
 
-.small[
+.xsmall[
 ```{r, echo=TRUE}
-ggplot(p, aes(x, y, fill = est)) +
-  geom_raster() +
-  scale_fill_viridis_c() +
-  coord_fixed(expand = FALSE)
+ggplot(p, aes(x, y, fill = est)) + #<<
+  geom_raster() + scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE) +
+  geom_point(aes(x, y, size = n), 
+    data = dat, pch = 21, colour = "white", inherit.aes = FALSE)
 ```
 ]
 
 ---
 
-# Predictions in normal space
+# Predictions in natural space
 
-.small[
+.xsmall[
 ```{r, echo=TRUE}
-ggplot(p, aes(x, y, fill = exp(est))) +
-  geom_raster() +
-  scale_fill_viridis_c() +
-  coord_fixed(expand = FALSE)
+ggplot(p, aes(x, y, fill = exp(est))) + #<<
+  geom_raster() + scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE) +
+  geom_point(aes(x, y, size = n), 
+    data = dat, pch = 21, colour = "white", inherit.aes = FALSE)
 ```
 ]
 
@@ -304,7 +300,7 @@ ggplot(p, aes(x, y, fill = exp(est))) +
 
 .small[
 ```{r, echo=TRUE}
-ggplot(p, aes(x, y, fill = omega_s)) +
+ggplot(p, aes(x, y, fill = omega_s)) + #<<
   geom_raster() +
   scale_fill_gradient2() +
   coord_fixed(expand = FALSE)
