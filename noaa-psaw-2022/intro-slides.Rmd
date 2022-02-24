@@ -45,7 +45,8 @@ style_mono_accent(
   base_font_size = "20px",
   header_h1_font_size = "2.4rem",
   text_font_size = "1.5rem",
-  code_font_size = "1.3rem"
+  code_font_size = "1.3rem",
+  link_color = "#0047AB"
 )
 ```
 
@@ -91,7 +92,7 @@ theme_set(theme_light())
 * sdmTMB documentation:  
   [https://pbs-assess.github.io/sdmTMB/index.html](https://pbs-assess.github.io/sdmTMB/index.html)
 
-*  New features to suggest? Add to issue tracker:  
+*  New features to suggest? Bugs?  
   [https://github.com/pbs-assess/sdmTMB/issues](https://github.com/pbs-assess/sdmTMB/issues)
 
 ---
@@ -198,7 +199,9 @@ class: center, middle, inverse
 
 ---
 
-# Moving from 1 to 2 dimensions (data types) 
+# Moving from 1 to 2 dimensions
+
+Spatial data types:
 
 * Lattice: gridded data, e.g. interpolated SST from satellite observations 
 
@@ -209,9 +212,8 @@ class: center, middle, inverse
 ---
 
 # Why is space important? 
-<!-- TODO: introduce stationarity? Isotropy/anisotropy? -->
 
-* Data covary spatially (neighbors that are closer are more similar)
+* Data covary spatially (data that are closer are more similar)
 
 * Relationship between distance and covariance can be described with a spatial covariance function
 
@@ -272,7 +274,7 @@ background-size: 35%
 # Random field
 
 
-* .huge[A 2 dimensional "Gaussian Process"] 
+* A 2 dimensional "Gaussian Process"
 
 --
 
@@ -312,15 +314,17 @@ Homework: try to work through some of these yourself. Make some plots, and see h
 
 # Estimating random fields 
 
+.small[
 * Georeferenced data often involve 1000s or more points
 
 * Like in the 1-D setting, we need to approximate the spatial field 
   * Options include nearest neighbor methods, covariance tapering, etc.
-  * Including more neighbors increases complexity
-  
+
 * sdmTMB uses an approach from INLA
   * for VAST users, this is the same
-  * INLA books: [https://www.r-inla.org/learnmore/books](https://www.r-inla.org/learnmore/books)
+  * INLA books:  
+    <https://www.r-inla.org/learnmore/books>
+]
 
 ---
 
@@ -361,9 +365,12 @@ class: center, middle, inverse
 
 # sdmTMB origins
 
-* A need for reproducible code and methods for assessments [(Anderson et al. 2019)](https://publications.gc.ca/collections/collection_2020/mpo-dfo/fs70-5/Fs70-5-2019-041-eng.pdf)
+* A need for reproducible code and methods for assessments [(Anderson et al. 2019)](https://www.dfo-mpo.gc.ca/csas-sccs/Publications/ResDocs-DocRech/2019/2019_041-eng.html)
 
+.center[
 <img src="images/yellowtail_synopsis.png" width="450px" height = "400px"/>
+]
+
 ---
 
 # sdmTMB highlights
@@ -527,11 +534,13 @@ ggplot(df, aes(x, y)) +
 
 # Tweedie
 
+.small[
 * Useful for positive continuous data with zeros (e.g., biomass density per unit effort) 
 
-* Dispersion ($\phi$) and power ($p$) parameters allow for a wide variety of shapes including many zeros
+* Dispersion ( $\phi$ ) and power ( $p$ ) parameters allow for a wide variety of shapes including many zeros
+]
 
-```{r sim-tweedie}
+```{r sim-tweedie, fig.width=6.2}
 set.seed(123)
 r1 <- fishMod::rTweedie(20000, mu = 3, phi = 0.1, p = 1.3)
 r2 <- fishMod::rTweedie(20000, mu = 3, phi = 1, p = 1.3)
@@ -673,7 +682,7 @@ pcod %>%
 
 # Fitting a basic GLM
 
-.medium[
+.tiny[
 ```{r pcod-glm, echo=TRUE}
 fit_glm <- glm(
   present ~ 1,
@@ -713,13 +722,13 @@ class: center, middle, inverse
 
 ---
 
-# Who is Hessian and why are they not positive definite??
+# Who is Hessian and why are they not "positive definite"??
 
 * A Hessian matrix is a matrix of second derivatives of a function (here the negative log likelihoood surface)
 * The inverse of the negative Hessian is the covariance matrix
 * Warning means the curvature of the negative log-likelihood surface is inconsistent with the model having found the best fit.
 * Overparameterized? Variance estimated near zero?
-* See <https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html>
+* See [vignette("troubleshooting", "glmmTMB")](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
 
 ---
 
@@ -760,7 +769,7 @@ fit <- sdmTMB(
 
 # Inspecting the model output
 
-.medium[
+.small[
 ```{r, echo=TRUE, highlight.output=c(1)}
 summary(fit)
 ```
@@ -770,7 +779,7 @@ summary(fit)
 
 # Inspecting the model output
 
-.medium[
+.small[
 ```{r, echo=TRUE, highlight.output=2:5}
 summary(fit)
 ```
@@ -780,7 +789,7 @@ summary(fit)
 
 # Inspecting the model output
 
-.medium[
+.small[
 ```{r, echo=TRUE, highlight.output=6:9}
 summary(fit)
 ```
@@ -790,7 +799,7 @@ summary(fit)
 
 # Inspecting the model output
 
-.medium[
+.small[
 ```{r, echo=TRUE, highlight.output=11:13}
 summary(fit)
 ```
@@ -814,9 +823,9 @@ tidy(fit, effects = "ran_pars")
 
 # Extracting parameters in a data frame
 
-.medium[
+.small[
 ```{r, echo=TRUE}
-tidy(fit, conf.int = TRUE) %>% 
+tidy(fit, "ran_pars", conf.int = TRUE) %>% 
   as_tibble()
 ```
 ]
@@ -825,7 +834,7 @@ tidy(fit, conf.int = TRUE) %>%
 
 # Making predictions
 
-.medium[
+.small[
 ```{r, echo=TRUE}
 p <- predict(fit)
 select(p, X, Y, est:omega_s) %>% 
@@ -833,12 +842,14 @@ select(p, X, Y, est:omega_s) %>%
 ```
 ]
 
-.small[
+---
+
+# Making predictions
+
 * `est`: Overall estimate **in link space**
 * `est_non_rf`: Estimate of non-random-field components
 * `est_rf`: Estimate of random-field components
 * `omega_s`: Spatial random field
-]
 
 ---
 
@@ -846,8 +857,7 @@ select(p, X, Y, est:omega_s) %>%
 
 
 ```{r, echo=TRUE}
-select(qcs_grid, X, Y, depth) %>% 
-  head()
+head(select(qcs_grid, X, Y, depth))
 nd <- filter(qcs_grid, year == 2017)
 p <- predict(fit, newdata = nd)
 ```
@@ -889,12 +899,13 @@ ggplot(p, aes(X, Y, fill = omega_s)) +
 
 # Plotting depth effect
 
-.medium[
-```{r, echo=TRUE}
+.xsmall[
+```{r pcod-sp-depth-pred, echo=TRUE}
 nd <- data.frame(depth = seq(30, 300, length.out = 100))
 p <- predict(fit, newdata = nd, se_fit = TRUE, re_form = ~ 0)
 ```
-```{r, fig.width=5, echo=TRUE}
+
+```{r pcod-sp-depth-pred-plot, fig.width=5, echo=TRUE}
 p$lwr <- plogis(p$est - 1.96 * p$est_se)
 p$upr <- plogis(p$est + 1.96 * p$est_se)
 ggplot(p, aes(nd$depth, plogis(est), ymin = lwr, ymax = upr)) +
@@ -909,7 +920,7 @@ ggplot(p, aes(nd$depth, plogis(est), ymin = lwr, ymax = upr)) +
 
 The Pacific Cod dataset:
 
-.medium[
+.small[
 ```{r, echo=TRUE}
 pcod %>% 
   select(year, X, Y, depth, density, present) %>% 
@@ -935,12 +946,12 @@ fit <- sdmTMB(
 
 # Switching to density
 
-```{r pcod-spatial-rf-density, echo=TRUE, eval=FALSE}
+```{r pcod-spatial-rf-density, echo=TRUE, eval=TRUE}
 fit <- sdmTMB(
-  density ~ s(depth, k = 5),
+  density ~ s(depth, k = 5), #<<
   data = pcod,
   mesh = mesh,
-  family = tweedie(link = "log"),
+  family = tweedie(link = "log"), #<<
   spatial = "on"
 )
 ```
@@ -951,14 +962,14 @@ fit <- sdmTMB(
 
 ```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
 fit <- sdmTMB(
-  density ~ s(depth, k = 5) + as.factor(year), #<<
+  density ~ s(depth, k = 5) + 0 + as.factor(year), #<<
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
   spatial = "on",
   time = "year", #<<
   spatiotemporal = "iid", #<<
-  silent = FALSE # slower; show progress!
+  silent = FALSE # show progress!
 )
 ```
 
@@ -966,9 +977,32 @@ fit <- sdmTMB(
 
 # Inspecting the model fit
 
-```{r pcod-st-print1, echo=TRUE}
+.xsmall[
+```{r, eval=FALSE, echo=TRUE}
 print(fit)
 ```
+
+```{r pcod-st-print2, echo=TRUE, eval=TRUE}
+#> Spatiotemporal model fit by ML ['sdmTMB']
+#> Formula: density ~ s(depth, k = 5) + as.factor(year)
+#> Time column: "year"
+#> Mesh: mesh
+#> Data: pcod
+#> Family: tweedie(link = 'log')
+#>                     coef.est coef.se
+#> (Intercept)             1.79    0.29
+#> as.factor(year)2004     0.57    0.31 #<<
+#> as.factor(year)2005     0.31    0.31 #<<
+#> ...
+#> 
+#> Dispersion parameter: 10.78
+#> Tweedie p: 1.49
+#> Matern range: 12.85 #<<
+#> Spatial SD: 1.81
+#> Spatiotemporal SD: 1.78 #<<
+#> ML criterion at convergence: 6246.433
+```
+]
 
 ---
 
@@ -978,18 +1012,17 @@ print(fit)
 p <- predict(fit, newdata = qcs_grid)
 ```
 
-.small[
 * `est`: Overall estimate **in link space**
 * `est_non_rf`: Estimate of non-random-field components
 * `est_rf`: Estimate of random-field components
 * `omega_s`: Spatial random field
 * `epsilon_st`: **Spatiotemporal random field**
-]
 
 ---
 
 # Plotting overall predictions
 
+.small[
 ```{r pcod-st-plot-est, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = exp(est))) +
   geom_raster() +
@@ -997,11 +1030,13 @@ ggplot(p, aes(X, Y, fill = exp(est))) +
   facet_wrap(~year) +
   coord_fixed()
 ```
+]
 
 ---
 
 # Plotting main effect contributions
 
+.small[
 ```{r pcod-st-plot-non-rf, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
   geom_raster() +
@@ -1009,11 +1044,13 @@ ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
   facet_wrap(~year) +
   coord_fixed()
 ```
+]
 
 ---
 
 # Plotting spatial random effects
 
+.small[
 ```{r pcod-st-plot-omega, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = omega_s)) +
   geom_raster() +
@@ -1021,9 +1058,13 @@ ggplot(p, aes(X, Y, fill = omega_s)) +
   facet_wrap(~year) +
   coord_fixed()
 ```
+]
+
+---
 
 # Plotting spatiotemporal random effects
 
+.small[
 ```{r pcod-st-plot-eps, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = epsilon_st)) +
   geom_raster() +
@@ -1031,6 +1072,7 @@ ggplot(p, aes(X, Y, fill = epsilon_st)) +
   facet_wrap(~year) +
   coord_fixed()
 ```
+]
 
 # sdmTMB formulas
 
