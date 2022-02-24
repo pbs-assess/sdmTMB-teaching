@@ -26,7 +26,7 @@ knitr::opts_chunk$set(
   fig.width = 7,
   dpi = 300,
   out.width = "700px",
-  fig.asp = 1/1.618,
+  fig.asp = 1 / 1.618,
   cache = TRUE,
   autodep = TRUE,
   cache.comments = TRUE,
@@ -63,8 +63,8 @@ library(ggplot2)
 library(spatstat)
 data(bei)
 
-as.data.frame(bei) %>% 
-  select(x, y) %>% 
+as.data.frame(bei) %>%
+  select(x, y) %>%
   head()
 ```
 ]
@@ -77,8 +77,8 @@ as.data.frame(bei) %>%
   * Hubbell's (2001) unified neutral theory of biodiversity
   
 ```{r plot-trees, fig.asp=0.5}
-ggplot(as.data.frame(bei), aes(x,y)) +
-  geom_point(col="darkblue",alpha=0.1) + 
+ggplot(as.data.frame(bei), aes(x, y)) +
+  geom_point(col = "darkblue", alpha = 0.1) +
   theme_bw()
 ```
 
@@ -86,21 +86,23 @@ ggplot(as.data.frame(bei), aes(x,y)) +
 
 # Lattice representation
 
-* Used in INLA book, other R packages (`spatstat`)  
+* Used in INLA book, other R packages ('spatstat')  
 
 ```{r plot-trees-grid, fig.asp=0.5}
 # scale controls resolution
-scale = 50
-data(bei)
-bei_grid = as.data.frame(bei)
-bei_grid$x = scale*floor(bei_grid$x/scale)
-bei_grid$y = scale*floor(bei_grid$y/scale)
+scale <- 50
+bei_grid <- as.data.frame(spatstat.data::bei)
+bei_grid$x <- scale * floor(bei_grid$x / scale)
+bei_grid$y <- scale * floor(bei_grid$y / scale)
 
-bei_grid = dplyr::group_by(bei_grid, x, y) %>% 
-  dplyr::summarise(n = n()) 
+bei_grid <- dplyr::group_by(bei_grid, x, y) %>%
+  dplyr::summarise(n = n())
 
-ggplot(bei_grid, aes(x, y, fill = n)) + 
-  geom_tile() + theme_bw()
+ggplot(bei_grid, aes(x, y, fill = n)) +
+  geom_tile() +
+  theme_bw() +
+  coord_fixed(expand = FALSE) +
+  scale_fill_viridis_c()
 ```
 
 ---
@@ -112,9 +114,11 @@ ggplot(bei_grid, aes(x, y, fill = n)) +
 * Zero-truncated (locations of measured trees)
 
 ```{r tree-hist, fig.asp=0.5}
-ggplot(bei_grid, aes(n)) + 
-  geom_histogram(bins=100,col="darkblue") + 
-  theme_bw() + xlab("# Trees")
+ggplot(bei_grid, aes(n)) +
+  geom_histogram(bins = 100, col = "darkblue") +
+  theme_bw() +
+  xlab("# Trees") +
+  coord_cartesian(expand = FALSE)
 ```
 
 ---
@@ -133,16 +137,26 @@ ggplot(bei_grid, aes(n)) +
 # Creating a mesh
 
 .small[
-```{r make-mesh, echo=TRUE}
-mesh = make_mesh(bei_grid, xy_cols = c("x","y"), cutoff=80)
+```{r make-mesh, echo=TRUE, out.width='500px', fig.asp=0.5}
+mesh <- make_mesh(
+  bei_grid, 
+  xy_cols = c("x", "y"), 
+  cutoff = 80 # min. distance between knots in X-Y units
+)
+mesh$mesh$n # extract number of vertices/knots
 
-# extract number of vertices/knots
-mesh$mesh$n
+# quick visualization of mesh
+plot(mesh)
 ```
 ]
 
-```{r fig.asp=0.5}
-ggplot() + inlabru::gg(mesh$mesh) +
+---
+
+# Fancier mesh visualizations
+
+```{r fig.asp=0.5, echo=TRUE}
+ggplot() +
+  inlabru::gg(mesh$mesh) + #<<
   geom_point(data = bei_grid, aes(x = x, y = y, col = n)) +
   coord_equal()
 ```
@@ -156,7 +170,7 @@ fit <- sdmTMB(
   n ~ 1,
   data = bei_grid,
   mesh = mesh,
-  family = truncated_nbinom2(),
+  family = nbinom2(),
 )
 ```
 
@@ -218,21 +232,8 @@ tidy(fit, effects = "ran_pars")
 
 .small[
 ```{r, echo=TRUE}
-tidy(fit, "ran_pars", conf.int = TRUE) %>% 
+tidy(fit, "ran_pars", conf.int = TRUE) %>%
   as_tibble()
-```
-]
-
----
-
-# Plotting spatial random effects
-
-.small[
-```{r, echo=TRUE}
-ggplot(p, aes(x, y, fill = omega_s)) +
-  geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed()
 ```
 ]
 
@@ -243,12 +244,10 @@ ggplot(p, aes(x, y, fill = omega_s)) +
 .small[
 ```{r, echo=TRUE}
 p <- predict(fit)
-select(p, x, y, est:omega_s) %>% 
+select(p, x, y, est:omega_s) %>%
   glimpse()
 ```
 ]
-
----
 
 # Making predictions
 
@@ -265,8 +264,11 @@ select(p, x, y, est:omega_s) %>%
 * Create a new df for predictions
 
 ```{r echo = TRUE}
-newdf = expand.grid(x = unique(bei_grid$x),
-                      y = unique(bei_grid$y))
+newdf <- expand.grid(
+  x = unique(bei_grid$x),
+  y = unique(bei_grid$y)
+)
+head(newdf)
 ```
 
 ---
@@ -305,3 +307,17 @@ ggplot(p, aes(x, y, fill = exp(est))) +
 ```
 ]
 
+---
+
+# Plotting spatial random effects
+
+.small[
+```{r, echo=TRUE}
+ggplot(p, aes(x, y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+```
+]
+
+---
