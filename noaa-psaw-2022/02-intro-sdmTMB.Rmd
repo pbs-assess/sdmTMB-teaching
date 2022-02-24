@@ -536,34 +536,40 @@ p <- predict(fit, newdata = nd)
 
 # Plotting predictions on new data
 
-```{r, echo=TRUE, fig.width=7}
+.small[
+```{r, echo=TRUE}
 ggplot(p, aes(X, Y, fill = plogis(est))) +
   geom_raster() +
   scale_fill_viridis_c() +
   coord_fixed()
 ```
+]
 
 ---
 
 # Plotting main effect contributions
 
-```{r, echo=TRUE, fig.width=7}
+.small[
+```{r, echo=TRUE}
 ggplot(p, aes(X, Y, fill = plogis(est_non_rf))) +
   geom_raster() +
   scale_fill_viridis_c() +
   coord_fixed()
 ```
+]
 
 ---
 
 # Plotting spatial random effects
 
-```{r, echo=TRUE, fig.width=7}
+.small[
+```{r, echo=TRUE}
 ggplot(p, aes(X, Y, fill = omega_s)) +
   geom_raster() +
   scale_fill_gradient2() +
   coord_fixed()
 ```
+]
 
 ---
 
@@ -575,7 +581,7 @@ nd <- data.frame(depth = seq(30, 300, length.out = 100))
 p <- predict(fit, newdata = nd, se_fit = TRUE, re_form = ~ 0)
 ```
 
-```{r pcod-sp-depth-pred-plot, fig.width=5, echo=TRUE}
+```{r pcod-sp-depth-pred-plot, fig.width=5, echo=TRUE, out.width='500px'}
 p$lwr <- plogis(p$est - 1.96 * p$est_se)
 p$upr <- plogis(p$est + 1.96 * p$est_se)
 ggplot(p, aes(nd$depth, plogis(est), ymin = lwr, ymax = upr)) +
@@ -588,7 +594,7 @@ ggplot(p, aes(nd$depth, plogis(est), ymin = lwr, ymax = upr)) +
 
 # Extending to a spatiotemporal model
 
-The Pacific Cod dataset:
+Reminder: the Pacific Cod dataset:
 
 .small[
 ```{r, echo=TRUE}
@@ -747,5 +753,52 @@ ggplot(p, aes(X, Y, fill = epsilon_st)) +
 ---
 
 # Getting help
+
+---
+
+---
+
+# Getting into UTMs
+
+* Need a projection that preserves constant distance
+
+* UTMs work well for regional analyses
+
+* Helper function: `sdmTMB::add_utm_columns()`
+
+* Internally, guesses at UTM zone and uses the sf package:
+  * `sf::st_as_sf()`, `sf::st_transform()`, and `sf::st_coordinates()`
+
+* Or use sp package
+
+---
+
+# Example of adding UTM columns
+
+```{r, echo=TRUE, message=TRUE}
+d <- data.frame(
+  lat = c(52.1, 53.4), 
+  lon = c(-130.0, -131.4)
+)
+d <- sdmTMB::add_utm_columns(d, c("lon", "lat"))
+d
+```
+
+* Note default `units = "km"`
+* Why? Range parameter estimated in units of X and Y.
+* Should be not too big or small for estimation.
+
+---
+
+# Words of wisdom
+
+---
+
+---
+
+# Related modelling software
+
+* Fig from paper?
+* Highlight table from paper?
 
 ---
