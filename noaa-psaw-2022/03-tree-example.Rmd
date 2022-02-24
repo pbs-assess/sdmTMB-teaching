@@ -41,7 +41,10 @@ class: center, middle, inverse
 
 .medium[
 ```{r, echo=TRUE}
-dat <- data.frame(x = spatstat.data::bei$x, y = spatstat.data::bei$y)
+dat <- data.frame(
+  x = spatstat.data::bei$x, 
+  y = spatstat.data::bei$y
+)
 head(dat)
 ```
 ]
@@ -247,6 +250,7 @@ select(p, x, y, est:omega_s) %>%
 * Let's project to the whole BCI region (on a grid)
 * Create a new data frame for predictions
 
+.small[
 ```{r echo = TRUE}
 # makes all combinations of x and y:
 newdf <- expand.grid( 
@@ -255,6 +259,7 @@ newdf <- expand.grid(
 )
 head(newdf)
 ```
+]
 
 ---
 
@@ -276,7 +281,7 @@ ggplot(p, aes(x, y, fill = est)) + #<<
   geom_raster() + scale_fill_viridis_c() +
   coord_fixed(expand = FALSE) +
   geom_point(aes(x, y, size = n), 
-    data = dat, pch = 21, colour = "white", inherit.aes = FALSE)
+    data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
 ```
 ]
 
@@ -290,7 +295,7 @@ ggplot(p, aes(x, y, fill = exp(est))) + #<<
   geom_raster() + scale_fill_viridis_c() +
   coord_fixed(expand = FALSE) +
   geom_point(aes(x, y, size = n), 
-    data = dat, pch = 21, colour = "white", inherit.aes = FALSE)
+    data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
 ```
 ]
 
