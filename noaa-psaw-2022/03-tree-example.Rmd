@@ -17,26 +17,9 @@ output:
 
 <!-- Build with: xaringan::inf_mr() -->
 
-```{r options, include=FALSE, cache=FALSE}
-knitr::opts_chunk$set(
-  message = FALSE,
-  warning = FALSE,
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 7,
-  dpi = 300,
-  out.width = "700px",
-  fig.asp = 1 / 1.618,
-  cache = TRUE,
-  autodep = TRUE,
-  cache.comments = TRUE,
-  fig.align = "center",
-  echo = FALSE
-)
-```
-
-```{r style, include=FALSE, cache=FALSE}
+```{r preamble, include=FALSE, cache=FALSE}
 source(here::here("noaa-psaw-2022/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
 ```{r libs, include=FALSE}
@@ -154,12 +137,14 @@ plot(mesh)
 
 # Fancier mesh visualizations
 
+.small[
 ```{r fig.asp=0.5, echo=TRUE}
 ggplot() +
   inlabru::gg(mesh$mesh) + #<<
   geom_point(data = bei_grid, aes(x = x, y = y, col = n)) +
   coord_equal()
 ```
+]
 
 ---
 
@@ -170,7 +155,7 @@ fit <- sdmTMB(
   n ~ 1,
   data = bei_grid,
   mesh = mesh,
-  family = nbinom2(),
+  family = nbinom2(link = "log"),
 )
 ```
 
@@ -179,7 +164,7 @@ fit <- sdmTMB(
 # Inspecting the model output
 
 .small[
-```{r inspect1, echo=TRUE, highlight.output=c(1)}
+```{r inspect1, echo=TRUE, highlight.output=1}
 summary(fit)
 ```
 ]
@@ -239,7 +224,10 @@ tidy(fit, "ran_pars", conf.int = TRUE) %>%
 
 ---
 
-# Making predictions
+# Making predictions on original data
+
+* sdmTMB has a `predict()` function just like other packages
+* For help, see `?predict.sdmTMB`
 
 .small[
 ```{r, echo=TRUE}
@@ -248,6 +236,8 @@ select(p, x, y, est:omega_s) %>%
   glimpse()
 ```
 ]
+
+---
 
 # Making predictions
 
@@ -261,10 +251,11 @@ select(p, x, y, est:omega_s) %>%
 # Making predictions on new data
 
 * Let's project to the whole BCI region (on a grid)
-* Create a new df for predictions
+* Create a new data frame for predictions
 
 ```{r echo = TRUE}
-newdf <- expand.grid(
+# makes all combinations of x and y:
+newdf <- expand.grid( 
   x = unique(bei_grid$x),
   y = unique(bei_grid$y)
 )
@@ -275,7 +266,7 @@ head(newdf)
 
 # Making predictions on new data
 
-* `sdmTMB` has predict() function just like other packages 
+* `predict.sdmTMB()` can also take `newdata`:
 
 ```{r, echo=TRUE}
 p <- predict(fit, newdata = newdf)
@@ -290,7 +281,7 @@ p <- predict(fit, newdata = newdf)
 ggplot(p, aes(x, y, fill = est)) +
   geom_raster() +
   scale_fill_viridis_c() +
-  coord_fixed()
+  coord_fixed(expand = FALSE)
 ```
 ]
 
@@ -303,7 +294,7 @@ ggplot(p, aes(x, y, fill = est)) +
 ggplot(p, aes(x, y, fill = exp(est))) +
   geom_raster() +
   scale_fill_viridis_c() +
-  coord_fixed()
+  coord_fixed(expand = FALSE)
 ```
 ]
 
@@ -316,7 +307,7 @@ ggplot(p, aes(x, y, fill = exp(est))) +
 ggplot(p, aes(x, y, fill = omega_s)) +
   geom_raster() +
   scale_fill_gradient2() +
-  coord_fixed()
+  coord_fixed(expand = FALSE)
 ```
 ]
 

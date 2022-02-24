@@ -9,3 +9,19 @@ xaringanthemer::style_mono_accent(
   code_font_size = "1.3rem",
   link_color = "#0047AB"
 )
+
+knitr_opts <- list(
+  message = FALSE,
+  warning = FALSE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  dpi = 300,
+  out.width = "700px",
+  fig.asp = 1 / 1.618,
+  cache = TRUE,
+  autodep = TRUE,
+  cache.comments = TRUE,
+  fig.align = "center",
+  echo = FALSE
+)
