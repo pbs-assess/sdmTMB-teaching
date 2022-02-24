@@ -43,6 +43,7 @@ source(here::here("noaa-psaw-2022/preamble.R"))
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
+library(rSPDE)
 theme_set(theme_light())
 ```
 
@@ -133,7 +134,25 @@ print(g2)
 
 * Flexible, can be exponential (= 0.5) or Gaussian (~ infinity)
 
-<img src="images/matern.png" height = "400px" width="400px" />
+```{r matern-plot}
+
+x = seq(from = 0, to = 1, length.out = 100)
+df = data.frame(x = rep(x, 4),
+                "nu" = sort(rep(c(0.5, 1.5, 2.5, 10),100)))
+df$row = seq(1,nrow(df))
+df = dplyr::group_by(df, row) %>% 
+  dplyr::mutate(cov = matern.covariance(h=x,kappa=5,nu=nu,sigma=1))
+df$nu = as.factor(df$nu)
+
+ggplot(df, aes(x, cov, col = nu, group=nu)) +
+  geom_line(size=1.3,alpha=0.8) +
+  theme_bw() +
+  xlab("Distance") + ylab("Covariance") + ggtitle("Matérn covariance") +
+  guides(col=guide_legend(title=expression(nu))) + 
+  theme(text=element_text(size=21))
+
+```
+
 ---
 
 # Predictive process models 
@@ -336,3 +355,68 @@ ggplot() + inlabru::gg(mesh$mesh) +
   coord_equal()
 ```
 
+---
+
+# Mesh construction
+
+* A unique mesh is generally made for each dataset
+* Rules of thumb:
+  * Borders with coarser resolution reduce number of triangles
+  * More triangles = more computation time
+  * Use minimum edge size to avoid meshes becoming too fine
+  * Want fewer vertices than data points
+
+* How to make a bad mesh? [Haakon Bakka's book](https://haakonbakkagit.github.io/btopic114.html)
+
+---
+
+# Building your own mesh
+
+* `INLA::inla.mesh.2d()` lets many arguments be customized
+
+* `INLA::meshbuilder()` Shiny app for constructing a mesh, provides R code
+
+* Meshes can include barriers / islands / coastlines with shapefiles
+
+* INLA books
+<https://www.r-inla.org/learnmore/books>
+---
+
+# Simplifying mesh construction in sdmTMB
+
+* `make_mesh()` function allows 2 types of meshes
+
+* K-means algorithm used to cluster points (user specifies `type="kmeans` and `n_knots` chosen)
+
+* Minimum cutoff (min. allowed distance between points) (`type=cutoff` and `cutoff` chosen)
+
+---
+
+# Original example, cutoff = 10km
+
+```{r mesh-example2, fig.width=6.5}
+mesh <- make_mesh(pcod, xy_cols = c("X","Y"), cutoff = 10)
+ggplot() + inlabru::gg(mesh$mesh) +
+  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
+  coord_equal()
+```
+
+---
+# Original example, cutoff = 25km
+
+```{r mesh-example3, fig.width=6.5}
+mesh <- make_mesh(pcod, xy_cols = c("X","Y"), cutoff = 25)
+ggplot() + inlabru::gg(mesh$mesh) +
+  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
+  coord_equal()
+```
+
+---
+# Original example, cutoff = 50km
+
+```{r mesh-example4, fig.width=6.5}
+mesh <- make_mesh(pcod, xy_cols = c("X","Y"), cutoff = 50)
+ggplot() + inlabru::gg(mesh$mesh) +
+  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
+  coord_equal()
+```
