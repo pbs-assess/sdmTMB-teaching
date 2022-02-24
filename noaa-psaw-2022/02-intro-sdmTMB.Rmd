@@ -33,7 +33,7 @@ theme_set(theme_light())
 
 class: center, middle, inverse
 
-# A gentle(?) introduction to sdmTMB
+# A gentle introduction to sdmTMB
 
 ---
 
@@ -90,7 +90,7 @@ class: center, middle, inverse
 .small[
 ```{r formulas1, echo=TRUE, eval=FALSE}
 # linear effect of x1:
-formula = y ~ x1 
+formula = y ~ x1
 
 # add smoother effect of x2:
 formula = y ~ x1 + s(x2)
@@ -133,7 +133,7 @@ formula = ~ s(month, bs = "cc", k = 12)
 # transformations using `I()` notation
 y ~ depth + I(depth^2)
 
-# polynomial functions using `poly` 
+# polynomial functions using `poly`
 y ~ poly(depth, degree = 2)
 
 # omit intercept
@@ -193,9 +193,12 @@ class: center, middle, inverse
 * Many of the same families used in `glm()`, `glmmTMB()`, `mgcv::gam()` can be
   used here:
 
-* Includes: `gaussian()`, `Gamma()`, `binomial()`, `poisson()`, `Beta()`, 
-  `student()`, `tweedie()`, `truncated_nbinom1()`, `truncated_nbinom2()`,
-  `nbinom1()`, `nbinom2()`
+* Includes:  
+  `gaussian()`, `Gamma()`, 
+  `binomial()`, `poisson()`, `Beta()`, 
+  `student()`, `tweedie()`, 
+  `nbinom1()`, `nbinom2()`,
+  `truncated_nbinom1()`, `truncated_nbinom2()`
   
 * All have `link` arguments
   
@@ -236,26 +239,32 @@ class: center, middle, inverse
 
 # Spatial vs. spatiotemporal fields
 
-* A spatial field can be thought of as an intercept—common across all time slices 
+* A spatial field can be thought of as a spatial intercept
+
   * a wiggly spatial process that is constant in time
+  
+--
 
 * Spatiotemporal variation represents separate fields estimated for each time
   slice (possibly correlated)
+  
   * wiggly spatial processes that change through time
+
+--
 
 * Refer to vignette for math notation
 ---
 
-# Spatial fields can be turned on / off
+# Spatial fields can be turned on/off
 
 * By default `sdmTMB()` estimates a spatial field  
 
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
-  cpue ~ depth + offset,
+  y ~ x,
   family = gaussian(),
   data = dat,
-  spatial = TRUE,
+  spatial = TRUE, #<<
   ...
 )
 ```
@@ -272,16 +281,17 @@ fit <- sdmTMB(
 
 ---
 
-# Spatiotemporal fields can be turned on / off
+# Spatiotemporal fields can be turned on/off
 
 * By default `sdmTMB()` estimates a spatiotemporal field if the `time` argument is specified
 
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
-  cpue ~ depth + offset,
+  y ~ x,
   family = gaussian(),
   data = dat,
-  spatiotemporal = "iid",
+  time = "year", #<<
+  spatiotemporal = "iid", #<<
   ...
 )
 ```
@@ -303,11 +313,14 @@ fit <- sdmTMB(
 # Spatiotemporal fields
 
 * Why include spatiotemporal fields?
+
   * If there are 'latent' spatial processes that vary through time
   * E.g., effect of water temperature on abundance if temperature wasn't in the model
   * Represents all the missing variables that vary through time
 
+--
+
 * Why would a field be IID vs RW/AR1?
+
   * Do we expect hotspots to be independent with each time slice or adapt slowly over time?
 
----
