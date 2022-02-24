@@ -310,5 +310,3 @@ ggplot(p, aes(x, y, fill = omega_s)) +
   coord_fixed(expand = FALSE)
 ```
 ]
-
----
