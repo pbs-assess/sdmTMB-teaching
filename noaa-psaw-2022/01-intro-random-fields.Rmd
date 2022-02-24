@@ -427,3 +427,35 @@ ggplot() +
   geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
   coord_equal()
 ```
+
+--
+# Getting into UTMs
+
+* Need a projection that preserves constant distance
+
+* UTMs work well for regional analyses
+
+* Helper function: `sdmTMB::add_utm_columns()`
+
+* Internally, guesses at UTM zone and uses the sf package:
+  * `sf::st_as_sf()`, `sf::st_transform()`, and `sf::st_coordinates()`
+
+* Or use sp package
+
+---
+# Example of adding UTM columns
+
+```{r, echo=TRUE, message=TRUE}
+d <- data.frame(
+  lat = c(52.1, 53.4), 
+  lon = c(-130.0, -131.4)
+)
+d <- sdmTMB::add_utm_columns(d, c("lon", "lat"))
+d
+```
+
+* Note default `units = "km"`
+* Why? Range parameter estimated in units of X and Y.
+* Should be not too big or small for estimation.
+
+---

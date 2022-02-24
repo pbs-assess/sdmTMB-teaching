@@ -38,7 +38,7 @@ class: center, middle, inverse
 
 # The Pacific Cod dataset
 
-.medium[
+.small[
 ```{r, echo=TRUE}
 library(dplyr)
 library(ggplot2)
@@ -51,73 +51,9 @@ pcod %>%
 
 ---
 
-# Fitting a basic GLM
-
-.tiny[
-```{r pcod-glm, echo=TRUE}
-fit_glm <- glm(
-  present ~ 1,
-  data = pcod,
-  family = binomial(link = "logit")
-)
-
-mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
-fit <- sdmTMB(
-  present ~ 1,
-  data = pcod,
-  mesh = mesh,
-  family = binomial(link = "logit"),
-  spatial = "off"
-)
-```
-]
-
----
-
-# SPDE approach / INLA / etc; comparison with other software
-
-<!-- --- -->
-
-<!-- # Fitting basic spatial models in sdmTMB (Philina) -->
-
-<!-- * Making meshes … link to INLA tutorial (+interactive meshbuilder) -->
-<!-- * How do you know your model hasn’t converged? Who is Hessian and why hasn’t he converged? -->
-<!-- * What warnings do you need to worry about?  -->
-<!-- * Overall magnitude of errors / observation error etc.  -->
-
----
-
-class: center, middle, inverse
-
-# Troubleshooting
-
----
-
-# Who is Hessian and why are they not "positive definite"??
-
-* A Hessian matrix is a matrix of second derivatives of a function (here the negative log likelihoood surface)
-* The inverse of the negative Hessian is the covariance matrix
-* Warning means the curvature of the negative log-likelihood surface is inconsistent with the model having found the best fit.
-* Overparameterized? Variance estimated near zero?
-* See [vignette("troubleshooting", "glmmTMB")](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
-
----
-
-# Splines
-
----
-
-# Spatiotemporal models, different structures
-
----
-
-# Prediction (prediction in time – e.g. future SDMs, prediction in space – new areas / unsampled areas)
-
----
-
 # Building a mesh
 
-```{r}
+```{r, echo=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 plot(mesh)
 ```
@@ -187,8 +123,6 @@ tidy(fit)
 # Variance-related terms:
 tidy(fit, effects = "ran_pars")
 ```
-
-<!-- TODO: sigma_O missing!? -->
 
 ---
 
@@ -323,7 +257,7 @@ fit <- sdmTMB(
 
 # Switching to density
 
-```{r pcod-spatial-rf-density, echo=TRUE, eval=TRUE}
+```{r pcod-spatial-rf-density, echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
   density ~ s(depth, k = 5), #<<
   data = pcod,
@@ -459,37 +393,6 @@ ggplot(p, aes(X, Y, fill = epsilon_st)) +
 
 ---
 
-# Getting into UTMs
-
-* Need a projection that preserves constant distance
-
-* UTMs work well for regional analyses
-
-* Helper function: `sdmTMB::add_utm_columns()`
-
-* Internally, guesses at UTM zone and uses the sf package:
-  * `sf::st_as_sf()`, `sf::st_transform()`, and `sf::st_coordinates()`
-
-* Or use sp package
-
----
-
-# Example of adding UTM columns
-
-```{r, echo=TRUE, message=TRUE}
-d <- data.frame(
-  lat = c(52.1, 53.4), 
-  lon = c(-130.0, -131.4)
-)
-d <- sdmTMB::add_utm_columns(d, c("lon", "lat"))
-d
-```
-
-* Note default `units = "km"`
-* Why? Range parameter estimated in units of X and Y.
-* Should be not too big or small for estimation.
-
----
 
 # Words of wisdom
 
@@ -503,3 +406,67 @@ d
 * Highlight table from paper?
 
 ---
+
+# SPDE approach / INLA / etc; comparison with other software
+
+<!-- --- -->
+
+<!-- # Fitting basic spatial models in sdmTMB (Philina) -->
+
+<!-- * Making meshes … link to INLA tutorial (+interactive meshbuilder) -->
+<!-- * How do you know your model hasn’t converged? Who is Hessian and why hasn’t he converged? -->
+<!-- * What warnings do you need to worry about?  -->
+<!-- * Overall magnitude of errors / observation error etc.  -->
+
+---
+
+class: center, middle, inverse
+
+# Troubleshooting
+
+---
+
+# Who is Hessian and why are they not "positive definite"??
+
+* A Hessian matrix is a matrix of second derivatives of a function (here the negative log likelihoood surface)
+* The inverse of the negative Hessian is the covariance matrix
+* Warning means the curvature of the negative log-likelihood surface is inconsistent with the model having found the best fit.
+* Overparameterized? Variance estimated near zero?
+* See [vignette("troubleshooting", "glmmTMB")](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
+
+---
+
+# Splines
+
+---
+
+# Spatiotemporal models, different structures
+
+---
+
+# Prediction (prediction in time – e.g. future SDMs, prediction in space – new areas / unsampled areas)
+
+---
+
+---
+
+# Fitting a basic GLM
+
+.small[
+```{r pcod-glm, echo=TRUE}
+fit_glm <- glm(
+  present ~ 1,
+  data = pcod,
+  family = binomial(link = "logit")
+)
+
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit <- sdmTMB(
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "off"
+)
+```
+]
