@@ -1,0 +1,114 @@
+---
+title: "Troubleshooting, other packages, tips and tricks"
+subtitle: "NOAA PSAW Seminar Series"
+author: "Names Here"
+institute: ""
+date: "2022-03-02"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Previous slides: https://www.dropbox.com/s/gu43n4gvqmo0uzy/sdmTMB-intro-2021.pdf?dl=1 -->
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("noaa-psaw-2022/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(sdmTMB)
+```
+
+
+
+---
+
+# Getting help
+
+---
+
+---
+
+
+# Words of wisdom
+
+---
+
+---
+
+# Related modelling software
+
+* Fig from paper?
+* Highlight table from paper?
+
+---
+
+# SPDE approach / INLA / etc; comparison with other software
+
+<!-- --- -->
+
+<!-- # Fitting basic spatial models in sdmTMB (Philina) -->
+
+<!-- * Making meshes … link to INLA tutorial (+interactive meshbuilder) -->
+<!-- * How do you know your model hasn’t converged? Who is Hessian and why hasn’t he converged? -->
+<!-- * What warnings do you need to worry about?  -->
+<!-- * Overall magnitude of errors / observation error etc.  -->
+
+---
+
+class: center, middle, inverse
+
+# Troubleshooting
+
+---
+
+# Who is Hessian and why are they not "positive definite"??
+
+* A Hessian matrix is a matrix of second derivatives of a function (here the negative log likelihoood surface)
+* The inverse of the negative Hessian is the covariance matrix
+* Warning means the curvature of the negative log-likelihood surface is inconsistent with the model having found the best fit.
+* Overparameterized? Variance estimated near zero?
+* See [vignette("troubleshooting", "glmmTMB")](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
+
+---
+
+# Splines
+
+---
+
+# Spatiotemporal models, different structures
+
+---
+
+# Prediction (prediction in time – e.g. future SDMs, prediction in space – new areas / unsampled areas)
+
+---
+
+---
+
+# Fitting a basic GLM
+
+.small[
+```{r pcod-glm, echo=TRUE}
+fit_glm <- glm(
+  present ~ 1,
+  data = pcod,
+  family = binomial(link = "logit")
+)
+
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit <- sdmTMB(
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "off"
+)
+```
+]
