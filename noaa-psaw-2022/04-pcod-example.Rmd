@@ -64,7 +64,7 @@ plot(mesh)
 
 ```{r pcod-spatial-rf, echo=TRUE}
 fit <- sdmTMB(
-  present ~ s(depth, k = 5),
+  present ~ s(depth),
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
@@ -78,7 +78,7 @@ fit <- sdmTMB(
 
 .small[
 ```{r, echo=TRUE, highlight.output=c(1)}
-summary(fit)
+fit # or print(fit)
 ```
 ]
 
@@ -88,7 +88,7 @@ summary(fit)
 
 .small[
 ```{r, echo=TRUE, highlight.output=2:5}
-summary(fit)
+fit
 ```
 ]
 
@@ -98,7 +98,7 @@ summary(fit)
 
 .small[
 ```{r, echo=TRUE, highlight.output=6:9}
-summary(fit)
+fit
 ```
 ]
 
@@ -108,7 +108,7 @@ summary(fit)
 
 .small[
 ```{r, echo=TRUE, highlight.output=11:13}
-summary(fit)
+fit
 ```
 ]
 
@@ -245,7 +245,7 @@ pcod %>%
 
 ```{r pcod-spatial-rf-reminder, echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
-  present ~ s(depth, k = 5),
+  present ~ s(depth),
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
@@ -259,7 +259,7 @@ fit <- sdmTMB(
 
 ```{r pcod-spatial-rf-density, echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
-  density ~ s(depth, k = 5), #<<
+  density ~ s(depth), #<<
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"), #<<
@@ -273,7 +273,7 @@ fit <- sdmTMB(
 
 ```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
 fit <- sdmTMB(
-  density ~ s(depth, k = 5) + 0 + as.factor(year), #<<
+  density ~ s(depth) + 0 + as.factor(year), #<<
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
@@ -290,28 +290,27 @@ fit <- sdmTMB(
 
 .xsmall[
 ```{r, eval=FALSE, echo=TRUE}
-print(fit)
+fit
 ```
 
 ```{r pcod-st-print2, echo=TRUE, eval=TRUE}
 #> Spatiotemporal model fit by ML ['sdmTMB']
-#> Formula: density ~ s(depth, k = 5) + as.factor(year)
+#> Formula: density ~ s(depth) + 0 + as.factor(year)
 #> Time column: "year"
 #> Mesh: mesh
 #> Data: pcod
 #> Family: tweedie(link = 'log')
 #>                     coef.est coef.se
-#> (Intercept)             1.79    0.29
-#> as.factor(year)2004     0.57    0.31 #<<
-#> as.factor(year)2005     0.31    0.31 #<<
+#> as.factor(year)2003     1.80    0.28 #<<
+#> as.factor(year)2004     2.40    0.27 #<<
 #> ...
 #> 
-#> Dispersion parameter: 10.78
+#> Dispersion parameter: 10.73
 #> Tweedie p: 1.49
-#> Matern range: 12.85 #<<
-#> Spatial SD: 1.81
-#> Spatiotemporal SD: 1.78 #<<
-#> ML criterion at convergence: 6246.433
+#> Matern range: 12.23 #<<
+#> Spatial SD: 1.85
+#> Spatiotemporal SD: 1.84 #<<
+#> ML criterion at convergence: 6242.801
 ```
 ]
 
