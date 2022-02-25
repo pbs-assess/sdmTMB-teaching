@@ -75,6 +75,35 @@ class: center, middle, inverse
 
 ---
 
+# Installing sdmTMB
+
+Currently:
+
+* Install a C++ compiler
+  * e.g., [Rtools](https://cran.r-project.org/bin/windows/Rtools/rtools40.html) on Windows
+  * e.g., Xcode command line tools on a Mac:  
+  `sudo xcode-select --install`
+
+.small[
+```{r, eval=FALSE, echo=TRUE}
+# install.packages("remotes")
+remotes::install_github("pbs-assess/sdmTMB", 
+  dependencies = TRUE)
+```
+]
+
+Should be on CRAN very soon so the C++ compiler won't be necessary.
+
+---
+
+# Install sdmTMB
+
+Warning: The INLA package is large, not on CRAN, and can be slow to install. If you run into problems, try installing it separately first:
+
+<https://www.r-inla.org/download-install>
+
+---
+
 class: center, middle, inverse
 
 # Syntax: formulas for non-spatial model components
