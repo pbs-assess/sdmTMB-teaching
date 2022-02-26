@@ -4,9 +4,9 @@ xaringanthemer::style_mono_accent(
   text_font_google = xaringanthemer::google_font("Open Sans"),
   code_font_google = xaringanthemer::google_font("Fira Mono"),
   base_font_size = "20px",
-  header_h1_font_size = "2.4rem",
+  header_h1_font_size = "2.1rem",
   text_font_size = "1.5rem",
-  code_font_size = "1.3rem",
+  code_font_size = "1.1rem",
   link_color = "#0047AB"
 )
 

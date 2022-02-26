@@ -43,7 +43,7 @@ class: center, middle, inverse
 library(dplyr)
 library(ggplot2)
 library(sdmTMB)
-pcod %>% 
+pcod %>%
   select(year, X, Y, depth, density, present) %>% 
   head()
 ```
@@ -334,7 +334,7 @@ p <- predict(fit, newdata = qcs_grid)
 
 # Plotting overall predictions
 
-.small[
+.xsmall[
 ```{r pcod-st-plot-est, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = exp(est))) +
   geom_raster() +
@@ -348,7 +348,7 @@ ggplot(p, aes(X, Y, fill = exp(est))) +
 
 # Plotting main effect contributions
 
-.small[
+.xsmall[
 ```{r pcod-st-plot-non-rf, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
   geom_raster() +
@@ -362,7 +362,7 @@ ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
 
 # Plotting spatial random effects
 
-.small[
+.xsmall[
 ```{r pcod-st-plot-omega, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = omega_s)) +
   geom_raster() +
@@ -376,7 +376,7 @@ ggplot(p, aes(X, Y, fill = omega_s)) +
 
 # Plotting spatiotemporal random effects
 
-.small[
+.xsmall[
 ```{r pcod-st-plot-eps, echo=TRUE, fig.width=7}
 ggplot(p, aes(X, Y, fill = epsilon_st)) +
   geom_raster() +
