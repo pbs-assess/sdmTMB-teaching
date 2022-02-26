@@ -428,7 +428,8 @@ ggplot() +
   coord_equal()
 ```
 
---
+---
+
 # Getting into UTMs
 
 * Need a projection that preserves constant distance
@@ -455,7 +456,5 @@ d
 ```
 
 * Note default `units = "km"`
-* Why? Range parameter estimated in units of X and Y.
-* Should be not too big or small for estimation.
-
----
+* Why? Range parameter estimated in units of X and Y
+* Should be not too big or small for estimation
