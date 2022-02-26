@@ -281,7 +281,7 @@ class: center, middle, inverse
 
 --
 
-* Refer to vignette for math notation
+* Refer to [model description](https://pbs-assess.github.io/sdmTMB/articles/model-description.html) vignette for math notation
 ---
 
 # Spatial fields can be turned on/off
