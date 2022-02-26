@@ -82,7 +82,7 @@ Currently:
 * Install a C++ compiler
   * e.g., [Rtools](https://cran.r-project.org/bin/windows/Rtools/rtools40.html) on Windows
   * e.g., Xcode command line tools on a Mac:  
-  `sudo xcode-select --install`
+  `xcode-select --install`
 
 .small[
 ```{r, eval=FALSE, echo=TRUE}
