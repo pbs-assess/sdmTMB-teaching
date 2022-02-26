@@ -53,10 +53,12 @@ pcod %>%
 
 # Building a mesh
 
+.small[
 ```{r, echo=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 plot(mesh)
 ```
+]
 
 ---
 
