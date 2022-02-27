@@ -1,7 +1,7 @@
 ---
 title: "Example: Spatial modeling of Pacific cod"
 subtitle: "NOAA PSAW Seminar Series"
-author: "Names Here"
+author: ""
 institute: ""
 date: "2022-03-02"
 output:

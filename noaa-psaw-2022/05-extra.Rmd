@@ -1,7 +1,7 @@
 ---
 title: "Troubleshooting, other packages, tips and tricks"
 subtitle: "NOAA PSAW Seminar Series"
-author: "Names Here"
+author: ""
 institute: ""
 date: "2022-03-02"
 output:
