@@ -25,20 +25,29 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 library(sdmTMB)
 ```
 
-
-
 ---
 
 # Getting help
 
----
+* sdmTMB GitHub repository:  
+  <https://github.com/pbs-assess/sdmTMB>
+  
+* sdmTMB documentation:  
+  <https://pbs-assess.github.io/sdmTMB/index.html>
+
+*  New features to suggest? Bugs?  
+  <https://github.com/pbs-assess/sdmTMB/issues>
 
 ---
-
 
 # Words of wisdom
 
----
+* Start simple
+  * intercept only
+  * no spatial varying / time varying parameters
+  * drop spatial / spatiotemporal fields  
+  
+* Try other approaches: will a similar model converge in `mgcv`?
 
 ---
 
@@ -78,37 +87,75 @@ class: center, middle, inverse
 
 ---
 
-# Splines
-
----
-
-# Spatiotemporal models, different structures
-
----
-
-# Prediction (prediction in time – e.g. future SDMs, prediction in space – new areas / unsampled areas)
-
----
-
----
-
-# Fitting a basic GLM
+# Example of non-converging model
 
 .small[
-```{r pcod-glm, echo=TRUE}
-fit_glm <- glm(
-  present ~ 1,
-  data = pcod,
-  family = binomial(link = "logit")
-)
-
+```{r pcod-spatial-rf, echo=TRUE, message=TRUE, warning=TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+
 fit <- sdmTMB(
-  present ~ 1,
+  present ~ depth*year,
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
-  spatial = "off"
+  spatial = "on"
 )
 ```
 ]
+---
+
+# Inspecting output
+
+* One or more SEs being NaN is a problem  
+.small[
+```{r, echo=TRUE, highlight.output=c(6)}
+fit$sd_report
+```
+]
+
+---
+
+# What does b_j represent?
+
+```{r}
+present ~ depth*year
+```
+
+Interpretation: 
+$$b_1 + b_2*depth+b_3*year+b_4*depth:year$$
+* Linear interaction term seems tricky to estimate
+* Solutions:
+  * drop linear interaction (maybe not important)
+  * explore non-linear smooths
+  
+---
+
+# Smooth effects by year
+
+* Separate smooths with unique wiggliness
+
+```{r eval = FALSE, echo=TRUE}
+pcod$fyear = as.factor(pcod$year)
+fit <- sdmTMB(
+  present ~ s(depth, by=fyear),
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+```
+
+---
+
+# 2D smooth effects
+
+* year x depth as smooth interaction
+```{r eval = FALSE, echo=TRUE}
+fit <- sdmTMB(
+  present ~ s(depth, by=year),
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+```
