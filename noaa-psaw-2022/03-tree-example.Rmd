@@ -26,7 +26,6 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
-theme_set(theme_bw())
 ```
 
 ---
