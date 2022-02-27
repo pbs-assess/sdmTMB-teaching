@@ -150,6 +150,17 @@ fit <- sdmTMB(
 ```
 
 ---
+ 
+# Other warning messages / diagnostics
+
+* `Matrix` package, compiler warnings
+  * generally ok, but see `glmmTMB` page 
+<https://glmmtmb.github.io/glmmTMB/>
+
+* TMB users forum
+<https://groups.google.com/g/tmb-users/>  
+
+---
 
 # Words of wisdom
 
@@ -159,3 +170,95 @@ fit <- sdmTMB(
   * drop spatial / spatiotemporal fields  
   
 * Try other approaches: will a similar model converge in `mgcv`?
+
+* Is observation error variance >> process variance?
+  * known to be problematic for state-space models
+---
+
+# Large observation error looks like noise
+
+* $\sigma_{obs}$ >> $\sigma_{O}$, $\sigma_{E}$
+
+```{r echo=FALSE}
+set.seed(123)
+  # a1 is a fake predictor:
+predictor_dat <- data.frame(
+  X = runif(300), Y = runif(300),
+  year = 1
+)
+mesh <- make_mesh(predictor_dat, 
+    xy_cols = c("X", "Y"), 
+    cutoff = 0.1)
+
+sim_dat <- sdmTMB_sim2(
+    formula = ~ 1,
+    data = predictor_dat,
+    time = "year",
+    mesh = mesh,
+    family = gaussian(link = "identity"),
+    range = 0.5,
+    sigma_E = 0.1,
+    phi = 1.0,
+    sigma_O = 0.1,
+    seed = 3542,
+    B = c(0.2) # B0 = intercept
+  )
+
+ggplot(sim_dat, aes(X,Y,col=observed)) + 
+  geom_point() + 
+  scale_colour_gradient2()
+```
+
+---  
+
+# Versus one with moderate observation errors
+
+* $\sigma_{obs}$ = $\sigma_{O}$ = $\sigma_{E}$
+
+```{r echo = FALSE}
+set.seed(123)
+
+sim_dat <- sdmTMB_sim2(
+    formula = ~ 1,
+    data = predictor_dat,
+    time = "year",
+    mesh = mesh,
+    family = gaussian(link = "identity"),
+    range = 0.5,
+    sigma_E = 0.1,
+    phi = 0.1,
+    sigma_O = 0.1,
+    seed = 3542,
+    B = c(0.2) # B0 = intercept
+  )
+
+ggplot(sim_dat, aes(X,Y,col=observed)) + 
+  geom_point() + 
+  scale_colour_gradient2()
+```
+
+# Versus one with small observation errors
+
+* $\sigma_{obs}$ << $\sigma_{O}$, $\sigma_{E}$
+
+```{r echo = FALSE}
+set.seed(123)
+
+sim_dat <- sdmTMB_sim2(
+    formula = ~ 1,
+    data = predictor_dat,
+    time = "year",
+    mesh = mesh,
+    family = gaussian(link = "identity"),
+    range = 0.5,
+    sigma_E = 0.1,
+    phi = 0.01,
+    sigma_O = 0.1,
+    seed = 3542,
+    B = c(0.2) # B0 = intercept
+  )
+
+ggplot(sim_dat, aes(X,Y,col=observed)) + 
+  geom_point() + 
+  scale_colour_gradient2()
+```
