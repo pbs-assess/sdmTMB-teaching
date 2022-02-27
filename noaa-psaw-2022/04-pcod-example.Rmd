@@ -65,7 +65,38 @@ plot(mesh)
 
 # Adding spatial random fields
 
-```{r pcod-spatial-rf, echo=TRUE}
+```{r pcod-null, echo=TRUE}
+fit <- sdmTMB(
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"   #<<
+)
+```
+
+---
+
+# Should we include depth?
+
+* Predictions here in *logit* space  
+
+```{r plotdepth, echo=FALSE}
+pred_df = pcod
+pred_df$pred = predict(fit)$est
+
+ggplot(pred_df, aes(depth, pred)) + 
+  geom_point(size=0.3, alpha=0.5) + 
+  geom_smooth() + 
+  xlab("pcod$depth") + 
+  ylab("predict(fit)$est")
+```
+
+---
+
+# Depth and spatial effect
+
+```{r pcod-spatial-rf-depth, echo=TRUE}
 fit <- sdmTMB(
   present ~ s(depth),
   data = pcod,
