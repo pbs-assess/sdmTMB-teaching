@@ -37,6 +37,8 @@ class: center, middle, inverse
 
 # The Pacific Cod dataset
 
+DFO trawl survey data from Queen Charlotte Sound off BC
+
 .small[
 ```{r, echo=TRUE}
 library(dplyr)
@@ -79,7 +81,7 @@ fit <- sdmTMB(
 
 .small[
 ```{r, echo=TRUE, highlight.output=c(1)}
-fit # or print(fit)
+fit
 ```
 ]
 
@@ -142,9 +144,9 @@ tidy(fit, "ran_pars", conf.int = TRUE) %>%
 
 .small[
 ```{r, echo=TRUE}
-p <- predict(fit)
+p <- predict(fit) #<<
 select(p, X, Y, est:omega_s) %>% 
-  glimpse()
+  as_tibble()
 ```
 ]
 
@@ -162,8 +164,11 @@ select(p, X, Y, est:omega_s) %>%
 # Making predictions on new data
 
 .small[
-```{r, echo=TRUE, out.width="600px", fig.width=6}
-nd <- filter(qcs_grid, year == 2017)
+* `qcs_grid`: a 2x2 km grid extending over the full survey domain
+]
+.small[
+```{r, echo=TRUE, out.width="500px", fig.width=5}
+nd <- filter(qcs_grid, year == 2017) # pick any year
 ggplot(nd, aes(X, Y, fill = depth)) + 
   geom_raster() +
   coord_fixed()
@@ -177,7 +182,8 @@ ggplot(nd, aes(X, Y, fill = depth)) +
 
 ```{r, echo=TRUE}
 head(select(nd, X, Y, depth))
-p <- predict(fit, newdata = nd)
+
+p <- predict(fit, newdata = nd) #<<
 ```
 
 ---
@@ -185,7 +191,7 @@ p <- predict(fit, newdata = nd)
 # Plotting predictions on new data
 
 .small[
-```{r, echo=TRUE}
+```{r, echo=TRUE, fig.width=6, out.width="600px"}
 ggplot(p, aes(X, Y, fill = plogis(est))) +
   geom_raster() +
   scale_fill_viridis_c() +
@@ -198,7 +204,7 @@ ggplot(p, aes(X, Y, fill = plogis(est))) +
 # Plotting main effect contributions
 
 .small[
-```{r, echo=TRUE}
+```{r, echo=TRUE, fig.width=6, out.width="600px"}
 ggplot(p, aes(X, Y, fill = plogis(est_non_rf))) +
   geom_raster() +
   scale_fill_viridis_c() +
@@ -211,7 +217,7 @@ ggplot(p, aes(X, Y, fill = plogis(est_non_rf))) +
 # Plotting spatial random effects
 
 .small[
-```{r, echo=TRUE}
+```{r, echo=TRUE, fig.width=6, out.width="600px"}
 ggplot(p, aes(X, Y, fill = omega_s)) +
   geom_raster() +
   scale_fill_gradient2() +
@@ -223,18 +229,24 @@ ggplot(p, aes(X, Y, fill = omega_s)) +
 
 # Plotting depth effect
 
-.xsmall[
+.small[
 ```{r pcod-sp-depth-pred, echo=TRUE}
 nd <- data.frame(depth = seq(30, 300, length.out = 100))
-p <- predict(fit, newdata = nd, se_fit = TRUE, re_form = ~ 0)
-```
-
-```{r pcod-sp-depth-pred-plot, fig.width=5, echo=TRUE, out.width='500px'}
+p <- predict(
+  fit, 
+  newdata = nd, 
+  se_fit = TRUE, #<<
+  re_form = ~ 0 #<<
+)
 p$lwr <- plogis(p$est - 1.96 * p$est_se)
 p$upr <- plogis(p$est + 1.96 * p$est_se)
+```
+
+```{r pcod-sp-depth-pred-plot, fig.width=5, echo=FALSE, out.width='500px', fig.asp=0.5}
 ggplot(p, aes(nd$depth, plogis(est), ymin = lwr, ymax = upr)) +
   geom_ribbon(alpha = 0.2) +
-  geom_line() + xlab("Depth (m)") + ylab("")
+  geom_line() + xlab("Depth (m)") + ylab("") +
+  coord_cartesian(ylim = c(0, 1), expand = FALSE)
 ```
 ]
 
@@ -301,7 +313,7 @@ fit <- sdmTMB(
 
 # Inspecting the model fit
 
-.xsmall[
+.small[
 ```{r, eval=FALSE, echo=TRUE}
 fit
 ```
@@ -446,7 +458,7 @@ ggplot(index, aes(year, est)) + geom_line() +
 .small[
 ```{r pcod-st-index-sims, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
 psims <- predict(fit, nsim = 1000) #<<
-index_sims <- get_index_sims(psims, area = rep(4, nrow(p_sims))) #<<
+index_sims <- get_index_sims(psims, area = rep(4, nrow(psims))) #<<
 ggplot(index_sims, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   xlab('Year') + ylab('Biomass estimate (kg)')
@@ -458,11 +470,12 @@ ggplot(index_sims, aes(year, est)) + geom_line() +
 # Calculating the center of gravity
 
 .small[
-```{r pcod-st-cog, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
+```{r pcod-st-cog, echo=TRUE, fig.width=6, out.width="600px"}
 cog <- get_cog(p2, bias_correct = FALSE, format = "wide") #<<
 ggplot(cog, aes(est_x, est_y, colour = year)) + 
   geom_linerange(aes(xmin = lwr_x, xmax = upr_x)) +
-  geom_linerange(aes(ymin = lwr_y, ymax = upr_y))
+  geom_linerange(aes(ymin = lwr_y, ymax = upr_y)) +
+  coord_equal()
 ```
 ]
 
