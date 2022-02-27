@@ -25,7 +25,6 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
-theme_set(theme_light())
 ```
 
 ---
@@ -162,10 +161,22 @@ select(p, X, Y, est:omega_s) %>%
 
 # Making predictions on new data
 
+.small[
+```{r, echo=TRUE, out.width="600px", fig.width=6}
+nd <- filter(qcs_grid, year == 2017)
+ggplot(nd, aes(X, Y, fill = depth)) + 
+  geom_raster() +
+  coord_fixed()
+```
+]
+
+---
+
+# Making predictions on new data
+
 
 ```{r, echo=TRUE}
-head(select(qcs_grid, X, Y, depth))
-nd <- filter(qcs_grid, year == 2017)
+head(select(nd, X, Y, depth))
 p <- predict(fit, newdata = nd)
 ```
 
@@ -385,3 +396,74 @@ ggplot(p, aes(X, Y, fill = epsilon_st)) +
   coord_fixed()
 ```
 ]
+
+---
+
+# Calculating spatial uncertainty
+
+.small[
+```{r pcod-st-sims, echo=TRUE}
+psims <- predict(fit, newdata = qcs_grid, nsim = 500) #<<
+dim(psims)
+psims[1:3, 1:4]
+
+p$sd <- apply(psims, 1, sd) #<<
+```
+]
+
+---
+
+# Calculating spatial uncertainty
+
+.small[
+```{r pcod-st-sims-plot, echo=TRUE, fig.width=5, out.width="500px"}
+filter(p, year == 2017) %>% 
+  ggplot(aes(X, Y, fill = sd)) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "log10") +
+  coord_fixed()
+```
+]
+
+---
+
+# Calculating an area-weighted population index
+
+.small[
+```{r pcod-st-index1, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
+p2 <- predict(fit, return_tmb_object = TRUE, area = 4) #<<
+index <- get_index(p2, bias_correct = FALSE) #<<
+ggplot(index, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+]
+
+---
+
+# Calculating an area-weighted population index
+
+.small[
+```{r pcod-st-index-sims, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
+psims <- predict(fit, nsim = 1000) #<<
+index_sims <- get_index_sims(psims, area = rep(4, nrow(p_sims))) #<<
+ggplot(index_sims, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+]
+
+---
+
+# Calculating the center of gravity
+
+.small[
+```{r pcod-st-cog, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
+cog <- get_cog(p2, bias_correct = FALSE, format = "wide") #<<
+ggplot(cog, aes(est_x, est_y, colour = year)) + 
+  geom_linerange(aes(xmin = lwr_x, xmax = upr_x)) +
+  geom_linerange(aes(ymin = lwr_y, ymax = upr_y))
+```
+]
+
+
