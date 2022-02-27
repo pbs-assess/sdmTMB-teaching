@@ -85,6 +85,24 @@ ggplot(dat, aes(x, y, fill = n)) +
 
 ---
 
+# Should a spatial model be used?
+
+* Diagnostics: Moran's I
+
+.small[
+```{r echo=TRUE}
+library(ape)
+inv_dists <- as.matrix(dist(dat[,c("x","y")]))
+diag(inv_dists) <- 0
+Moran.I(dat$n, inv_dists)
+```
+]  
+
+???
+Could also fit model using `gls()` to estimate spatial range, etc.
+ 
+---
+
 # What type of distribution?
 
 * Counts
