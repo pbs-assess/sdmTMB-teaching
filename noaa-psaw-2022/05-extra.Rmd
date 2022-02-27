@@ -40,22 +40,11 @@ library(sdmTMB)
 
 ---
 
-# Words of wisdom
-
-* Start simple
-  * intercept only
-  * no spatial varying / time varying parameters
-  * drop spatial / spatiotemporal fields  
-  
-* Try other approaches: will a similar model converge in `mgcv`?
-
----
-
 # Related modelling software
 
-* Fig from paper?
-* Highlight table from paper?
-
+.center[
+<img src="images/table_comparison.png" width="550px" height = "500px"/>
+]
 ---
 
 # SPDE approach / INLA / etc; comparison with other software
@@ -159,3 +148,14 @@ fit <- sdmTMB(
   spatial = "on"
 )
 ```
+
+---
+
+# Words of wisdom
+
+* Start simple
+  * intercept only
+  * no spatial varying / time varying parameters
+  * drop spatial / spatiotemporal fields  
+  
+* Try other approaches: will a similar model converge in `mgcv`?
