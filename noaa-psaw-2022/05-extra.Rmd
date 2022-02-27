@@ -173,13 +173,42 @@ fit <- sdmTMB(
 
 * Is observation error variance >> process variance?
   * known to be problematic for state-space models
+
+---
+
+# Words of wisdom
+
+* Start simple
+  * intercept only
+  * no spatial varying / time varying parameters
+  * drop spatial / spatiotemporal fields  
+  
+* Try other approaches: will a similar model converge in `mgcv`?
+
+* Is observation error variance >> process variance?
+  * known to be problematic for state-space models
+
+---
+
+# Words of wisdom
+
+* Start simple
+  * intercept only
+  * no spatial varying / time varying parameters
+  * drop spatial / spatiotemporal fields  
+  
+* Try other approaches: will a similar model converge in `mgcv`?
+
+* Is observation error variance >> process variance?
+  * known to be problematic for state-space models
+
 ---
 
 # Large observation error looks like noise
 
 * $\sigma_{obs}$ >> $\sigma_{O}$, $\sigma_{E}$
 
-```{r echo=FALSE}
+```{r sim-rf-large_phi, echo=FALSE, fig.asp=0.5}
 set.seed(123)
   # a1 is a fake predictor:
 predictor_dat <- data.frame(
@@ -208,17 +237,17 @@ ggplot(sim_dat, aes(X,Y,col=observed)) +
   geom_point() + 
   scale_colour_gradient2()
 ```
-
----  
-
-# Versus one with moderate observation errors
+ 
+---
+  
+# Moderate observation errors
 
 * $\sigma_{obs}$ = $\sigma_{O}$ = $\sigma_{E}$
-
-```{r echo = FALSE}
-set.seed(123)
-
-sim_dat <- sdmTMB_sim2(
+    
+```{r sim-rf-med_phi, echo = FALSE, fig.asp=0.5}
+  set.seed(123)
+  
+  sim_dat <- sdmTMB_sim2(
     formula = ~ 1,
     data = predictor_dat,
     time = "year",
@@ -231,19 +260,23 @@ sim_dat <- sdmTMB_sim2(
     seed = 3542,
     B = c(0.2) # B0 = intercept
   )
-
-ggplot(sim_dat, aes(X,Y,col=observed)) + 
-  geom_point() + 
-  scale_colour_gradient2()
+  
+  ggplot(sim_dat, aes(X,Y,col=observed)) + 
+    geom_point() + 
+    scale_colour_gradient2()
 ```
+  
+  
+---
 
-# Versus one with small observation errors
-
+     
+# Versus one with small observation errors  
+    
 * $\sigma_{obs}$ << $\sigma_{O}$, $\sigma_{E}$
-
-```{r echo = FALSE}
+    
+```{r sim-rf-small_phi, echo = FALSE, fig.asp=0.5}
 set.seed(123)
-
+  
 sim_dat <- sdmTMB_sim2(
     formula = ~ 1,
     data = predictor_dat,
@@ -257,8 +290,10 @@ sim_dat <- sdmTMB_sim2(
     seed = 3542,
     B = c(0.2) # B0 = intercept
   )
-
+  
 ggplot(sim_dat, aes(X,Y,col=observed)) + 
   geom_point() + 
   scale_colour_gradient2()
 ```
+  
+  
