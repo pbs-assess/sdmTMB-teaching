@@ -231,7 +231,7 @@ ggplot(p, aes(X, Y, fill = omega_s)) +
 
 .small[
 ```{r pcod-sp-depth-pred, echo=TRUE}
-nd <- data.frame(depth = seq(30, 300, length.out = 100))
+nd <- data.frame(depth = seq(30, 500, length.out = 100))
 p <- predict(
   fit, 
   newdata = nd, 
@@ -341,6 +341,25 @@ fit
 
 ---
 
+# Model residuals
+
+```{r, echo=TRUE}
+rq_res <- residuals(fit)
+#> Consider using `dharma_residuals()` instead.
+qqnorm(rq_res);qqline(rq_res)
+```
+
+---
+
+# Model residuals
+
+```{r, echo=TRUE}
+s <- simulate(fit, nsim = 500)
+dharma_residuals(s, fit)
+```
+
+---
+
 # Predicting on the survey grid
 
 ```{r pcod-st-pred, echo=TRUE}
@@ -441,9 +460,9 @@ filter(p, year == 2017) %>%
 
 # Calculating an area-weighted population index
 
-.small[
+.xsmall[
 ```{r pcod-st-index1, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
-p2 <- predict(fit, return_tmb_object = TRUE, area = 4) #<<
+p2 <- predict(fit, newdata = qcs_grid, area = 4, return_tmb_object = TRUE) #<<
 index <- get_index(p2, bias_correct = FALSE) #<<
 ggplot(index, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
@@ -455,10 +474,25 @@ ggplot(index, aes(year, est)) + geom_line() +
 
 # Calculating an area-weighted population index
 
-.small[
+.xsmall[
 ```{r pcod-st-index-sims, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
-psims <- predict(fit, nsim = 1000) #<<
+psims <- predict(fit, newdata = qcs_grid, nsim = 1000) #<<
 index_sims <- get_index_sims(psims, area = rep(4, nrow(psims))) #<<
+ggplot(index_sims, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+]
+
+---
+
+# Calculating an area-weighted population index
+
+.xsmall[
+```{r pcod-st-index-sims2, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
+qcs_grid2 <- qcs_grid %>% filter(depth<=400) #<<
+psims <- predict(fit, newdata = qcs_grid2, nsim = 1000) 
+index_sims <- get_index_sims(psims, area = rep(4, nrow(psims))) 
 ggplot(index_sims, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   xlab('Year') + ylab('Biomass estimate (kg)')
