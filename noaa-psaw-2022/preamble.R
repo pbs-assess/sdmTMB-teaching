@@ -25,3 +25,10 @@ knitr_opts <- list(
   fig.align = "center",
   echo = FALSE
 )
+
+library(ggplot2)
+library(dplyr)
+library(sdmTMB)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+ggplot2::theme_set(ggplot2::theme_minimal())
