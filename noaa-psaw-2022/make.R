@@ -8,7 +8,7 @@ files <- c(
 )
 
 rm <- function(x) if (file.exists(x)) file.remove(x)
-rm_folder <- function(x) if (file.exists(x)) unlink(x)
+rm_folder <- function(x) if (file.exists(x)) unlink(x, recursive = TRUE)
 purrr::walk(files, function(.x) {
   cat(.x, "\n")
   f <- paste0(here::here(folder, .x), ".html")
