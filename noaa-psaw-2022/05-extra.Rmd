@@ -45,9 +45,9 @@ library(sdmTMB)
 .center[
 <img src="images/table_comparison.png" width="550px" height = "500px"/>
 ]
----
+<!-- --- -->
 
-# SPDE approach / INLA / etc; comparison with other software
+<!-- # SPDE approach / INLA / etc; comparison with other software -->
 
 <!-- --- -->
 
@@ -66,67 +66,119 @@ class: center, middle, inverse
 
 ---
 
-# Who is Hessian and why are they not "positive definite"??
-
-* A Hessian matrix is a matrix of second derivatives of a function (here the negative log likelihoood surface)
-* The inverse of the negative Hessian is the covariance matrix
-* Warning means the curvature of the negative log-likelihood surface is inconsistent with the model having found the best fit.
-* Overparameterized? Variance estimated near zero?
-* See [vignette("troubleshooting", "glmmTMB")](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
-
----
-
 # Example of non-converging model
 
 .small[
-```{r pcod-spatial-rf, echo=TRUE, message=TRUE, warning=TRUE}
+```{r pcod-spatial-rf, echo=TRUE, eval=TRUE, warning=FALSE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 
 fit <- sdmTMB(
-  present ~ depth*year,
+  present ~ depth * year,
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
   spatial = "on"
 )
 ```
+
+```r
+#> Warning message:
+#> The model may not have converged: 
+#> non-positive-definite Hessian matrix. 
+```
 ]
+---
+
+# Who is Hessian and why are they not "positive definite"?
+
+* A Hessian matrix is a matrix of second derivatives of a function (here the negative log likelihoood surface)
+
+--
+
+* The inverse of the negative Hessian is the covariance matrix
+
+--
+
+* Warning means the curvature of the negative log-likelihood surface is inconsistent with the model having found the best fit.
+
+--
+
+* Overparameterized? Variance estimated near zero?
+
+--
+
+* See [vignette("troubleshooting", "glmmTMB")](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
+
 ---
 
 # Inspecting output
 
-* One or more SEs being NaN is a problem  
+One or more standard errors being `NaN` is a problem:
+
 .small[
-```{r, echo=TRUE, highlight.output=c(6)}
+```{r, echo=TRUE, highlight.output=10}
+fit
+```
+]
+
+---
+
+# Inspecting output
+
+We could also look directly at the TMB `sdreport`:
+
+.small[
+```{r, echo=TRUE, highlight.output=c(6, 9, 10, 11)}
 fit$sd_report
 ```
 ]
 
 ---
 
-# What does b_j represent?
+# Looking at gradients
 
-```{r}
-present ~ depth*year
+Log likelihood gradient with respect to fixed effects:
+
+.small[
+```{r, echo=TRUE}
+max(fit$gradients)
 ```
+]
 
-Interpretation: 
-$$b_1 + b_2*depth+b_3*year+b_4*depth:year$$
+* Gradient becomes smaller as likelihood surface becomes flatter at the location in parameter space
+
+--
+
+* Flatter surface = closer to point of maximum likelihood
+
+--
+
+* So, small values are consistent with convergence (no hard rule, perhaps at least < 0.001)
+
+---
+
+# Interpretation
+
 * Linear interaction term seems tricky to estimate
+
 * Solutions:
+  * make sure the model is identifiable
   * drop linear interaction (maybe not important)
-  * explore non-linear smooths
+  * try re-scaling predictors
+  * try a different mesh setup
+  * simplify some other part of the model
+  * try a related fixed-effect structure, e.g., non-linear smooths
   
 ---
 
 # Smooth effects by year
 
-* Separate smooths with unique wiggliness
+Separate smooths by year:
 
 ```{r eval = FALSE, echo=TRUE}
-pcod$fyear = as.factor(pcod$year)
+pcod$fyear <- as.factor(pcod$year)
 fit <- sdmTMB(
-  present ~ s(depth, by=fyear),
+  present ~ s(depth, by = fyear), #<<
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
@@ -138,10 +190,11 @@ fit <- sdmTMB(
 
 # 2D smooth effects
 
-* year x depth as smooth interaction
+year x depth as smooth interaction:
+
 ```{r eval = FALSE, echo=TRUE}
 fit <- sdmTMB(
-  present ~ s(depth, by=year),
+  present ~ s(depth, by = year), #<<
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
@@ -154,54 +207,65 @@ fit <- sdmTMB(
 # Other warning messages / diagnostics
 
 * `Matrix` package, compiler warnings
-  * generally ok, but see `glmmTMB` page 
-<https://glmmtmb.github.io/glmmTMB/>
+  * generally OK, but see glmmTMB page:  
+    <https://glmmtmb.github.io/glmmTMB/>
 
-* TMB users forum
-<https://groups.google.com/g/tmb-users/>  
-
----
-
-# Words of wisdom
-
-* Start simple
-  * intercept only
-  * no spatial varying / time varying parameters
-  * drop spatial / spatiotemporal fields  
-  
-* Try other approaches: will a similar model converge in `mgcv`?
-
-* Is observation error variance >> process variance?
-  * known to be problematic for state-space models
+* TMB users forum  
+  <https://groups.google.com/g/tmb-users/>  
 
 ---
 
 # Words of wisdom
 
-* Start simple
-  * intercept only
-  * no spatial varying / time varying parameters
-  * drop spatial / spatiotemporal fields  
-  
-* Try other approaches: will a similar model converge in `mgcv`?
+**Start simple!**
 
-* Is observation error variance >> process variance?
-  * known to be problematic for state-space models
+* These are complex models:
+  * They may take a while to fit
+  * Easy to create configurations that won't converge
+  * Can also be hard to wrap your head around
 
 ---
 
 # Words of wisdom
 
-* Start simple
-  * intercept only
-  * no spatial varying / time varying parameters
-  * drop spatial / spatiotemporal fields  
-  
+Options for starting simple:
+  * start intercept only
+  * start with a spatial not spatiotemporal model
+  * start without random fields:  
+    `spatial = 'off', spatiotemporal = 'off'`
+  * start with coarse meshes, maybe increase later  
+    (*mesh resolution greatly impacts speed*)
+
+---
+
+# More words of wisdom
+
+
+--
+
+* Make lots of plots
+
+--
+
+* Don't get too caught up in model configuration
+
+--
+
+* Work in constant distance coordinates (e.g., UTMs)
+
+--
+
+* Consider the scale of the response and predictors
+
+--
+
 * Try other approaches: will a similar model converge in `mgcv`?
 
-* Is observation error variance >> process variance?
-  * known to be problematic for state-space models
+--
 
+* Is observation error variance >> process variance?  
+  Known to be problematic for state-space models.
+  
 ---
 
 # Large observation error looks like noise
@@ -210,32 +274,31 @@ fit <- sdmTMB(
 
 ```{r sim-rf-large_phi, echo=FALSE, fig.asp=0.5}
 set.seed(123)
-  # a1 is a fake predictor:
 predictor_dat <- data.frame(
   X = runif(300), Y = runif(300),
   year = 1
 )
-mesh <- make_mesh(predictor_dat, 
-    xy_cols = c("X", "Y"), 
-    cutoff = 0.1)
+mesh <- make_mesh(predictor_dat,
+  xy_cols = c("X", "Y"),
+  cutoff = 0.1
+)
 
-sim_dat <- sdmTMB_sim2(
-    formula = ~ 1,
-    data = predictor_dat,
-    time = "year",
-    mesh = mesh,
-    family = gaussian(link = "identity"),
-    range = 0.5,
-    sigma_E = 0.1,
-    phi = 1.0,
-    sigma_O = 0.1,
-    seed = 3542,
-    B = c(0.2) # B0 = intercept
-  )
+sim_dat <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.5,
+  sigma_E = 0.1,
+  phi = 1.0,
+  sigma_O = 0.1,
+  seed = 3542,
+  B = c(0.2) # B0 = intercept
+)
 
-ggplot(sim_dat, aes(X,Y,col=observed)) + 
-  geom_point() + 
-  scale_colour_gradient2()
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point()
 ```
  
 ---
@@ -245,55 +308,78 @@ ggplot(sim_dat, aes(X,Y,col=observed)) +
 * $\sigma_{obs}$ = $\sigma_{O}$ = $\sigma_{E}$
     
 ```{r sim-rf-med_phi, echo = FALSE, fig.asp=0.5}
-  set.seed(123)
-  
-  sim_dat <- sdmTMB_sim2(
-    formula = ~ 1,
-    data = predictor_dat,
-    time = "year",
-    mesh = mesh,
-    family = gaussian(link = "identity"),
-    range = 0.5,
-    sigma_E = 0.1,
-    phi = 0.1,
-    sigma_O = 0.1,
-    seed = 3542,
-    B = c(0.2) # B0 = intercept
-  )
-  
-  ggplot(sim_dat, aes(X,Y,col=observed)) + 
-    geom_point() + 
-    scale_colour_gradient2()
+set.seed(123)
+sim_dat <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.5,
+  sigma_E = 0.1,
+  phi = 0.1,
+  sigma_O = 0.1,
+  seed = 3542,
+  B = c(0.2) # B0 = intercept
+)
+
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point()
 ```
   
   
 ---
-
      
-# Versus one with small observation errors  
+# Small observation errors  
     
 * $\sigma_{obs}$ << $\sigma_{O}$, $\sigma_{E}$
     
 ```{r sim-rf-small_phi, echo = FALSE, fig.asp=0.5}
 set.seed(123)
-  
 sim_dat <- sdmTMB_sim2(
-    formula = ~ 1,
-    data = predictor_dat,
-    time = "year",
-    mesh = mesh,
-    family = gaussian(link = "identity"),
-    range = 0.5,
-    sigma_E = 0.1,
-    phi = 0.01,
-    sigma_O = 0.1,
-    seed = 3542,
-    B = c(0.2) # B0 = intercept
-  )
-  
-ggplot(sim_dat, aes(X,Y,col=observed)) + 
-  geom_point() + 
-  scale_colour_gradient2()
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.5,
+  sigma_E = 0.1,
+  phi = 0.01,
+  sigma_O = 0.1,
+  seed = 3542,
+  B = c(0.2) # B0 = intercept
+)
+
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point()
 ```
   
-  
+---
+
+# Lots of topics not covered today
+
+* Simulation
+* Residuals
+* Time-varying coefficients
+* Spatially varying coefficients
+* Interpolation over missing years
+* Forecasting on future years
+* Penalties/priors
+* Cross validation
+* Bayesian sampling with Stan
+* Correlation boundaries
+
+---
+
+# Lots of topics not covered today
+
+* Simulation | `sdmTMB_simulate()`
+* Residuals | `residuals()`, `dharma_residuals()`
+* Time-varying coefficients | `time_varying = ...`
+* Spatially varying slopes | `spatial_varying = ...`
+* Interpolation over missing years | `extra_time`
+* Forecasting on future years | `extra_time`
+* Penalties/priors | `sdmTMB_priors()`
+* Cross validation | `sdmTMB_cv()`
+* Bayesian sampling with Stan | `extract_mcmc()`
+* Correlation boundaries | `add_barrier_mesh()`

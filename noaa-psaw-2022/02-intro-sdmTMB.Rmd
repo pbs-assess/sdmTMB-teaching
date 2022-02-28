@@ -352,3 +352,62 @@ fit <- sdmTMB(
 
   * Do we expect hotspots to be independent with each time slice or adapt slowly over time?
 
+---
+
+# Independent (IID) spatiotemporal fields
+
+```{r iid-demo}
+predictor_dat <- expand.grid(
+  x = seq(0, 1, length.out = 100),
+  y = seq(0, 1, length.out = 100),
+  year = seq_len(6)
+)
+mesh <- make_mesh(predictor_dat, xy_cols = c("x", "y"), cutoff = 0.05)
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(),
+  range = 0.5,
+  sigma_E = 0.2,
+  phi = 0.1,
+  sigma_O = NULL,
+  seed = 1,
+  B = 0
+)
+ggplot(sim_dat, aes(x, y, fill = mu)) +
+  facet_wrap(vars(year)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed(expand = FALSE) +
+  guides(fill = "none")
+```
+
+---
+
+# AR1 spatiotemporal fields
+
+```{r ar1-demo}
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(),
+  range = 0.5,
+  sigma_E = 0.2,
+  rho = 0.75,
+  phi = 0.1,
+  sigma_O = NULL,
+  seed = 1,
+  B = 0
+)
+ggplot(sim_dat, aes(x, y, fill = mu)) +
+  facet_wrap(vars(year)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed(expand = FALSE) +
+  guides(fill = "none")
+```
+

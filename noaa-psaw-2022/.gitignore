@@ -3,3 +3,4 @@ libs/
 figure-html
 slides-demo.Rmd
 xaringan-themer.css
+.DS_Store
