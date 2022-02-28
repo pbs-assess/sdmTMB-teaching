@@ -70,6 +70,8 @@ class: center, middle, inverse
 
 # sdmTMB workflow
 
+- TODO very basic one here...
+
 <img src="images/sdmTMB_workflow.png" height = "500px" width="900px" />
 
 ---
@@ -218,8 +220,7 @@ class: center, middle, inverse
 
 # Families
 
-* Many of the same families used in `glm()`, `glmmTMB()`, `mgcv::gam()` can be
-  used here:
+* Many of the same families used in `glm()`, `glmmTMB()`, `mgcv::gam()` can be used here
 
 * Includes:  
   `gaussian()`, `Gamma()`, 
@@ -256,6 +257,44 @@ ggplot(df, aes(y)) +
   facet_wrap(~phi, ncol = 1, scale = "free_y") +
   coord_cartesian(xlim = c(0, 20))
 ```
+
+---
+
+class: center, middle, inverse
+
+# Syntax: constructing meshes
+
+---
+
+# Getting into UTMs
+
+* Need a projection that preserves constant distance
+
+* UTMs work well for regional analyses
+
+* Helper function: `sdmTMB::add_utm_columns()`
+
+* Internally, guesses at UTM zone and uses the sf package:
+  * `sf::st_as_sf()`, `sf::st_transform()`, and `sf::st_coordinates()`
+
+* Or use sp package
+
+---
+# Example of adding UTM columns
+
+```{r, echo=TRUE, message=TRUE}
+d <- data.frame(
+  lat = c(52.1, 53.4), 
+  lon = c(-130.0, -131.4)
+)
+d <- sdmTMB::add_utm_columns(d, c("lon", "lat"))
+d
+```
+
+* Note default `units = "km"`
+* Why? Range parameter estimated in units of X and Y
+* Should be not too big or small for estimation
+
 
 ---
 
@@ -338,22 +377,6 @@ fit <- sdmTMB(
 
 ---
 
-# Spatiotemporal fields
-
-* Why include spatiotemporal fields?
-
-  * If there are 'latent' spatial processes that vary through time
-  * E.g., effect of water temperature on abundance if temperature wasn't in the model
-  * Represents all the missing variables that vary through time
-
---
-
-* Why would a field be IID vs RW/AR1?
-
-  * Do we expect hotspots to be independent with each time slice or adapt slowly over time?
-
----
-
 # Independent (IID) spatiotemporal fields
 
 ```{r iid-demo}
@@ -410,4 +433,34 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
   coord_fixed(expand = FALSE) +
   guides(fill = "none")
 ```
+
+.small[Random walk = AR1 with 1.0 correlation]
+
+---
+
+# Spatiotemporal fields
+
+* Why include spatiotemporal fields?
+
+  * If there are 'latent' spatial processes that vary through time
+  * E.g., effect of water temperature on abundance if temperature wasn't in the model
+  * Represents all the missing variables that vary through time
+
+--
+
+* Why would a field be IID vs RW/AR1?
+
+  * Do we expect hotspots to be independent with each time slice or adapt slowly over time?
+
+---
+
+# After model fitting
+
+Covered in examples that follow:
+
+* `predict()`
+* `residuals()`
+* `print()`
+* `tidy()`
+* ...
 

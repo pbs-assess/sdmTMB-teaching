@@ -1,5 +1,5 @@
 ---
-title: "Introduction to sdmTMB"
+title: "Introduction to random fields"
 subtitle: "NOAA PSAW Seminar Series"
 author: ""
 institute: ""
@@ -39,28 +39,24 @@ library(ggplot2)
 
 # Plan for the 2-session course
 
-* Session 1 (March 3): describe models and walk through code with us
+* Session 1 (March 2): describe models and walk through code with us
 
-* Session 2 (March 10): have sdmTMB installed, run models and explore advanced features
+* Session 2 (March 9): review optional exercise; introduce advanced features
 
 * Each day, we have ~1.5–2 hours of content, and will plan to take a 10–15 minute break halfway through.
 
-* Have questions? Use the chat, ask during our break, or at the end. Thanks!
+* Have questions? Use the Google Doc, ask during our break, or at the end. Thanks!
 
 ---
 
-# Resources
-
-* sdmTMB GitHub repository:  
-  <https://github.com/pbs-assess/sdmTMB>
-  
-* sdmTMB documentation:  
-  <https://pbs-assess.github.io/sdmTMB/index.html>
-
-*  New features to suggest? Bugs?  
-  <https://github.com/pbs-assess/sdmTMB/issues>
-
----
+<!-- high level intro trhing... 
+- wiggly latent field
+- glm
+- plot residuals...
+- need wiggly surface...
+- random fields...
+- 1D is gaussian process
+-->
 
 class: center, middle, inverse
 
@@ -70,22 +66,22 @@ class: center, middle, inverse
 
 # Gaussian processes 101
 
-* Using Gaussian processes (GPs) to approximate underlying truth
+Using Gaussian processes (GPs) to approximate underlying truth:
 
 ```{r sim-gp, fig.asp=0.5}
-x <- seq(1, 50)
+x <- seq(1, 50, length.out = 300)
 d <- as.matrix(dist(x, diag = TRUE))
 set.seed(123)
 df <- data.frame(
   x = x,
-  true = c(spam::rmvnorm(1, mu = 0, Sigma = 1 * exp(-0.05 * d)))
+  true = c(spam::rmvnorm(1, mu = 0, Sigma = 2 * exp(-30 * d)))
 )
-df$y <- rnorm(df$true, df$true, 0.1)
+df$y <- rnorm(nrow(df), df$true, 0.1)
 
 g1 <- ggplot(df, aes(x, y)) +
-  geom_point(col = "red", alpha = 0.7) +
+  # geom_point(col = "red", alpha = 0.7) +
   theme_bw() +
-  xlab("") +
+  xlab("Time") +
   ylab("Observations")
 g2 <- g1 + geom_line(aes(x, true))
 
@@ -93,12 +89,22 @@ g2 <- g1 + geom_line(aes(x, true))
 print(g2)
 ```
 
+TODO: make smooth; just wiggly lines?
 <!-- * There are many approaches to modeling 'latent' dynamics. GPs are one of those, without constraints (e.g. stationarity in time, ARMA properties, etc) -->
 
 ---
 
-# Gaussian processes 101
+# Gaussian processes 101 (simple)
 
+.small[
+* TODO
+]
+
+---
+
+# Gaussian processes 101 (math)
+
+.small[
 * Dynamics of $\textbf{y}_t$ (observations at time $t$) can be approximated with a Gaussian process if $E[\textbf{y}_t] \sim \mathrm{MVN}(\mu, \Sigma)$
 
 * $\mu$ may be fixed (e.g., $\mu = 0$)
@@ -107,13 +113,14 @@ print(g2)
   * $\Sigma_{i,j} = f(x_{i}, x_{j})$
   * 2–3 parameters instead of $n (n-1)/2$ parameters
 
-* Which to choose? 
+* Which to choose?
+]
 
 ---
 
 # Matérn covariance
 
-* Flexible, can be exponential or Gaussian
+Flexible, can be exponential or Gaussian
 
 ```{r matern-plot}
 x <- seq(from = 0, to = 1, length.out = 100)
@@ -128,7 +135,7 @@ df <- dplyr::group_by(df, row) %>%
       rSPDE::matern.covariance(h = x, kappa = 5, nu = nu, sigma = 1)
   )
 df$nu <- as.factor(df$nu)
-
+# TODO INLA is fixed at...
 ggplot(df, aes(x, cov, col = nu, group = nu)) +
   geom_line(size = 1.3, alpha = 0.8) +
   theme_bw() +
@@ -177,6 +184,8 @@ g2 <- ggplot(df, aes(x, y)) +
   ylab("Observations") +
   geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7))
 gridExtra::grid.arrange(g1, g2, ncol = 1)
+
+# TODO: overlay knots? vertical lines
 ```
 
 ---
@@ -305,6 +314,7 @@ background-size: 30%
 
 ???
 Homework: try to work through some of these yourself. Make some plots, and see how changing the covariance affects the smoothness of these fields.
+
 ---
 
 # Estimating random fields 
@@ -345,7 +355,7 @@ Lindgren, F., Rue, H., and Lindström, J. 2011. An explicit link between Gaussia
 
 # Introducing meshes
 
-* Implementing the SPDE with INLA requires constructing a 'mesh'
+Implementing the SPDE with INLA requires constructing a 'mesh'
 
 ```{r mesh-example, fig.width=6.5}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
@@ -362,6 +372,7 @@ ggplot() +
 * A unique mesh is generally made for each dataset
 * Rules of thumb:
   * More triangles = more computation time
+  * More triangles = more fine-scale spatial predictions
   * Borders with coarser resolution reduce number of triangles
   * Use minimum edge size to avoid meshes becoming too fine
   * Want fewer vertices than data points
@@ -394,28 +405,6 @@ ggplot() +
 
 ---
 
-# Example: cutoff = 10km
-
-```{r mesh-example2, fig.width=6.5}
-mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
-ggplot() +
-  inlabru::gg(mesh$mesh) +
-  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
-  coord_equal()
-```
-
----
-# Example: cutoff = 25km
-
-```{r mesh-example3, fig.width=6.5}
-mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 25)
-ggplot() +
-  inlabru::gg(mesh$mesh) +
-  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
-  coord_equal()
-```
-
----
 # Example: cutoff = 50km
 
 ```{r mesh-example4, fig.width=6.5}
@@ -428,31 +417,34 @@ ggplot() +
 
 ---
 
-# Getting into UTMs
+# Example: cutoff = 25km
 
-* Need a projection that preserves constant distance
-
-* UTMs work well for regional analyses
-
-* Helper function: `sdmTMB::add_utm_columns()`
-
-* Internally, guesses at UTM zone and uses the sf package:
-  * `sf::st_as_sf()`, `sf::st_transform()`, and `sf::st_coordinates()`
-
-* Or use sp package
-
----
-# Example of adding UTM columns
-
-```{r, echo=TRUE, message=TRUE}
-d <- data.frame(
-  lat = c(52.1, 53.4), 
-  lon = c(-130.0, -131.4)
-)
-d <- sdmTMB::add_utm_columns(d, c("lon", "lat"))
-d
+```{r mesh-example3, fig.width=6.5}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 25)
+ggplot() +
+  inlabru::gg(mesh$mesh) +
+  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
+  coord_equal()
 ```
 
-* Note default `units = "km"`
-* Why? Range parameter estimated in units of X and Y
-* Should be not too big or small for estimation
+---
+
+
+# Example: cutoff = 10km
+
+```{r mesh-example2, fig.width=6.5}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+ggplot() +
+  inlabru::gg(mesh$mesh) +
+  geom_point(data = pcod, aes(x = X, y = Y), alpha = 0.1, pch = 20) +
+  coord_equal()
+```
+
+
+---
+
+# Visualize difference sigma + covariance
+
+TODO
+
+# Show adding noise...

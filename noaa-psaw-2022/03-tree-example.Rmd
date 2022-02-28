@@ -111,10 +111,10 @@ Could also fit model using `gls()` to estimate spatial range, etc.
 
 ```{r tree-hist, fig.asp=0.5}
 ggplot(dat, aes(n)) +
-  geom_histogram(bins = 100, col = "darkblue") +
+  geom_histogram(breaks = seq(1, 200), col = "darkblue") +
   theme_bw() +
   xlab("# Trees") +
-  coord_cartesian(expand = FALSE)
+  coord_cartesian(expand = FALSE, xlim = c(0, 130))
 ```
 
 ---
@@ -247,15 +247,15 @@ tidy(fit, "ran_pars", conf.int = TRUE) %>%
 ```{r, echo=TRUE}
 p <- predict(fit)
 select(p, x, y, est:omega_s) %>%
-  glimpse()
+  as_tibble()
 ```
 ]
 
 ---
 
-# Making predictions
+# What are the columns in the prediction output?
 
-* `est`: Overall estimate **in link space**
+* `est`: Overall estimate **in link space** (logit here)
 * `est_non_rf`: Estimate of non-random-field components
 * `est_rf`: Estimate of random-field components
 * `omega_s`: Spatial random field
@@ -264,7 +264,7 @@ select(p, x, y, est:omega_s) %>%
 
 # Making predictions on new data
 
-* Let's project to the whole BCI region (on a grid)
+* Let's project to the whole region (on a grid)
 * Create a new data frame for predictions
 
 .small[
@@ -288,6 +288,34 @@ head(newdf)
 p <- predict(fit, newdata = newdf)
 ```
 
+See `?predict.sdmTMB`
+
+
+---
+
+# Plotting fixed effects (the intercept here)
+
+.small[
+```{r, echo=TRUE}
+ggplot(p, aes(x, y, fill = est_non_rf)) + #<<
+  geom_raster() +
+  coord_fixed(expand = FALSE)
+```
+]
+
+---
+
+# Plotting spatial random effects
+
+.small[
+```{r, echo=TRUE}
+ggplot(p, aes(x, y, fill = omega_s)) + #<<
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed(expand = FALSE)
+```
+]
+
 ---
 
 # Predictions in link (log) space
@@ -306,8 +334,10 @@ ggplot(p, aes(x, y, fill = est)) + #<<
 
 # Predictions in natural space
 
+
 .xsmall[
 ```{r, echo=TRUE}
+# Hint: inverse link function also available in `fit$family$linkinv()`
 ggplot(p, aes(x, y, fill = exp(est))) + #<<
   geom_raster() + scale_fill_viridis_c() +
   coord_fixed(expand = FALSE) +
@@ -316,15 +346,3 @@ ggplot(p, aes(x, y, fill = exp(est))) + #<<
 ```
 ]
 
----
-
-# Plotting spatial random effects
-
-.small[
-```{r, echo=TRUE}
-ggplot(p, aes(x, y, fill = omega_s)) + #<<
-  geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed(expand = FALSE)
-```
-]

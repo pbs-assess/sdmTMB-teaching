@@ -194,7 +194,7 @@ year x depth as smooth interaction:
 
 ```{r eval = FALSE, echo=TRUE}
 fit <- sdmTMB(
-  present ~ s(depth, by = year), #<<
+  present ~ s(depth, year), #<<
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
@@ -359,7 +359,7 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
 # Lots of topics not covered today
 
 * Simulation
-* Residuals
+* Other kinds of residuals
 * Time-varying coefficients
 * Spatially varying coefficients
 * Interpolation over missing years
@@ -374,7 +374,7 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
 # Lots of topics not covered today
 
 * Simulation | `sdmTMB_simulate()`
-* Residuals | `residuals()`, `dharma_residuals()`
+* Other kinds of residuals | `dharma_residuals()`
 * Time-varying coefficients | `time_varying = ...`
 * Spatially varying slopes | `spatial_varying = ...`
 * Interpolation over missing years | `extra_time`
