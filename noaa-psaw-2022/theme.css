@@ -83,3 +83,10 @@
 .tiny .remark-code {
   font-size: 60% !important;
 }
+
+.title-slide {
+  background-image: url("images/logo-sdmTMB.png");
+  background-position: 50% 10%;
+  background-size: 10%;
+}
+/* 90% 20%, 75% 75%;
