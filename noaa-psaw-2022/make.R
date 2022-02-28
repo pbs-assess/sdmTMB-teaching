@@ -1,3 +1,5 @@
+PARALLEL <- TRUE
+
 folder <- "noaa-psaw-2022"
 files <- c(
   "01-intro-random-fields",
@@ -21,8 +23,18 @@ purrr::walk(files, function(.x) {
 
 # https://github.com/rstudio/rmarkdown/issues/1673
 render_separately <- function(...) callr::r(
-  function(...) rmarkdown::render(..., envir = globalenv()), args = list(...), show = TRUE)
-purrr::walk(files, function(.x) {
-  cat(.x, "\n")
-  render_separately(paste0(here::here(folder, .x), ".Rmd"))
-})
+  function(...) rmarkdown::render(..., envir = globalenv()),
+  args = list(...), show = TRUE)
+
+if (!PARALLEL) {
+  purrr::walk(files, function(.x) {
+    cat(.x, "\n")
+    render_separately(paste0(here::here(folder, .x), ".Rmd"))
+  })
+} else {
+  future::plan(future::multisession)
+  options(future.rng.onMisuse = "ignore")
+  furrr::future_walk(files, function(.x) {
+    render_separately(paste0(here::here(folder, .x), ".Rmd"))
+  })
+}

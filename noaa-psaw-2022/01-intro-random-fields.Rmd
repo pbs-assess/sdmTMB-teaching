@@ -109,12 +109,11 @@ print(g2)
 
 * Which to choose? 
 
-<!-- TODO: I don't think we need to highlight GP predictive process models, but that might be a good transition to working with meshes? -->
 ---
 
 # Matérn covariance
 
-* Flexible, can be exponential (= 0.5) or Gaussian (~ infinity)
+* Flexible, can be exponential or Gaussian
 
 ```{r matern-plot}
 x <- seq(from = 0, to = 1, length.out = 100)
