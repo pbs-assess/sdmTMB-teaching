@@ -45,7 +45,7 @@ library(ggplot2)
 
 * Each day, we have ~1.5–2 hours of content, and will plan to take a 10–15 minute break halfway through.
 
-* Have questions? Use the Google Doc, ask during our break, or at the end. Thanks!
+* Have questions? Use the [Google Doc](https://docs.google.com/document/d/1MxjLJ4Kz5ASIT15RQWApuf5xI1k-IHFTfd__rHAyuOM/edit?usp=sharing), ask during our break, or at the end. Thanks!
 
 ---
 
