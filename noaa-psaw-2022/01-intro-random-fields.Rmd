@@ -49,72 +49,95 @@ library(ggplot2)
 
 ---
 
-<!-- high level intro trhing... 
-- wiggly latent field
-- glm
-- plot residuals...
-- need wiggly surface...
-- random fields...
-- 1D is gaussian process
--->
+# Motivating questions
 
-class: center, middle, inverse
+* Data often has spatial attributes
 
-# Covariance functions & Gaussian processes for time series
-
----
-
-# Gaussian processes 101
-
-Using Gaussian processes (GPs) to approximate underlying truth:
-
-```{r sim-gp, fig.asp=0.5}
-x <- seq(1, 50, length.out = 300)
-d <- as.matrix(dist(x, diag = TRUE))
+* Ideal world
+  * Plug spatial coviariates into a GLM / GLMM
+  * Residuals uncorrelated  
+  
+```{r sim-rf-intro, echo=FALSE, fig.asp=0.4}
 set.seed(123)
-df <- data.frame(
-  x = x,
-  true = c(spam::rmvnorm(1, mu = 0, Sigma = 2 * exp(-30 * d)))
+predictor_dat <- data.frame(
+  X = runif(300), Y = runif(300),
+  year = 1
 )
-df$y <- rnorm(nrow(df), df$true, 0.1)
+mesh <- make_mesh(predictor_dat,
+  xy_cols = c("X", "Y"),
+  cutoff = 0.1
+)
 
-g1 <- ggplot(df, aes(x, y)) +
-  # geom_point(col = "red", alpha = 0.7) +
-  theme_bw() +
-  xlab("Time") +
-  ylab("Observations")
-g2 <- g1 + geom_line(aes(x, true))
+sim_dat <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.00001,
+  sigma_E = 0.1,
+  phi = 0.01,
+  sigma_O = 0.2,
+  seed = 3542,
+  B = c(0) # B0 = intercept
+)
 
-# gridExtra::grid.arrange(g1, g2, ncol = 1)
-print(g2)
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point(alpha=0.7, size=3) + 
+  guides(col=guide_legend(title="Residuals"))
 ```
 
-TODO: make smooth; just wiggly lines?
-<!-- * There are many approaches to modeling 'latent' dynamics. GPs are one of those, without constraints (e.g. stationarity in time, ARMA properties, etc) -->
+---
+
+
+# Reality
+  
+* Residual spatial autocorrelation
+
+```{r sim-rf-intro-cor, echo=FALSE, fig.asp=0.4}
+set.seed(123)
+predictor_dat <- data.frame(
+  X = runif(300), Y = runif(300),
+  year = 1
+)
+mesh <- make_mesh(predictor_dat,
+  xy_cols = c("X", "Y"),
+  cutoff = 0.1
+)
+
+sim_dat <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.25,
+  sigma_E = 0.1,
+  phi = 0.01,
+  sigma_O = 0.1,
+  seed = 3542,
+  B = c(0) # B0 = intercept
+)
+
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point(alpha=0.7, size=3) + 
+  guides(col=guide_legend(title="Residuals"))
+```
+
 
 ---
 
-# Gaussian processes 101 (simple)
+# Modeling spatial autocorrelation
 
-.small[
-* TODO
-]
+* Need wiggly / smooth surface for approximating spatial complexity
 
----
+* Several equivalent approaches exist
+  * Smooths in mgcv()  
+  * Stochastic Partial Differential Equation (SPDE)
 
-# Gaussian processes 101 (math)
+* SPDE differs in that it explicitly estimates parameters for spatial covariance function
 
-.small[
-* Dynamics of $\textbf{y}_t$ (observations at time $t$) can be approximated with a Gaussian process if $E[\textbf{y}_t] \sim \mathrm{MVN}(\mu, \Sigma)$
-
-* $\mu$ may be fixed (e.g., $\mu = 0$)
-
-* $\Sigma$ contains many parameters. Instead of estimating them all, elements can be approximated by a covariance function:
-  * $\Sigma_{i,j} = f(x_{i}, x_{j})$
-  * 2–3 parameters instead of $n (n-1)/2$ parameters
-
-* Which to choose?
-]
+Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020)  
 
 ---
 
@@ -151,7 +174,8 @@ ggplot(df, aes(x, cov, col = nu, group = nu)) +
 
 # Predictive process models 
 
-* High dimensional datasets may still be computationally challenging
+* High dimensional datasets are computationally challenging
+  * Too many random effects if we try to estimate value at observations
 
 * Gaussian process predictive process models:
   * Estimate values at a subset of locations in the time series
@@ -171,6 +195,8 @@ df <- data.frame(
   true = c(spam::rmvnorm(1, mu = 0, Sigma = 1 * exp(-0.05 * d)))
 )
 df$y <- rnorm(df$true, df$true, 0.1)
+
+fit1 <- gam(y ~ s(x, bs = "gp", k = 25), data = df)
 g1 <- ggplot(df, aes(x, y)) +
   geom_point(col = "red", alpha = 0.7) +
   theme_bw() +
@@ -190,15 +216,9 @@ gridExtra::grid.arrange(g1, g2, ncol = 1)
 
 ---
 
-class: center, middle, inverse
-
-# Spatial data & random fields
+# Spatial data types
 
 ---
-
-# Moving from 1 to 2 dimensions
-
-Spatial data types:
 
 * Lattice: gridded data, e.g. interpolated SST from satellite observations 
 
@@ -304,7 +324,7 @@ background-size: 30%
 <!-- TODO: include nugget / sill? Show slide with semivariogram image? -->
 ---
 
-# Many ways to simulate random fields in R
+# Many ways to simulate random fields
 
 * `RandomFields::RFsimulate()` simulates univariate / multivariate fields
 * `fields::sim.rf()` simulates random fields on a grid
@@ -314,6 +334,143 @@ background-size: 30%
 
 ???
 Homework: try to work through some of these yourself. Make some plots, and see how changing the covariance affects the smoothness of these fields.
+
+---
+
+# Effects of changing variance and range
+
+```{r sim-rf-grid, echo=FALSE, fig.asp=0.7}
+set.seed(123)
+predictor_dat <- data.frame(
+  X = runif(300), Y = runif(300),
+  year = 1
+)
+mesh <- make_mesh(predictor_dat,
+  xy_cols = c("X", "Y"),
+  cutoff = 0.1
+)
+
+grid_pars = expand.grid("range"=c(0.1, 0.5),
+                        "sigma_O" = c(0.05, 0.1))
+
+for(i in 1:nrow(grid_pars)) {
+  s <- sdmTMB_simulate(
+    formula = ~1,
+    data = predictor_dat,
+    time = "year",
+    mesh = mesh,
+    family = gaussian(link = "identity"),
+    range = grid_pars$range[i],
+    sigma_E = NULL,
+    phi = 0.01,
+    sigma_O = grid_pars$sigma_O[i],
+    seed = 3542,
+    B = c(0) # B0 = intercept
+  )
+  s$range = grid_pars$range[i]
+  s$sigma_O = grid_pars$sigma_O[i]
+  if(i == 1) {
+    sim_dat = s
+  } else sim_dat = rbind(s, sim_dat)
+}
+
+sim_dat$sigma_O = paste0("sigma_O = ", sim_dat$sigma_O)
+sim_dat$range = paste0("range = ", sim_dat$range)
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point(size=1) + 
+  scale_color_gradient2() + 
+  facet_wrap(range ~ sigma_O)
+```
+
+---
+
+# Effects of adding noise 
+
+* Large observation error looks like noise
+
+* $\sigma_{obs}$ >> $\sigma_{O}$, $\sigma_{E}$
+
+```{r sim-rf-large_phi, echo=FALSE, fig.asp=0.5}
+set.seed(123)
+predictor_dat <- data.frame(
+  X = runif(300), Y = runif(300),
+  year = 1
+)
+mesh <- make_mesh(predictor_dat,
+  xy_cols = c("X", "Y"),
+  cutoff = 0.1
+)
+
+sim_dat <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.5,
+  sigma_E = 0.1,
+  phi = 1.0,
+  sigma_O = 0.1,
+  seed = 3542,
+  B = c(0.2) # B0 = intercept
+)
+
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point(alpha=0.7, size=3)
+```
+ 
+---
+  
+# Moderate observation errors
+
+* $\sigma_{obs}$ = $\sigma_{O}$ = $\sigma_{E}$
+    
+```{r sim-rf-med_phi, echo = FALSE, fig.asp=0.5}
+set.seed(123)
+sim_dat <- sdmTMB_simulate(
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.5,
+  sigma_E = 0.1,
+  phi = 0.1,
+  sigma_O = 0.1,
+  seed = 3542,
+  B = c(0.2) # B0 = intercept
+)
+
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point(alpha=0.7, size=3)
+```
+  
+  
+---
+     
+# Small observation errors  
+    
+* $\sigma_{obs}$ << $\sigma_{O}$, $\sigma_{E}$
+    
+```{r sim-rf-small_phi, echo = FALSE, fig.asp=0.5}
+set.seed(123)
+sim_dat <- sdmTMB_sim2(
+  formula = ~1,
+  data = predictor_dat,
+  time = "year",
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.5,
+  sigma_E = 0.1,
+  phi = 0.01,
+  sigma_O = 0.1,
+  seed = 3542,
+  B = c(0.2) # B0 = intercept
+)
+
+ggplot(sim_dat, aes(X, Y, col = observed)) +
+  geom_point(alpha=0.7, size=3)
+```
 
 ---
 
@@ -441,10 +598,4 @@ ggplot() +
 ```
 
 
----
 
-# Visualize difference sigma + covariance
-
-TODO
-
-# Show adding noise...
