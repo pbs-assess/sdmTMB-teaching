@@ -48,17 +48,6 @@ sdmTMB is a user-friendly R package for modeling spatial processes
 
 ---
 
-# sdmTMB limitations
-
-sdmTMB fits a variety of models with univariate responses
-
-sdmTMB: 
-* does not fit multivariate models ([see VAST](https://github.com/James-Thorson-NOAA/VAST))
-* does not conduct spatial (dynamic) factor analysis ([see VAST](https://github.com/James-Thorson-NOAA/VAST))
-* doesn't have built-in delta/hurdle or zero-inflated models (but these can be fit as two parts) 
-
----
-
 # Installing sdmTMB
 
 Currently:
@@ -76,7 +65,7 @@ remotes::install_github("pbs-assess/sdmTMB",
 ```
 ]
 
-Should be on CRAN very soon so the C++ compiler won't be necessary.
+Should be on CRAN soon so the C++ compiler won't be necessary.
 
 ---
 
@@ -205,7 +194,7 @@ class: center, middle, inverse
 
 # sdmTMB()
 
-Set up similarly to glmmTMB(). Common arguments:
+Set up is similar to glmmTMB(). Common arguments:
 
 ```r
 fit <- sdmTMB(
@@ -215,7 +204,7 @@ fit <- sdmTMB(
   time = NULL,
   family = gaussian(link = "identity"),
   spatial = c("on", "off"),
-  spatiotemporal = c("IID", "AR1", "RW", "off"),
+  spatiotemporal = c("iid", "ar1", "rw", "off"),
   silent = TRUE,
   ...
 )
@@ -415,6 +404,7 @@ fit <- sdmTMB(
   y ~ x,
   family = gaussian(),
   data = dat,
+  mesh = mesh,
   spatial = "on", #<<
   ...
 )
@@ -441,6 +431,7 @@ fit <- sdmTMB(
   y ~ x,
   family = gaussian(),
   data = dat,
+  mesh = mesh,
   time = "year", # column in `data` #<<
   spatiotemporal = "iid", #<<
   ...
@@ -469,12 +460,12 @@ predictor_dat <- expand.grid(
   y = seq(0, 1, length.out = 100),
   year = seq_len(6)
 )
-mesh <- make_mesh(predictor_dat, xy_cols = c("x", "y"), cutoff = 0.05)
+mesh2 <- make_mesh(predictor_dat, xy_cols = c("x", "y"), cutoff = 0.05)
 sim_dat <- sdmTMB_simulate(
   formula = ~ 1,
   data = predictor_dat,
   time = "year",
-  mesh = mesh,
+  mesh = mesh2,
   family = gaussian(),
   range = 0.5,
   sigma_E = 0.2,
@@ -500,11 +491,11 @@ sim_dat <- sdmTMB_simulate(
   formula = ~ 1,
   data = predictor_dat,
   time = "year",
-  mesh = mesh,
+  mesh = mesh2,
   family = gaussian(),
   range = 0.5,
   sigma_E = 0.2,
-  rho = 0.75,
+  rho = 0.85,
   phi = 0.1,
   sigma_O = NULL,
   seed = 1,
@@ -526,7 +517,8 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
 
 * Why include spatiotemporal fields?
 
-  * If there are 'latent' spatial processes that vary through time
+  * If the data are collected in both space and time *and* 
+    there are 'latent' spatial processes that vary through time
   * E.g., effect of water temperature on abundance if temperature wasn't in the model
   * Represents all the missing variables that vary through time
 
@@ -540,7 +532,9 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
 
 # After model fitting
 
-Covered in examples that follow:
+Inspecting, summarizing, predicting, etc.
+
+Covered in examples in next slides.
 
 * `predict()`: `?predict.sdmTMB`
 * `residuals()`: `?residuals.sdmTMB`
