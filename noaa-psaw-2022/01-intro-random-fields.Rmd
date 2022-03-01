@@ -66,7 +66,6 @@ mesh <- make_mesh(predictor_dat,
   xy_cols = c("X", "Y"),
   cutoff = 0.1
 )
-
 sim_dat <- sdmTMB_simulate(
   formula = ~1,
   data = predictor_dat,
@@ -82,12 +81,12 @@ sim_dat <- sdmTMB_simulate(
 )
 
 ggplot(sim_dat, aes(X, Y, col = observed)) +
-  geom_point(alpha=0.7, size=3) + 
-  guides(col=guide_legend(title="Residuals"))
+  geom_point(alpha = 0.7, size = 3) +
+  guides(col = guide_legend(title = "Residuals")) +
+  scale_color_gradient2()
 ```
 
 ---
-
 
 # Reality
   
@@ -103,7 +102,6 @@ mesh <- make_mesh(predictor_dat,
   xy_cols = c("X", "Y"),
   cutoff = 0.1
 )
-
 sim_dat <- sdmTMB_simulate(
   formula = ~1,
   data = predictor_dat,
@@ -120,7 +118,8 @@ sim_dat <- sdmTMB_simulate(
 
 ggplot(sim_dat, aes(X, Y, col = observed)) +
   geom_point(alpha=0.7, size=3) + 
-  guides(col=guide_legend(title="Residuals"))
+  guides(col=guide_legend(title="Residuals")) +
+  scale_color_gradient2()
 ```
 
 
@@ -128,15 +127,17 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
 
 # Modeling spatial autocorrelation
 
-* Need wiggly / smooth surface for approximating spatial complexity
+* Need 'wiggly'/smooth surface for approximating all spatial variables missing from model ('latent' variables)
 
 * Several equivalent approaches exist
   * Smooths in `mgcv()`  
-  * Stochastic Partial Differential Equation (SPDE)
+  * Random fields and the Stochastic Partial Differential Equation (SPDE)
 
 * SPDE differs in that it explicitly estimates parameters for spatial covariance function
 
-Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020)  
+.xsmall[
+Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020)
+]
 
 ---
 
@@ -198,40 +199,38 @@ df <- data.frame(
 )
 df$y <- rnorm(df$true, df$true, 0.1)
 
-f1 <- mgcv::gam(y ~ s(x, k = 25, bs="bs"), data = df)
+f1 <- mgcv::gam(y ~ s(x, k = 25, bs = "bs"), data = df)
 
-knots = data.frame("x"=f1$smooth[[1]]$knots,ymin=0,ymax=1.0e10)
+knots <- data.frame("x" = f1$smooth[[1]]$knots, ymin = 0, ymax = 1.0e10)
 g1 <- ggplot(df, aes(x, y)) +
-  geom_vline(data = knots, aes(xintercept = x), col="grey30",size=0.1, linetype = "dashed") + 
+  geom_vline(data = knots, aes(xintercept = x), col = "grey20", size = 0.3, linetype = "dashed") +
   geom_point(col = "red", alpha = 0.7) +
-  theme_bw() +
+  theme(panel.grid = element_blank()) +
   xlab("") +
   ylab("Observations") +
-  geom_smooth(method = "gam", 
-              formula = y ~ s(x, bs = "bs", k = 25)) + 
-  coord_cartesian(xlim=c(0,50))
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "bs", k = 25)
+  ) +
+  coord_cartesian(xlim = c(0, 50))
 
-f2 <- mgcv::gam(y ~ s(x, k = 7, bs="bs"), data = df)
-knots = data.frame("x"=f2$smooth[[1]]$knots,ymin=0,ymax=1.0e10)
+f2 <- mgcv::gam(y ~ s(x, k = 7, bs = "bs"), data = df)
+knots <- data.frame("x" = f2$smooth[[1]]$knots, ymin = 0, ymax = 1.0e10)
 
 g2 <- ggplot(df, aes(x, y)) +
-  geom_vline(data = knots, aes(xintercept = x), col="grey30",size=0.1, linetype = "dashed") + 
+  geom_vline(data = knots, aes(xintercept = x), col = "grey20", size = 0.3, linetype = "dashed") +
   geom_point(col = "red", alpha = 0.7) +
-  theme_bw() +
+  theme(panel.grid = element_blank()) +
   xlab("") +
   ylab("Observations") +
-  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7)) + 
-  coord_cartesian(xlim=c(0,50))
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7)) +
+  coord_cartesian(xlim = c(0, 50))
 gridExtra::grid.arrange(g1, g2, ncol = 1)
-
-# TODO: overlay knots? vertical lines
 ```
 
 ---
 
 # Spatial data types
-
----
 
 * Lattice: gridded data, e.g. interpolated SST from satellite observations 
 
