@@ -132,7 +132,7 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
 * Need wiggly / smooth surface for approximating spatial complexity
 
 * Several equivalent approaches exist
-  * Smooths in mgcv()  
+  * Smooths in `mgcv()`  
   * Stochastic Partial Differential Equation (SPDE)
 
 * SPDE differs in that it explicitly estimates parameters for spatial covariance function
@@ -174,8 +174,9 @@ ggplot(df, aes(x, cov, col = nu, group = nu)) +
 
 # Predictive process models 
 
-* High dimensional datasets are computationally challenging
-  * Too many random effects if we try to estimate value at observations
+* Estimate spatial field as random effects 
+
+* High dimensional datasets computationally challenging
 
 * Gaussian process predictive process models:
   * Estimate values at a subset of locations in the time series
@@ -185,6 +186,8 @@ ggplot(df, aes(x, cov, col = nu, group = nu)) +
 ---
 
 # Predictive process models 
+
+* More knots (vertical dashed lines) = more wiggliness & parameters to estimate
 
 ```{r show-gp, fig.height=4}
 x <- seq(1, 50)
@@ -196,19 +199,30 @@ df <- data.frame(
 )
 df$y <- rnorm(df$true, df$true, 0.1)
 
-fit1 <- gam(y ~ s(x, bs = "gp", k = 25), data = df)
+f1 <- mgcv::gam(y ~ s(x, k = 25, bs="bs"), data = df)
+
+knots = data.frame("x"=f1$smooth[[1]]$knots,ymin=0,ymax=1.0e10)
 g1 <- ggplot(df, aes(x, y)) +
+  geom_vline(data = knots, aes(xintercept = x), col="grey30",size=0.1, linetype = "dashed") + 
   geom_point(col = "red", alpha = 0.7) +
   theme_bw() +
   xlab("") +
   ylab("Observations") +
-  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 25))
+  geom_smooth(method = "gam", 
+              formula = y ~ s(x, bs = "bs", k = 25)) + 
+  coord_cartesian(xlim=c(0,50))
+
+f2 <- mgcv::gam(y ~ s(x, k = 7, bs="bs"), data = df)
+knots = data.frame("x"=f2$smooth[[1]]$knots,ymin=0,ymax=1.0e10)
+
 g2 <- ggplot(df, aes(x, y)) +
+  geom_vline(data = knots, aes(xintercept = x), col="grey30",size=0.1, linetype = "dashed") + 
   geom_point(col = "red", alpha = 0.7) +
   theme_bw() +
   xlab("") +
   ylab("Observations") +
-  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7))
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7)) + 
+  coord_cartesian(xlim=c(0,50))
 gridExtra::grid.arrange(g1, g2, ncol = 1)
 
 # TODO: overlay knots? vertical lines
