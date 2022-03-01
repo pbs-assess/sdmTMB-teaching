@@ -3,7 +3,7 @@ title: "Introduction to random fields"
 subtitle: "NOAA PSAW Seminar Series"
 author: ""
 institute: ""
-date: "2022-03-02"
+date: ""
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
@@ -12,8 +12,6 @@ output:
       highlightLines: true
       countIncrementalSlides: false
 ---
-
-<!-- Previous slides: https://www.dropbox.com/s/gu43n4gvqmo0uzy/sdmTMB-intro-2021.pdf?dl=1 -->
 
 <!-- Build with: xaringan::inf_mr() -->
 
@@ -26,6 +24,7 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
+library(mgcv)
 ```
 
 # Who we are
