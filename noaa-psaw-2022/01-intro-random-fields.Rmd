@@ -560,17 +560,14 @@ ggplot() +
 
 * INLA books
 <https://www.r-inla.org/learnmore/books>
+
 ---
 
 # Simplifying mesh construction in sdmTMB
 
-* `make_mesh()` has 2 shortcuts to mesh construction
+sdmTMB has a function `make_mesh()` to quickly construct a basic mesh
 
-  1. K-means algorithm: used to cluster points (e.g., `n_knots = 100`); approach taken in VAST; sensitive to random `seed` argument!
-
-  2. Cutoff: minimum allowed distance between vertices (e.g., `cutoff = 10`)
-  
-* Alternatively, build any INLA mesh and supply it to the `mesh` argument in `make_mesh()`.
+Details in next set of slides
 
 ---
 

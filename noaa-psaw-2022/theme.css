@@ -89,4 +89,7 @@
   background-position: 50% 90%;
   background-size: 14%;
 }
-/* 90% 20%, 75% 75%;
+
+.blue .remark-inline-code {
+  color: #1e81b0 !important;
+}
