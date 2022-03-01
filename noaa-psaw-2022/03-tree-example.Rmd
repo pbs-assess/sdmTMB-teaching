@@ -26,14 +26,6 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
----
-
-class: center, middle, inverse
-
-# A first spatial model
-
----
-
 # The bei dataset
 
 .medium[
