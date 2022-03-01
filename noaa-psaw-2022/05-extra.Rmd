@@ -1,5 +1,5 @@
 ---
-title: "Troubleshooting, other packages, tips and tricks"
+title: "Related packages, troubleshooting, tips"
 subtitle: "NOAA PSAW Seminar Series"
 author: ""
 institute: ""
@@ -24,8 +24,6 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 ```{r libs, include=FALSE}
 library(sdmTMB)
 ```
-
----
 
 # Getting help
 
@@ -187,7 +185,7 @@ max(fit$gradients)
 
 # Smooth effects by year
 
-Separate smooths by year:
+For example, separate smooths by year:
 
 ```{r eval = FALSE, echo=TRUE}
 pcod$fyear <- as.factor(pcod$year)
@@ -201,24 +199,8 @@ fit <- sdmTMB(
 ```
 
 ---
-
-# 2D smooth effects
-
-year x depth as smooth interaction:
-
-```{r eval = FALSE, echo=TRUE}
-fit <- sdmTMB(
-  present ~ s(depth, year), #<<
-  data = pcod,
-  mesh = mesh,
-  family = binomial(link = "logit"),
-  spatial = "on"
-)
-```
-
----
  
-# Other warning messages / diagnostics
+# Other warning messages
 
 * `Matrix` package, compiler warnings
   * generally OK, but see glmmTMB page:  
@@ -233,22 +215,47 @@ fit <- sdmTMB(
 
 **Start simple!**
 
-* These are complex models:
-  * They may take a while to fit
-  * Easy to create configurations that won't converge
-  * Can also be hard to wrap your head around
+--
+
+These are complex models:
+
+--
+
+* May take a while to fit (`silent = FALSE`)
+
+--
+
+* Easy to create configurations that won't converge
+
+--
+
+* Can also be hard to wrap your head around
 
 ---
 
 # Words of wisdom
 
+--
+
 Options for starting simple:
-  * start intercept only
-  * start with a spatial not spatiotemporal model
-  * start without random fields:  
-    `spatial = 'off', spatiotemporal = 'off'`
-  * start with coarse meshes, maybe increase later  
-    (*mesh resolution greatly impacts speed*)
+
+--
+
+* Start intercept only
+
+--
+
+* Start with a spatial not spatiotemporal model
+
+--
+
+* Start without random fields:  
+  `spatial = 'off', spatiotemporal = 'off'`
+  
+--
+
+* Start with coarse meshes, maybe increase later  
+  .xsmall[Mesh resolution greatly impacts speed and finer is not always better; can affect convergence.]
 
 ---
 
@@ -257,28 +264,23 @@ Options for starting simple:
 
 --
 
-* Make lots of plots
+* Make lots of plots  
+  .xsmall[Plot the raw data, plot the predictions, plot the random fields, ...]
 
 --
 
-* Don't get too caught up in model configuration
-
---
-
-* Work in constant distance coordinates (e.g., UTMs)
+* Don't get too caught up in model configuration  
+  .xsmall[Many are only subtly different and can produce similar predictions]
 
 --
 
 * Consider the scale of the response and predictors
+  .xsmall[Keep parameters not too big or small]
 
 --
 
-* Try other approaches: will a similar model converge in `mgcv`?
-
---
-
-* Is observation error variance >> process variance?  
-  Known to be problematic for state-space models.
+* Consider if observation error variance >> process variance   
+  .xsmall[Known to be problematic for state-space models]
   
   
 ---
@@ -300,13 +302,13 @@ Options for starting simple:
 
 # Lots of topics not covered today
 
-* Simulation | `sdmTMB_simulate()`
-* Other kinds of residuals | `dharma_residuals()`
-* Time-varying coefficients | `time_varying = ...`
-* Spatially varying slopes | `spatial_varying = ...`
-* Interpolation over missing years | `extra_time`
-* Forecasting on future years | `extra_time`
-* Penalties/priors | `sdmTMB_priors()`
-* Cross validation | `sdmTMB_cv()`
-* Bayesian sampling with Stan | `extract_mcmc()`
-* Correlation boundaries | `add_barrier_mesh()`
+* Simulation .blue[`sdmTMB_simulate()`]
+* Other kinds of residuals .blue[`dharma_residuals()`]
+* Time-varying coefficients .blue[`time_varying = ...`]
+* Spatially varying slopes .blue[`spatial_varying = ...`]
+* Interpolation over missing years .blue[`extra_time`]
+* Forecasting on future years .blue[`extra_time`]
+* Penalties/priors .blue[`sdmTMB_priors()`]
+* Cross validation .blue[`sdmTMB_cv()`]
+* Bayesian sampling with Stan .blue[`extract_mcmc()`]
+* Correlation boundaries .blue[`add_barrier_mesh()`]
