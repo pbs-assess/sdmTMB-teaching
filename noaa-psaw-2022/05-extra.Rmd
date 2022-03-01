@@ -37,6 +37,9 @@ library(sdmTMB)
 
 *  New features to suggest? Bugs?  
   <https://github.com/pbs-assess/sdmTMB/issues>
+  
+*  Resources and reference material: 
+  <https://github.com/pbs-assess/sdmTMB/wiki/resources>
 
 ---
 
