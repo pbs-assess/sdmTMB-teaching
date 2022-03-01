@@ -3,7 +3,7 @@ title: "Introduction to sdmTMB"
 subtitle: "NOAA PSAW Seminar Series"
 author: ""
 institute: ""
-date: "2022-03-02"
+date: ""
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
@@ -12,8 +12,6 @@ output:
       highlightLines: true
       countIncrementalSlides: false
 ---
-
-<!-- Previous slides: https://www.dropbox.com/s/gu43n4gvqmo0uzy/sdmTMB-intro-2021.pdf?dl=1 -->
 
 <!-- Build with: xaringan::inf_mr() -->
 
@@ -28,17 +26,9 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
----
-
-class: center, middle, inverse
-
-# A gentle introduction to sdmTMB
-
----
-
 # sdmTMB origins
 
-* A need for reproducible code and methods for assessments [(Anderson et al. 2019)](https://www.dfo-mpo.gc.ca/csas-sccs/Publications/ResDocs-DocRech/2019/2019_041-eng.html)
+A need for reproducible code and methods for assessments [(Anderson et al. 2019)](https://www.dfo-mpo.gc.ca/csas-sccs/Publications/ResDocs-DocRech/2019/2019_041-eng.html)
 
 .center[
 <img src="images/yellowtail_synopsis.png" width="450px" height = "400px"/>
