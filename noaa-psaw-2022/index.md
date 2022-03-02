@@ -12,7 +12,7 @@ March 2nd and 9th 2022
 
 1. [Introduction to random fields](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/01-intro-random-fields.html)
 
-2. [Introduction to sdmTMB](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/03-tree-example.html)
+2. [Introduction to sdmTMB](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/02-intro-sdmTMB.html)
 
 3. [Tree spatial modelling example](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/03-tree-example.html)
 
