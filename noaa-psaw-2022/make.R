@@ -38,3 +38,5 @@ if (!PARALLEL) {
     render_separately(paste0(here::here(folder, .x), ".Rmd"))
   })
 }
+
+rmarkdown::render("noaa-psaw-2022/index.md")

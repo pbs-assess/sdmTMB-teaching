@@ -1,4 +1,6 @@
-# NOAA PSAW Workshops 
+---
+title: NOAA PSAW Workshops 
+---
 
 March 2nd and 9th 2022
 
@@ -18,7 +20,7 @@ March 2nd and 9th 2022
 
 4. [Pacific Cod spatiotemporal example](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/04-pcod-example.html)
 
-5. [Troublshooting, tips, and tricks](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/05-extra.html)
+5. [Troubleshooting, tips, and tricks](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/05-extra.html)
 
 ### Draft manuscript:
 
