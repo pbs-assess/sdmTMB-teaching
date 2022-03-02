@@ -4,8 +4,41 @@ options(ggplot2.continuous.colour = "viridis")
 options(ggplot2.continuous.fill = "viridis")
 theme_set(theme_minimal())
 
-# Set the seed so we can hopefully work with similar results
-set.seed(123)
+# ---------------------------------------------------------------------
+
+# Try simulating some random fields to see how the range and sigma affect
+# the random field.
+
+# A grid of X and Y values:
+predictor_dat <- expand.grid(
+  X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100)
+)
+mesh <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.05)
+
+# Re-run the following simulation and plotting repeatedly with
+# different values for range and sigma_O. How do these affect
+# the random field?
+# Reminder: the range is the distance at which spatial correlation is
+# effectively independent in units of X and Y.
+# The X and Y values we're looking at scale from 0 to 1.
+
+# run from here...
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.6, # Try changing this (spatial range)
+  sigma_O = 0.2, # Try changing this (spatial standard deviation)
+  phi = 0.01, # observation error standard deviation; not used
+  B = 0
+)
+ggplot(sim_dat, aes(X, Y, fill = mu)) +
+  geom_raster() +
+  scale_fill_gradient2()
+# to here, repeatedly; try changing the range and sigma_O
+
+# ---------------------------------------------------------------------
 
 # Lets work with the built-in Pacific Cod data from British Columbia in
 # Queen Charlotte Sound:
@@ -45,7 +78,8 @@ fit1 <- sdmTMB(
 )
 
 # Look at the maximum gradient and standard errors. Is this
-# indicating convergence?
+# consistent with convergence?
+max(fit1$gradients)
 fit1$sd_report
 
 # Inspect the model:
@@ -129,12 +163,13 @@ fit2 <- sdmTMB(
 
 fit2
 
-# Inspect the sd_report for fit2 -- have things converged? If so, what looks
-# larger -- tau_O (the spatial precision) or tau_E (the spatiotemporal precision)?
-# What does this mean for the spatial field -- which has larger variability?
+# Inspect the sd_report and maximum gradient for fit2 -- has the model converged?
 
 tidy(fit2, conf.int = TRUE)
 tidy(fit2, effects = "ran_pars", conf.int = TRUE)
+
+# What is larger: sigma_O (the spatial standard deviation) or 
+# sigma_E (the spatiotemporal standard deviation)?
 
 # Again, predict on the survey grid:
 p2 <- predict(fit2, newdata = qcs_grid)
@@ -218,34 +253,3 @@ ind <- get_index(pred2, bias_correct = FALSE)
 ggplot(ind, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   ylim(0, NA)
-
-# ---------------------------------------------------------------------
-
-# Try simulating some random fields to see how the range and sigma affect
-# the result.
-
-predictor_dat <- expand.grid(
-  X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100)
-)
-mesh <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.05)
-
-# Re-run the following simulation and plotting repeatedly with
-# different values for range and sigma_O:
-
-# Reminder: the range is the distance at which spatial correlation is
-# effectively independent and the scale of the square of data is from 0 to 1.
-
-sim_dat <- sdmTMB_simulate(
-  formula = ~ 1,
-  data = predictor_dat,
-  mesh = mesh,
-  family = gaussian(link = "identity"),
-  range = 0.6, # Try changing this
-  sigma_E = NULL,
-  phi = 0.01, # observation error standard deviation; not used
-  sigma_O = 0.2, # Try changing this
-  B = 0
-)
-ggplot(sim_dat, aes(X, Y, fill = mu)) +
-  geom_raster() +
-  scale_fill_gradient2()
