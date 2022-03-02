@@ -221,6 +221,9 @@ mesh <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.05)
 # Re-run the following simulation and plotting repeatedly with
 # different values for range and sigma_O:
 
+# Reminder: the range is the distance at which spatial correlation is
+# effectively independent and the scale of the square of data is from 0 to 1.
+
 sim_dat <- sdmTMB_simulate(
   formula = ~ 1,
   data = predictor_dat,
