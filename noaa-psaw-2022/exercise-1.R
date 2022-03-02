@@ -4,6 +4,9 @@ options(ggplot2.continuous.colour = "viridis")
 options(ggplot2.continuous.fill = "viridis")
 theme_set(theme_minimal())
 
+# Set the seed so we can hopefully work with similar results
+set.seed(123)
+
 # Lets work with the built-in Pacific Cod data from British Columbia in
 # Queen Charlotte Sound:
 head(pcod)
@@ -40,6 +43,10 @@ fit1 <- sdmTMB(
   spatial = "on",
   silent = FALSE
 )
+
+# Look at the maximum gradient and standard errors. Is this
+# indicating convergence?
+fit1$sd_report
 
 # Inspect the model:
 fit1
@@ -121,6 +128,10 @@ fit2 <- sdmTMB(
 )
 
 fit2
+
+# Inspect the sd_report for fit2 -- have things converged? If so, what looks
+# larger -- tau_O (the spatial precision) or tau_E (the spatiotemporal precision)?
+# What does this mean for the spatial field -- which has larger variability?
 
 tidy(fit2, conf.int = TRUE)
 tidy(fit2, effects = "ran_pars", conf.int = TRUE)
