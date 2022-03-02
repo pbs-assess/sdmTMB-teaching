@@ -178,7 +178,7 @@ fit3 <- sdmTMB(
   data = pcod,
   family = tweedie(link = "log"),
   mesh = mesh,
-  spatial = "on",4
+  spatial = "on",
   time = "year",
   spatiotemporal = "iid",
   share_range = FALSE, #<<
@@ -207,3 +207,31 @@ ind <- get_index(pred2, bias_correct = FALSE)
 ggplot(ind, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   ylim(0, NA)
+
+# ---------------------------------------------------------------------
+
+# Try simulating some random fields to see how the range and sigma affect
+# the result.
+
+predictor_dat <- expand.grid(
+  X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100)
+)
+mesh <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.05)
+
+# Re-run the following simulation and plotting repeatedly with
+# different values for range and sigma_O:
+
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.2,
+  sigma_E = NULL,
+  phi = 0.01, # observation error standard deviation; not used
+  sigma_O = 0.2,
+  B = 0 # B0 = intercept
+)
+ggplot(sim_dat, aes(X, Y, fill = mu)) +
+  geom_raster() +
+  scale_fill_gradient2()
