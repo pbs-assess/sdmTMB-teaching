@@ -26,14 +26,6 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
----
-
-class: center, middle, inverse
-
-# A basic spatial example
-
----
-
 # The Pacific Cod dataset
 
 DFO trawl survey data from Queen Charlotte Sound off BC
