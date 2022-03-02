@@ -229,11 +229,11 @@ sim_dat <- sdmTMB_simulate(
   data = predictor_dat,
   mesh = mesh,
   family = gaussian(link = "identity"),
-  range = 0.2,
+  range = 0.6, # Try changing this
   sigma_E = NULL,
   phi = 0.01, # observation error standard deviation; not used
-  sigma_O = 0.2,
-  B = 0 # B0 = intercept
+  sigma_O = 0.2, # Try changing this
+  B = 0
 )
 ggplot(sim_dat, aes(X, Y, fill = mu)) +
   geom_raster() +
