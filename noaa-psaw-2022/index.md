@@ -25,3 +25,11 @@ March 2nd and 9th 2022
 ### Draft manuscript:
 
 [Dropbox folder](https://www.dropbox.com/sh/p5ydljdycaw9x6n/AAA6W1VM-0T4c3najeQFCXtza?dl=0)
+
+### Optional exercise:
+
+<https://github.com/pbs-assess/sdmTMB-teaching/blob/main/noaa-psaw-2022/exercise-1.R>
+
+### GitHub folder for these slides:
+
+<https://github.com/pbs-assess/sdmTMB-teaching>
