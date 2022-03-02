@@ -53,9 +53,9 @@ library(mgcv)
 
 * Data often has spatial attributes
 
-* Ideal world
-  * Plug spatial excoriates into a GLM / GLMM
-  * Residuals uncorrelated  
+* Ideal world:
+  * Plug spatial covariates into a GLM / GLMM
+  * Residuals are uncorrelated  
   
 ```{r sim-rf-intro, echo=FALSE, fig.asp=0.4}
 set.seed(123)
