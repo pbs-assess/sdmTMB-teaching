@@ -29,10 +29,11 @@ library(mgcv)
 
 # Who we are
 
-* Eric Ward, Northwest Fisheries Science Center (Seattle)
-* Sean Anderson, Fisheries and Oceans Canada (Nanaimo)
-* Lewis Barnett, Alaska Fisheries Science Center (Seattle) 
-* Philina English, Fisheries and Oceans Canada (Nanaimo)
+<img src="images/intro_slide.png" width="650px" class="center" />
+<!-- * Eric Ward, Northwest Fisheries Science Center (Seattle) -->
+<!-- * Sean Anderson, Fisheries and Oceans Canada (Nanaimo) -->
+<!-- * Lewis Barnett, Alaska Fisheries Science Center (Seattle)  -->
+<!-- * Philina English, Fisheries and Oceans Canada (Nanaimo) -->
 
 ---
 
@@ -428,7 +429,8 @@ sim_dat <- sdmTMB_simulate(
 )
 
 ggplot(sim_dat, aes(X, Y, col = observed)) +
-  geom_point(alpha=0.7, size=3)
+  geom_point(alpha=0.7, size=3) + 
+  scale_color_gradient2()
 ```
  
 ---
@@ -454,7 +456,8 @@ sim_dat <- sdmTMB_simulate(
 )
 
 ggplot(sim_dat, aes(X, Y, col = observed)) +
-  geom_point(alpha=0.7, size=3)
+  geom_point(alpha=0.7, size=3) + 
+  scale_color_gradient2()
 ```
   
   
@@ -481,7 +484,8 @@ sim_dat <- sdmTMB_sim2(
 )
 
 ggplot(sim_dat, aes(X, Y, col = observed)) +
-  geom_point(alpha=0.7, size=3)
+  geom_point(alpha=0.7, size=3) + 
+  scale_color_gradient2()
 ```
 
 ---
