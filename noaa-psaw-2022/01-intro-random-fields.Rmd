@@ -550,7 +550,7 @@ ggplot() +
   * Borders with coarser resolution reduce number of triangles
   * Use minimum edge size to avoid meshes becoming too fine
   * Want fewer vertices than data points
-  * Mesh size needs to be smaller than spatial range
+  * Triangle edge size needs to be smaller than spatial range
 
 * "How to make a bad mesh?" [Haakon Bakka's book](https://haakonbakkagit.github.io/btopic114.html)
 ]
