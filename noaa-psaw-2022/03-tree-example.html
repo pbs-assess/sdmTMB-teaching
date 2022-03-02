@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Example: Spatial modeling of trees in a rainforest</title>
+    <meta charset="utf-8" />
+    <meta name="date" content="2022-03-02" />
+    <script src="libs/header-attrs-2.11/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Example: Spatial modeling of trees in a rainforest
+## NOAA PSAW Seminar Series
+### 
+### March 2, 2022
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# The bei dataset
+
+.medium[
+
+```r
+dat &lt;- data.frame(
+  x = spatstat.data::bei$x, 
+  y = spatstat.data::bei$y
+)
+head(dat)
+#&gt;       x     y
+#&gt; 1  11.7 151.1
+#&gt; 2 998.9 430.5
+#&gt; 3 980.1 433.5
+#&gt; 4 986.5 425.8
+#&gt; 5 944.1 415.1
+#&gt; 6 940.5 410.4
+```
+]
+
+---
+
+# Spatial patterning of trees
+
+* Barro Colorado Island = classic in ecology
+  * Hubbell's (2001) unified neutral theory of biodiversity
+  
+&lt;img src="03-tree-example_files/figure-html/plot-trees-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Lattice representation
+
+* Used in INLA book and other R packages ('spatstat')  
+
+&lt;img src="03-tree-example_files/figure-html/plot-trees-grid-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Should a spatial model be used?
+
+* Diagnostics: Moran's I
+
+.small[
+
+```r
+library(ape)
+inv_dists &lt;- as.matrix(dist(dat[,c("x","y")]))
+diag(inv_dists) &lt;- 0
+Moran.I(dat$n, inv_dists)
+#&gt; $observed
+#&gt; [1] -0.02739762
+#&gt; 
+#&gt; $expected
+#&gt; [1] -0.005649718
+#&gt; 
+#&gt; $sd
+#&gt; [1] 0.003478684
+#&gt; 
+#&gt; $p.value
+#&gt; [1] 4.058491e-10
+```
+]  
+
+???
+Could also fit model using `gls()` to estimate spatial range, etc.
+ 
+---
+
+# What type of distribution?
+
+* Counts
+* Skewed
+* Zero-truncated (locations of measured trees)
+
+&lt;img src="03-tree-example_files/figure-html/tree-hist-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# What type of distribution?
+
+* Likely best fit as a point process model for presence-only analysis (e.g., [Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352))
+  * could be done with a Poisson family and weights in sdmTMB
+* For simplicity, we could ignore truncation and use `nbinom2()`
+* sdmTMB has several additional families for censored data:
+  * `truncated_nbinom1()`
+  * `truncated_nbinom2()`
+  * `censored_poisson()`
+  
+---
+
+# Creating a mesh
+
+.small[
+
+```r
+mesh &lt;- make_mesh(
+  dat, 
+  xy_cols = c("x", "y"), 
+  cutoff = 80 # min. distance between knots in X-Y units
+)
+mesh$mesh$n # extract number of vertices/knots
+#&gt; [1] 78
+
+# quick visualization of mesh
+plot(mesh)
+```
+
+&lt;img src="03-tree-example_files/figure-html/make-mesh-1.png" width="340px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Fancier mesh visualizations
+
+.small[
+
+```r
+ggplot() +
+* inlabru::gg(mesh$mesh) +
+  geom_point(data = dat, aes(x = x, y = y, col = n)) +
+  coord_equal()
+```
+
+&lt;img src="03-tree-example_files/figure-html/unnamed-chunk-3-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# A first model
+
+
+```r
+fit &lt;- sdmTMB(
+  n ~ 1,
+  data = dat,
+  mesh = mesh,
+  family = truncated_nbinom2(link = "log"),
+)
+```
+
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+summary(fit)
+*#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Formula: n ~ 1
+#&gt; Mesh: mesh
+#&gt; Data: dat
+#&gt; Family: truncated_nbinom2(link = 'log')
+#&gt;             coef.est coef.se
+#&gt; (Intercept)     2.68    0.37
+#&gt; 
+#&gt; Dispersion parameter: 3.61
+#&gt; Matern range: 233.47
+#&gt; Spatial SD: 1.02
+#&gt; ML criterion at convergence: 658.755
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+summary(fit)
+#&gt; Spatial model fit by ML ['sdmTMB']
+*#&gt; Formula: n ~ 1
+*#&gt; Mesh: mesh
+*#&gt; Data: dat
+*#&gt; Family: truncated_nbinom2(link = 'log')
+#&gt;             coef.est coef.se
+#&gt; (Intercept)     2.68    0.37
+#&gt; 
+#&gt; Dispersion parameter: 3.61
+#&gt; Matern range: 233.47
+#&gt; Spatial SD: 1.02
+#&gt; ML criterion at convergence: 658.755
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+summary(fit)
+#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Formula: n ~ 1
+#&gt; Mesh: mesh
+#&gt; Data: dat
+#&gt; Family: truncated_nbinom2(link = 'log')
+*#&gt;             coef.est coef.se
+*#&gt; (Intercept)     2.68    0.37
+#&gt; 
+#&gt; Dispersion parameter: 3.61
+#&gt; Matern range: 233.47
+#&gt; Spatial SD: 1.02
+#&gt; ML criterion at convergence: 658.755
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+summary(fit)
+#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Formula: n ~ 1
+#&gt; Mesh: mesh
+#&gt; Data: dat
+#&gt; Family: truncated_nbinom2(link = 'log')
+#&gt;             coef.est coef.se
+#&gt; (Intercept)     2.68    0.37
+#&gt; 
+*#&gt; Dispersion parameter: 3.61
+*#&gt; Matern range: 233.47
+*#&gt; Spatial SD: 1.02
+#&gt; ML criterion at convergence: 658.755
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+
+---
+
+# Extracting parameters in a data frame
+
+
+```r
+# Main effects:
+tidy(fit)
+#&gt;          term estimate std.error
+#&gt; 1 (Intercept) 2.676762 0.3710164
+
+# Variance-related terms:
+tidy(fit, effects = "ran_pars")
+#&gt;      term   estimate std.error
+#&gt; 1   range 233.469561        NA
+#&gt; 3     phi   3.606950        NA
+#&gt; 4 sigma_O   1.020086        NA
+```
+
+---
+
+# Extracting parameters in a data frame
+
+.small[
+
+```r
+tidy(fit, "ran_pars", conf.int = TRUE) %&gt;%
+  as_tibble()
+#&gt; # A tibble: 3 × 5
+#&gt;   term    estimate std.error conf.low conf.high
+#&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;lgl&gt;        &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 range     233.   NA         132.       413.  
+#&gt; 2 phi         3.61 NA           2.58       5.04
+#&gt; 3 sigma_O     1.02 NA           0.780      1.33
+```
+]
+
+---
+
+# Making predictions on original data
+
+* sdmTMB has a `predict()` function just like other packages
+* For help, see `?predict.sdmTMB`
+
+.small[
+
+```r
+p &lt;- predict(fit)
+select(p, x, y, est:omega_s) %&gt;%
+  as_tibble()
+#&gt; # A tibble: 178 × 6
+#&gt;        x     y   est est_non_rf est_rf omega_s
+#&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
+#&gt;  1     0     0  3.25       2.68  0.572   0.572
+#&gt;  2     0    50  3.23       2.68  0.556   0.556
+#&gt;  3     0   100  3.22       2.68  0.540   0.540
+#&gt;  4     0   150  3.64       2.68  0.964   0.964
+#&gt;  5     0   200  4.07       2.68  1.39    1.39 
+#&gt;  6     0   250  3.62       2.68  0.948   0.948
+#&gt;  7     0   300  3.18       2.68  0.507   0.507
+#&gt;  8     0   350  3.24       2.68  0.564   0.564
+#&gt;  9     0   400  3.30       2.68  0.621   0.621
+#&gt; 10     0   450  3.38       2.68  0.708   0.708
+#&gt; # … with 168 more rows
+```
+]
+
+---
+
+# What are the columns in the prediction output?
+
+* `est`: Overall estimate **in link space** (logit here)
+* `est_non_rf`: Estimate of non-random-field components
+* `est_rf`: Estimate of random-field components
+* `omega_s`: Spatial random field
+
+---
+
+# Making predictions on new data
+
+* Let's project to the whole region (on a grid)
+* Create a new data frame for predictions
+
+.small[
+
+```r
+# makes all combinations of x and y:
+newdf &lt;- expand.grid( 
+  x = unique(dat$x),
+  y = unique(dat$y)
+)
+head(newdf)
+#&gt;     x y
+#&gt; 1   0 0
+#&gt; 2  50 0
+#&gt; 3 100 0
+#&gt; 4 150 0
+#&gt; 5 200 0
+#&gt; 6 250 0
+```
+]
+
+---
+
+# Making predictions on new data
+
+* `predict.sdmTMB()` can also take `newdata`:
+
+
+```r
+p &lt;- predict(fit, newdata = newdf)
+```
+
+See `?predict.sdmTMB`
+
+
+---
+
+# Plotting fixed effects (the intercept here)
+
+.small[
+
+```r
+*ggplot(p, aes(x, y, fill = est_non_rf)) +
+  geom_raster() +
+  coord_fixed(expand = FALSE)
+```
+
+&lt;img src="03-tree-example_files/figure-html/unnamed-chunk-8-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting spatial random effects
+
+.small[
+
+```r
+*ggplot(p, aes(x, y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed(expand = FALSE)
+```
+
+&lt;img src="03-tree-example_files/figure-html/unnamed-chunk-9-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Predictions in link (log) space
+
+.xsmall[
+
+```r
+*ggplot(p, aes(x, y, fill = est)) +
+  geom_raster() + scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE) +
+  geom_point(aes(x, y, size = n), 
+    data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
+```
+
+&lt;img src="03-tree-example_files/figure-html/unnamed-chunk-10-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Predictions in natural space
+
+
+.xsmall[
+
+```r
+# Hint: inverse link function also available in `fit$family$linkinv()`
+*ggplot(p, aes(x, y, fill = exp(est))) +
+  geom_raster() + scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE) +
+  geom_point(aes(x, y, size = n), 
+    data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
+```
+
+&lt;img src="03-tree-example_files/figure-html/unnamed-chunk-11-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
