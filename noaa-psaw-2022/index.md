@@ -22,6 +22,10 @@ March 2nd and 9th 2022
 
 5. [Troubleshooting, tips, and tricks](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/05-extra.html)
 
+### Shared Google Docs notes and questions
+
+<https://docs.google.com/document/d/1MxjLJ4Kz5ASIT15RQWApuf5xI1k-IHFTfd__rHAyuOM/edit#>
+
 ### Draft manuscript:
 
 [Dropbox folder](https://www.dropbox.com/sh/p5ydljdycaw9x6n/AAA6W1VM-0T4c3najeQFCXtza?dl=0)
