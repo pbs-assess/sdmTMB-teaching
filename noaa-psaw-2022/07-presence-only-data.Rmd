@@ -1,0 +1,247 @@
+---
+title: "Example: Spatial modeling of trees in a rainforest"
+subtitle: "NOAA PSAW Seminar Series"
+author: ""
+institute: ""
+date: "March 2, 2022"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("noaa-psaw-2022/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+
+# Spatial patterning of trees: bei dataset
+
+```{r dat, echo=FALSE}
+dat <- data.frame(
+  x = spatstat.data::bei$x, 
+  y = spatstat.data::bei$y
+)
+```
+
+```{r plot-trees, fig.asp=0.5}
+ggplot(dat, aes(x, y)) +
+  geom_point(col = "darkblue", alpha = 0.1) +
+  coord_cartesian(expand = FALSE)
+```
+
+---
+
+# Pseudo-absences  
+
+* Need to generate 0s: how? 
+  * quadrature points (Renner et al. 2015)
+  * strategy: generate regularly space or random 
+  * or in higher density where environmental variability is high
+
+* How many? 
+  * Large enough so that predictive performance does not change as more are added  
+
+
+---
+  
+
+# Pseudo-absences from sdmTMB
+
+* uniform grid strategy
+* this creates ~ 20000 points  
+
+```{r make-zeros, echo = TRUE}
+res <- 5
+zeros <- expand.grid(x = seq(0,1000, by = res),
+                    y = seq(0, 500, by = res))
+```
+
+
+---
+  
+
+# Bind the observed and pseudo-zeros together
+
+.small[
+```{r bind-dat, echo=TRUE}
+dat$present <- 1
+zeros$present <- 0
+all_dat <- rbind(dat, zeros)
+mesh <- make_mesh(
+  all_dat, 
+  xy_cols = c("x", "y"), 
+  cutoff = 25 # min. distance between knots in X-Y units
+)
+mesh$mesh$n # extract number of vertices/knots
+
+```
+]
+
+
+---
+  
+
+# Combined data 
+
+.small[
+```{r mesh-viz, fig.asp=0.5, echo=FALSE}
+all_dat$fpres <- as.factor(all_dat$present)
+ggplot() +
+  inlabru::gg(mesh$mesh) + 
+  geom_point(data = all_dat, 
+             aes(x = x, y = y, col = fpres), size=0.1, alpha=0.3) +
+  coord_equal() + 
+  guides(col=guide_legend(title="Present"))
+```
+]
+
+
+---
+  
+
+# Infinitely Weighted Logistic Regression
+
+* Fithian & Hastie (2013)
+
+```{r make-iwlr, echo=TRUE}
+# results sensitive to choice of nW
+nW <- 1.0e6
+all_dat$wt = nW^(1 - all_dat$present)
+```
+
+* weights can be passed into model of choice
+
+
+---
+  
+
+# IWLR & sdmTMB
+
+```{r}
+fit <- sdmTMB(
+  present ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  weights = all_dat$wt
+)
+```
+
+---
+
+# Inspecting the model output
+
+* But intercept and log-likelihood affected by `nW` (Renner et al. 2015)
+.small[
+```{r inspect1, echo=TRUE, highlight.output=1}
+summary(fit)
+```
+]
+
+---
+
+# Downweighted Poisson Regression
+
+* Similar to IWLR, uses different weights
+* Doesn't have same arbitrary effects on intercept, likelihood  
+
+```{r make-dwpr, echo=TRUE}
+# small values at presence locations
+all_dat$wt = 1e-6
+
+# pseudo-absences: area per quadrature point
+area <- diff(range(dat$x)) * diff(range(dat$y))
+all_dat$wt[which(all_dat$present==0)] <- 
+  area / length(which(all_dat$present==0))
+```
+
+
+---
+  
+
+# DWPR & sdmTMB
+
+```{r echo=TRUE}
+fit <- sdmTMB(
+  present/wt ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = poisson(link = "log"),
+  weights = all_dat$wt
+)
+```
+
+---
+
+# Inspecting the model output
+
+* But intercept and log-likelihood affected by `nW` (Renner et al. 2015)
+.small[
+```{r inspect2, echo=TRUE}
+summary(fit)
+```
+]
+
+
+---
+
+# Plotting spatial random effects
+
+.small[
+```{r, echo=FALSE}
+p <- predict(fit, newdata = zeros)
+ggplot(p, aes(x, y, fill = omega_s)) + 
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed(expand = FALSE)
+```
+]
+
+---
+
+# Predictions in link (log) space
+
+.xsmall[
+```{r, echo=FALSE}
+ggplot(p, aes(x, y, fill = est)) + 
+  geom_raster() + scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE)# +
+  #geom_point(aes(x, y, size = n), 
+   # data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
+```
+]
+
+---
+
+# Predictions in natural space
+
+
+.xsmall[
+```{r, echo=FALSE}
+# Hint: inverse link function also available in `fit$family$linkinv()`
+ggplot(p, aes(x, y, fill = exp(est))) +
+  geom_raster() + scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE) #+
+  #geom_point(aes(x, y, size = n), 
+  #  data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
+```
+]
+
+---
+
+# Benefits of pseudo-absence SDM
+
+* Estimate of spatial range isn't sensitive to choice of raster / lattice resolution
