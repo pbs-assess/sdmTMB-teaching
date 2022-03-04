@@ -24,15 +24,13 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
-library(ROCR)
 ```
-
 
 # Spatial patterning of trees: bei dataset
 
 ```{r dat, echo=FALSE}
 dat <- data.frame(
-  x = spatstat.data::bei$x, 
+  x = spatstat.data::bei$x,
   y = spatstat.data::bei$y
 )
 ```
@@ -47,18 +45,16 @@ ggplot(dat, aes(x, y)) +
 
 # Pseudo-absences  
 
-* Need to generate 0s: how? 
-  * quadrature points (Renner et al. 2015)
-  * strategy: generate regularly space or random 
-  * or in higher density where environmental variability is high
-
-* How many? 
-  * Large enough so that predictive performance does not change as more are added  
-
+* Need to generate 0s: how?
+  * quadrature points ([Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352))
+* Strategy?
+  * generate regularly spaced or random
+  * or generate higher density where environmental variability high
+* How many?
+  * Large enough so that predictive performance does not change as more are added
 
 ---
   
-
 # Pseudo-absences from sdmTMB
 
 * uniform grid strategy
@@ -66,13 +62,13 @@ ggplot(dat, aes(x, y)) +
 
 ```{r make-zeros, echo = TRUE}
 res <- 5
-zeros <- expand.grid(x = seq(0,1000, by = res),
-                    y = seq(0, 500, by = res))
+zeros <- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
 ```
 
-
 ---
-  
 
 # Bind the observed and pseudo-zeros together
 
@@ -82,40 +78,41 @@ dat$present <- 1
 zeros$present <- 0
 all_dat <- rbind(dat, zeros)
 mesh <- make_mesh(
-  all_dat, 
-  xy_cols = c("x", "y"), 
+  all_dat,
+  xy_cols = c("x", "y"),
   cutoff = 25 # min. distance between knots in X-Y units
 )
 mesh$mesh$n # extract number of vertices/knots
-
 ```
 ]
 
-
 ---
-  
 
 # Combined data 
+
+* blue dots are data; red grid dots are quadrature points
+* grey triangles are from the SPDE mesh
 
 .small[
 ```{r mesh-viz, fig.asp=0.5, echo=FALSE}
 all_dat$fpres <- as.factor(all_dat$present)
 ggplot() +
-  inlabru::gg(mesh$mesh) + 
-  geom_point(data = all_dat, 
-             aes(x = x, y = y, col = fpres), size=0.1, alpha=0.3) +
-  coord_equal() + 
-  guides(col=guide_legend(title="Present"))
+  inlabru::gg(mesh$mesh) +
+  geom_point(
+    data = all_dat,
+    aes(x = x, y = y, col = fpres), size = 0.1, alpha = 0.3
+  ) +
+  coord_equal() +
+  # guides(colour = guide_legend(override.aes = list(alpha = 1))) + 
+  guides(col = guide_legend(title = "Present"))
 ```
 ]
 
-
 ---
-  
 
-# Infinitely Weighted Logistic Regression
+# Infinitely Weighted Logistic Regression (IWLR)
 
-* Fithian & Hastie (2013)
+* [Fithian & Hastie (2013)](https://doi.org/10.1214/13-AOAS667)
 
 ```{r make-iwlr, echo=TRUE}
 # results sensitive to choice of nW
@@ -124,14 +121,15 @@ all_dat$wt <- nW^(1 - all_dat$present)
 ```
 
 * weights can be passed into model of choice
-  * `glm`, `glmmTMB`, etc.
+  * `glm()`, `glmmTMB()`, etc.
+  * these options don't deal with spatial correlation/latent spatial processes
+  * adding random fields makes this a "spatial log-Gaussian Cox process"
 
 ---
-  
 
 # IWLR & sdmTMB
 
-```{r echo = TRUE}
+```{r iwlr-fit, echo = TRUE}
 fit <- sdmTMB(
   present ~ 1,
   data = all_dat,
@@ -145,7 +143,8 @@ fit <- sdmTMB(
 
 # Inspecting the model output
 
-* But intercept and log-likelihood affected by `nW` (Renner et al. 2015)
+* But intercept and log-likelihood affected by `nW` ([Renner et al. 2015](https://doi.org/10.1214/13-AOAS667))
+
 .small[
 ```{r inspect1, echo=TRUE}
 summary(fit)
@@ -154,33 +153,31 @@ summary(fit)
 
 ---
 
-# Downweighted Poisson Regression
+# Downweighted Poisson Regression (DWPR)
 
 * Similar to IWLR, uses different weights
 * Doesn't have same arbitrary effects on intercept, likelihood  
 
 ```{r make-dwpr, echo=TRUE}
 # small values at presence locations
-all_dat$wt = 1e-6
+all_dat$wt <- 1e-6
 
 # pseudo-absences: area per quadrature point
 tot_area <- diff(range(dat$x)) * diff(range(dat$y))
-n_zeros <- length(which(all_dat$present==0))
+n_zeros <- length(which(all_dat$present == 0))
 
-all_dat$wt <- ifelse(all_dat$present == 1, 
-                     1e-6, tot_area / n_zeros)
-  
+all_dat$wt <- ifelse(all_dat$present == 1,
+  1e-6, tot_area / n_zeros
+)
 ```
 
-
 ---
-  
 
 # DWPR & sdmTMB
 
 ```{r fit-dwpr, echo=TRUE}
 fit <- sdmTMB(
-  present/wt ~ 1,
+  present / wt ~ 1,
   data = all_dat,
   mesh = mesh,
   family = poisson(link = "log"),
@@ -198,7 +195,6 @@ summary(fit)
 ```
 ]
 
-
 ---
 
 # Plotting spatial random effects
@@ -206,7 +202,7 @@ summary(fit)
 .small[
 ```{r plot-rf, echo=FALSE}
 p <- predict(fit, newdata = zeros)
-ggplot(p, aes(x, y, fill = omega_s)) + 
+ggplot(p, aes(x, y, fill = omega_s)) +
   geom_raster() +
   scale_fill_gradient2() +
   coord_fixed(expand = FALSE)
@@ -219,11 +215,12 @@ ggplot(p, aes(x, y, fill = omega_s)) +
 
 .xsmall[
 ```{r plot-link, echo=FALSE}
-ggplot(p, aes(x, y, fill = est)) + 
-  geom_raster() + scale_fill_viridis_c() +
-  coord_fixed(expand = FALSE)# +
-  #geom_point(aes(x, y, size = n), 
-   # data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
+ggplot(p, aes(x, y, fill = est)) +
+  geom_raster() +
+  scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE) # +
+# geom_point(aes(x, y, size = n),
+# data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
 ```
 ]
 
@@ -231,15 +228,15 @@ ggplot(p, aes(x, y, fill = est)) +
 
 # Predictions in natural space
 
-
 .xsmall[
 ```{r plot-norm, echo=FALSE}
 # Hint: inverse link function also available in `fit$family$linkinv()`
 ggplot(p, aes(x, y, fill = exp(est))) +
-  geom_raster() + scale_fill_viridis_c() +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt") +
   coord_fixed(expand = FALSE) #+
-  #geom_point(aes(x, y, size = n), 
-  #  data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
+# geom_point(aes(x, y, size = n),
+#  data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
 ```
 ]
 
@@ -249,12 +246,12 @@ ggplot(p, aes(x, y, fill = exp(est))) +
 
 * Lots of options for binary data, AUC common
 * Values near 0.5 ~ random, want close to 1
+
 ```{r auc, echo=TRUE}
 all_dat$p <- predict(fit)$est # total predictions, logit
 rocr <- ROCR::prediction(plogis(all_dat$p), all_dat$present)
 ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 ```
-
 
 ---
 
@@ -266,38 +263,40 @@ ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 
 ```{r inc-points-auc, echo=FALSE}
 dat <- data.frame(
-  x = spatstat.data::bei$x, 
+  x = spatstat.data::bei$x,
   y = spatstat.data::bei$y
 )
 
 res <- 4
-zeros <- expand.grid(x = seq(0,1000, by = res),
-                    y = seq(0, 500, by = res))
+zeros <- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
 
 dat$present <- 1
 zeros$present <- 0
 all_dat <- rbind(dat, zeros)
 mesh <- make_mesh(
-  all_dat, 
-  xy_cols = c("x", "y"), 
+  all_dat,
+  xy_cols = c("x", "y"),
   cutoff = 25 # min. distance between knots in X-Y units
 )
-#mesh$mesh$n # extract number of vertices/knots
+# mesh$mesh$n # extract number of vertices/knots
 
-all_dat$wt = 1e-6
+all_dat$wt <- 1e-6
 
 # pseudo-absences: area per quadrature point
 area <- diff(range(dat$x)) * diff(range(dat$y))
-all_dat$wt[which(all_dat$present==0)] <- 
-  area / length(which(all_dat$present==0))
+all_dat$wt[which(all_dat$present == 0)] <-
+  area / length(which(all_dat$present == 0))
 
 fit2 <- sdmTMB(
-  present/wt ~ 1,
+  present / wt ~ 1,
   data = all_dat,
   mesh = mesh,
   family = poisson(link = "log"),
   weights = all_dat$wt
-)  
+)
 
 all_dat$p <- predict(fit2)$est # total predictions, logit
 rocr <- ROCR::prediction(plogis(all_dat$p), all_dat$present)
@@ -310,43 +309,45 @@ ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 # Does decreasing pseudo-absences worsen things?
 
 * Decrease 0s from ~ 20K to 5K
-
-* AUC similar -- so 20K probably overkill for this mesh 
+* AUC similar
+* So, 20K probably overkill for this mesh 
 
 ```{r dec-points-auc, echo=FALSE}
 dat <- data.frame(
-  x = spatstat.data::bei$x, 
+  x = spatstat.data::bei$x,
   y = spatstat.data::bei$y
 )
 
 res <- 10
-zeros <- expand.grid(x = seq(0,1000, by = res),
-                    y = seq(0, 500, by = res))
+zeros <- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
 
 dat$present <- 1
 zeros$present <- 0
 all_dat <- rbind(dat, zeros)
 mesh <- make_mesh(
-  all_dat, 
-  xy_cols = c("x", "y"), 
+  all_dat,
+  xy_cols = c("x", "y"),
   cutoff = 25 # min. distance between knots in X-Y units
 )
-#mesh$mesh$n # extract number of vertices/knots
+# mesh$mesh$n # extract number of vertices/knots
 
-all_dat$wt = 1e-6
+all_dat$wt <- 1e-6
 
 # pseudo-absences: area per quadrature point
 area <- diff(range(dat$x)) * diff(range(dat$y))
-all_dat$wt[which(all_dat$present==0)] <- 
-  area / length(which(all_dat$present==0))
+all_dat$wt[which(all_dat$present == 0)] <-
+  area / length(which(all_dat$present == 0))
 
 fit2 <- sdmTMB(
-  present/wt ~ 1,
+  present / wt ~ 1,
   data = all_dat,
   mesh = mesh,
   family = poisson(link = "log"),
   weights = all_dat$wt
-)  
+)
 
 all_dat$p <- predict(fit2)$est # total predictions, logit
 rocr <- ROCR::prediction(plogis(all_dat$p), all_dat$present)
@@ -359,47 +360,49 @@ ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 
 * Change cutoff from 25 to 15
 
-* Knots changes from ~ 700 to ~ 1750
+* Knots change from ~700 to ~1750
 
 * Marginal gains in AUC with finer mesh
-  * Note: it's not adding more pseudo-absences but changing the mesh that's more important  
+  * Note: it's not adding more pseudo-absences but changing the mesh that's more important here  
   
 ```{r auc-highres-mesh, echo=FALSE}
 dat <- data.frame(
-  x = spatstat.data::bei$x, 
+  x = spatstat.data::bei$x,
   y = spatstat.data::bei$y
 )
 
 res <- 4
-zeros <- expand.grid(x = seq(0,1000, by = res),
-                    y = seq(0, 500, by = res))
+zeros <- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
 
 dat$present <- 1
 zeros$present <- 0
 all_dat <- rbind(dat, zeros)
 mesh <- make_mesh(
-  all_dat, 
-  xy_cols = c("x", "y"), 
+  all_dat,
+  xy_cols = c("x", "y"),
   cutoff = 15 # min. distance between knots in X-Y units
 )
-#mesh$mesh$n # extract number of vertices/knots
+# mesh$mesh$n # extract number of vertices/knots
 
-all_dat$wt = 1e-6
+all_dat$wt <- 1e-6
 
 # pseudo-absences: area per quadrature point
 area <- diff(range(dat$x)) * diff(range(dat$y))
-all_dat$wt[which(all_dat$present==0)] <- 
-  area / length(which(all_dat$present==0))
+all_dat$wt[which(all_dat$present == 0)] <-
+  area / length(which(all_dat$present == 0))
 
-fit2 <- sdmTMB(
-  present/wt ~ 1,
+fit3 <- sdmTMB(
+  present / wt ~ 1,
   data = all_dat,
   mesh = mesh,
   family = poisson(link = "log"),
   weights = all_dat$wt
-)  
+)
 
-all_dat$p <- predict(fit2)$est # total predictions, logit
+all_dat$p <- predict(fit3)$est # total predictions, logit
 rocr <- ROCR::prediction(plogis(all_dat$p), all_dat$present)
 ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 ```
@@ -409,3 +412,79 @@ ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 # Benefits of pseudo-absence modeling
 
 * Estimate of spatial range isn't sensitive to choice of raster / lattice resolution
+
+---
+
+# How is the result different from the truncated negative binomial?
+
+```{r compare-fit, echo=FALSE}
+dat <- data.frame(
+  x = spatstat.data::bei$x,
+  y = spatstat.data::bei$y
+)
+scale <- 30
+dat$x <- scale * floor(dat$x / scale)
+dat$y <- scale * floor(dat$y / scale)
+dat <- dplyr::group_by(dat, x, y) %>%
+  dplyr::summarise(n = n())
+
+mesh_all_dat <- make_mesh(
+  all_dat,
+  xy_cols = c("x", "y"),
+  cutoff = 25 # min. distance between knots in X-Y units
+)
+# mesh_all_dat$mesh$n
+
+mesh <- make_mesh(
+  dat, 
+  xy_cols = c("x", "y"), 
+  mesh = mesh_all_dat$mesh
+)
+# plot(mesh)
+fit_nb <- sdmTMB(
+  n ~ 1,
+  data = dat,
+  mesh = mesh,
+  family = truncated_nbinom2(link = "log"),
+)
+
+# fit_pois <- sdmTMB(
+#   n ~ 1,
+#   data = dat,
+#   mesh = mesh,
+#   family = poisson(link = "log"),
+# )
+grid <- expand.grid(
+  x = seq(min(dat$x), max(dat$x), length.out = 150),
+  y = seq(min(dat$y), max(dat$y), length.out = 150)
+)
+grid$pred_pp <- predict(fit2, grid)$est
+grid$pred_nb <- predict(fit_nb, grid)$est
+# grid$pred_poiss <- predict(fit_pois, grid)$est
+```
+
+```{r compare-fig, fig.asp=1, out.width="500px", fig.width=6}
+g1 <- ggplot(grid, aes(x, y, fill = plogis(pred_pp))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "log", breaks = c(0.001, 0.005, 0.02, 0.1)) +
+  coord_fixed(expand = FALSE) +
+  labs(fill = "Tree probability of\npresence (intensity)") +
+  ggtitle("Point process with quadrature points")
+
+# TODO: fill lab right??
+
+g2 <- ggplot(grid, aes(x, y, fill = exp(pred_nb))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "log10") +
+  coord_fixed(expand = FALSE) +
+  labs(fill = "Estimated trees\nper grid cell") +
+  ggtitle("Truncated negative binomial on binned data")
+
+# g3 <- ggplot(grid, aes(x, y, fill = pred_nb)) +
+#   geom_raster() +
+#   scale_fill_viridis_c() +
+#   coord_fixed(expand = FALSE) +
+#   ggtitle("Poisson on binned data")
+
+cowplot::plot_grid(g1, g2, ncol = 1L, align = "v")
+```
