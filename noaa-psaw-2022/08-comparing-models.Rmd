@@ -254,3 +254,30 @@ sdmTMB_stacking(model_list,
 `model_list` is a collection of models fit with `sdmTMB_cv`
 
 `optim()` is used to find the best weights $w_{i}$ to maximize the combined predictive density
+
+---
+
+# Using future
+
+sdmTMB has built-in functionality for cross-validation. If we were to set a `future::plan()`, the folds would be fit in parallel:
+
+```{r cv, warning=FALSE}
+mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 10)
+## Set parallel processing if desired:
+# library(future)
+# plan(multisession)
+m_cv <- sdmTMB_cv(
+  density ~ s(depth, k = 5),
+  data = pcod, mesh = mesh,
+  family = tweedie(link = "log"), k_folds = 2
+)
+# Sum of log likelihoods of left-out data:
+m_cv$sum_loglik
+# Expected log pointwise predictive density from left-out data:
+# (average likelihood density)
+m_cv$elpd
+```
+
+See [`?sdmTMB_cv`](https://pbs-assess.github.io/sdmTMB/reference/sdmTMB_cv.html) for more details.
+
+---
