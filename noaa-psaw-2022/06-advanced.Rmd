@@ -26,28 +26,131 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
-# Time-varying coefficients
+# Time-varying intercept
 
-Time-varying intercept:
+* Several ways in sdmTMB
+  * random effects ` + (1|year)`
+  * smooth, ` + s(year)`
+  * or as random walk (here)
 
-```{r}
+* Note: a `0` or `-1` in formula for suppressing global intercept
+
+.small[
+```{r echo = TRUE}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
   density ~ 0 + s(depth, k = 5), 
-  time_varying = ~ 1, 
+  time_varying = ~ 1, #<<
   data = pcod, mesh = mesh,
   time = "year",  
   family = tweedie(link = "log"),
   silent = FALSE # see progress
 )
 ```
+]
+
+---
+
+# Getting coefficients 
+
+Return with 
+```{r eval = FALSE}
+summary(fit)
+```
+
+Or by digging into `$sd_report`
+
+```{r eval = FALSE}
+fit$sd_report$par.random
+```
+Look for the first elements named `b_rw_t`
+
+---
+
+# Other approaches to modeling time-varying intercept
+
+```{r eval = FALSE}
+density ~ s(depth) + s(year,k=7)
+```
+
+```{r eval = FALSE}
+density ~ s(depth) + (1|year)
+```
+
+---
+
+# These approaches are equivalent
+
+* Estimates and SEs identical  
+
+```{r echo=FALSE}
+fit_sm <- sdmTMB(
+  density ~ s(depth,k=5) + s(year,k=7), 
+  data = pcod, mesh = mesh,
+  time = "year",  
+  family = tweedie(link = "log"),
+  silent = FALSE # see progress
+)
+pcod$fyear = as.factor(pcod$year)
+fit_re <- sdmTMB(
+  density ~ s(depth,k=5) + (1|fyear), 
+  data = pcod, mesh = mesh,
+  time = "year",  
+  family = tweedie(link = "log"),
+  silent = FALSE # see progress
+)
+# just make predictions on avg depth / location
+newdf = data.frame("depth"=mean(pcod$depth),
+                   "X" = mean(pcod$X),
+                   "Y" = mean(pcod$Y),
+                   year = unique(pcod$year))
+newdf$fyear = as.factor(newdf$year)
+
+pred_fit <- predict(fit, newdata = newdf, se_fit=TRUE)
+pred_fit$model = "RW"
+pred_sm <- predict(fit_sm, newdata = newdf, se_fit=TRUE)
+pred_sm$model = "Smooth"
+pred_re <- predict(fit_re, newdata = newdf, se_fit=TRUE)
+pred_re$model = "RE"
+pred = rbind(pred_fit, pred_sm, pred_re)
+
+ggplot(pred, aes(year, est, fill = model, col=model)) + 
+  geom_ribbon(aes(ymin=est - 2*est_se,ymax=est + 2*est_se),alpha=0.3,
+              col = NA) + 
+  geom_line(alpha = 0.3)
+
+```
+
+
+---
+
+# Time-varying coefficients
 
 Time-varying (random walk) effect of depth:
 
+* Intercept in this model NOT time-varying
 ```{r}
 fit <- sdmTMB(
   density ~ 1, 
-  time_varying = ~ 0 + depth_scaled + depth_scaled2,
+  time_varying = ~ 0 + depth_scaled + depth_scaled2,#<<
+  data = pcod, mesh = mesh,
+  time = "year",
+  family = tweedie(link = "log"),
+  spatial = "off",
+  spatiotemporal = "ar1",
+  silent = FALSE
+)
+```
+
+---
+
+# Time-varying coefficients
+
+* Could also model this with 2D smooth  
+  * Additional smooth complexity could be added 
+```{r}
+fit <- sdmTMB(
+  density ~ s(depth_scaled, year), #<<
   data = pcod, mesh = mesh,
   time = "year",
   family = tweedie(link = "log"),
