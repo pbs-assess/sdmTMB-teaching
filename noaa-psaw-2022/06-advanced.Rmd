@@ -125,6 +125,7 @@ ggplot(pred, aes(year, est, fill = model, col=model)) +
 
 <img src="images/spidey.jpeg" width="650px" class="center" /> 
 
+* H/T Eric Pederson
 ---
 
 # Time-varying coefficients
