@@ -30,7 +30,7 @@ library(ggplot2)
 <!-- presence only -->
 <!-- time-varying coefs -->
 <!-- spatial varying coefs -->
-<!-- forecasting -->
+<!-- forecasting? -->
 <!-- barriers?? -->
 
 # Why might we want time-varying effects?

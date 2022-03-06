@@ -1,0 +1,27 @@
+---
+title: "Forecasting with sdmTMB"
+subtitle: "NOAA PSAW Seminar Series"
+author: ""
+institute: ""
+date: "March 9, 2022"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("noaa-psaw-2022/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
