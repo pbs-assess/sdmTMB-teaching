@@ -1,13 +1,7 @@
 PARALLEL <- TRUE
 
 folder <- "noaa-psaw-2022"
-files <- c(
-  "01-intro-random-fields",
-  "02-intro-sdmTMB",
-  "03-tree-example",
-  "04-pcod-example",
-  "05-extra"
-)
+files <- list.files(folder, pattern = "\\.Rmd$")
 
 rm <- function(x) if (file.exists(x)) file.remove(x)
 rm_folder <- function(x) if (file.exists(x)) unlink(x, recursive = TRUE)
