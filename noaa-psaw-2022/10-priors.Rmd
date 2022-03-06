@@ -53,24 +53,76 @@ fit <- sdmTMB(...,
 
 # What can we put priors on?
 
-$\beta$ fixed effects
-$\phi$ Observation variance parameter
-$\rho$ AR(1) parameter
-$p$ Tweedie parameter
-$\kappa$ Matern range 
-$\sigma$ Matern variance
+$\beta$ fixed effects  
+$\phi$ Observation variance parameter  
+$\rho$ AR(1) parameter for spatiotemporal fields  
+$p$ Tweedie parameter (variance power)  
+$\kappa$ Matérn range   
+$\sigma$ Matérn variance  
 
 ---
 
 # Example: regression coefficients
 
-* Univariate
+* Simple prior on $b_{1}$
+
+* Note: don't have to specify a prior on all coefficients  
+.small[
+```{r echo=TRUE}
+mesh <- make_mesh(pcod, 
+  xy_cols = c("X", "Y"), 
+  cutoff = 10)
+fit_prior <- sdmTMB(present ~ depth,
+  data = pcod, mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(b = normal(c(4.2,NA), 
+          c(0.1,NA))) #<<
+)
+```
+]
+  
+  
+---
+
+# Example: regression coefficients
+
+```{r echo=TRUE}
+tidy(fit_prior)
+```
+  
+Compare to model without priors  
+```{r echo = FALSE}
+fit <- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off"
+)
+```
+
+```{r echo=TRUE}
+tidy(fit)
+```
 
 ---
 
 # Example: regression coefficients
 
-* Show example of MVN
+* Covariance in fixed effects can be included with `mvnormal`
+.small[
+```{r echo=TRUE, eval=FALSE}
+fit_prior <- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(b = mvnormal(b_loc, scale = b_Sigma)) #<<
+)
+```
+]
 
 ---
 
@@ -82,13 +134,21 @@ $\sigma$ Matern variance
 
 # Bounds
 
+* Sometimes we may want to put hard bounds on a parameter
+
 `?sdmTMBcontrol`
 
+* Example: constrain depth effect on occurrence to be negative  
+.small[
 ```{r eval=FALSE, echo=TRUE}
-sdmTMBcontrol(...
-              lower,#<<
-              upper,#<<
-              ...
+fit <- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  control = sdmTMBcontrol(lower = list(b_j = c(NA,NA),
+                          upper = list(b_j = c(NA,0))))
 )
 ```
-
+]
