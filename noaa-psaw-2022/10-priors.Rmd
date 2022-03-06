@@ -54,11 +54,16 @@ fit <- sdmTMB(...,
 # What can we put priors on?
 
 $\beta$ fixed effects  
-$\phi$ Observation variance parameter  
+
+$\phi$ Observation variance parameter (variance for gaussian, overdispersion for nbinom2)  
+
 $\rho$ AR(1) parameter for spatiotemporal fields  
+
 $p$ Tweedie parameter (variance power)  
-$\kappa$ Matérn range   
-$\sigma$ Matérn variance  
+
+$h$ Matérn range  
+
+$\sigma$ Matérn standard deviation
 
 ---
 
@@ -126,15 +131,119 @@ fit_prior <- sdmTMB(
 
 ---
 
-# Example: Matern
+# Example: Matérn priors
 
-* PC prior example
+* Spatial data may not be informative w.r.t. spatial range and variance
+
+* Penalized complexity (PC) priors may be useful in models converging
+  * [Fuglstad et al. 2016](https://www.tandfonline.com/doi/full/10.1080/01621459.2017.1415907?casa_token=TcqJrOvGCa4AAAAA%3AbPZ1eP-KoRmks3A-kI4QngKNDBNssNQBEAEQs98wemDSH0B_yZv_1q_f5waRhXVv2-ATm3RpmglH)  
+  
+* Penalty on complexity? 
+  * Simple random field = low variance, infinite range
+  * Complexity = increasing variance, small spatial range
+
+---
+
+# Visualizing PC prior
+
+```{r}
+inla_docs <- function(range = 1, sigma = 0.6, matern_range = 5,
+  range_prob = 0.05, matern_SD = 2, SD_prob = 0.05) {
+  d <- 2
+  prior.range <- c(matern_range, range_prob)
+  lam1 <- -log(prior.range[2])*prior.range[1]^(d/2)
+  prior.sigma <- c(matern_SD, SD_prob)
+  lam2 <- -log(prior.sigma[2])/prior.sigma[1]
+  dHalf <- d / 2.0
+  log(dHalf * lam1 * (range ^ (-1 - dHalf)) * exp(-lam1 * range ^ (-dHalf)) *
+      lam2 * exp(-lam2 * sigma))
+}
+
+
+inla_docs_log <- function(range = 1, sigma = 0.6, matern_range = 5,
+  range_prob = 0.05, matern_SD = 2, SD_prob = 0.05) {
+  d <- 2
+  dhalf <- d / 2
+  lam1 <- -log(range_prob)*matern_range^dhalf
+  lam2 <- -log(SD_prob)/matern_SD
+  log(dhalf) + log(lam1) + log(range^(-1 - dhalf)) - lam1 * range^-dhalf + 
+    log(lam2) - lam2 * sigma
+}
+
+ranges <- seq(0.05, 10, length.out = 150) # adjust as needed
+sigmas <- seq(0.01, 1.8, length.out = 151) # adjust as needed
+
+id <- data.frame(Var2 = seq_along(ranges), range = ranges)
+id1 <- data.frame(Var1 = seq_along(sigmas), sigma = sigmas)
+out <- sapply(ranges, function(.range) {
+  sapply(sigmas, function(.sigma) {
+    inla_docs_log(.range, .sigma, matern_range = 1, matern_SD = 1.5, # adjust as needed
+      range_prob = 0.05, SD_prob = 0.05)  # adjust as needed
+  })
+})
+reshape2::melt(out) %>%
+  dplyr::left_join(id, by = "Var2") %>%
+  dplyr::left_join(id1, by = "Var1") %>%
+  ggplot(aes(range, sigma, fill = exp(value))) + geom_raster() +
+  scale_fill_viridis_c(option = "B") +
+  coord_cartesian(expand = FALSE) +
+  labs(fill = "Density") +
+  geom_vline(xintercept = 1, col = "white") +
+  geom_hline(yintercept = 1.5, col = "white")
+```
+
+---
+
+# Implementing PC prior: spatial random field
+
+.small[
+```{r echo=TRUE, eval=FALSE}
+fit_prior <- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 10, #<<
+                                             sigma_lt = 3,#<<
+                                             range_prob = 0.05,#<<
+                                             sigma_prob = 0.05)) #<<
+)
+```
+]
+
+---
+
+# PC priors parameterized in terms of thresholds
+
+* $Pr(h > $ range_gt $)$ = range_prob
+* $Pr(\sigma < $ sigma_lt $)$ = sigma_prob
+```{r echo = TRUE, eval = FALSE}
+pc_matern(range_gt = 10, range_prob = 0.05,#<<
+          sigma_lt = 3, sigma_prob = 0.05)#<<
+```
+
+---
+
+# Using PC priors with spatiotemporal model
+
+* Is range $h$ shared? `share_range` argument
+  * if so, probably not needed to specify 2 sets of PC priors
+  
+* For model without shared ranges, can specify separate PC priors
+
+```{r echo = TRUE, eval = FALSE}
+priors = sdmTMBpriors(matern_s = pc_matern(...),
+                      matern_st = pc_matern(...))
+```
+
 
 ---
 
 # Bounds
 
 * Sometimes we may want to put hard bounds on a parameter
+* All optional, lower/upper both need not be specified
 
 `?sdmTMBcontrol`
 
@@ -147,8 +256,8 @@ fit <- sdmTMB(
   mesh = mesh,
   family = binomial(link = "logit"),
   spatiotemporal = "off",
-  control = sdmTMBcontrol(lower = list(b_j = c(NA,NA),
-                          upper = list(b_j = c(NA,0))))
+  control = sdmTMBcontrol(lower = list(b_j = c(NA,NA),#<<
+                          upper = list(b_j = c(NA,0))))#<<
 )
 ```
 ]
