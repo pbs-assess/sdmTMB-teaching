@@ -100,10 +100,11 @@ fit_sm <- sdmTMB(
   family = tweedie(link = "log"),
   silent = FALSE # see progress
 )
-pcod$fyear <- as.factor(pcod$year)
+nd <- pcod
+nd$fyear <- as.factor(nd$year)
 fit_re <- sdmTMB(
   density ~ s(depth, k = 5) + (1 | fyear),
-  data = pcod, mesh = mesh,
+  data = nd, mesh = mesh,
   time = "year",
   family = tweedie(link = "log"),
   silent = FALSE # see progress
