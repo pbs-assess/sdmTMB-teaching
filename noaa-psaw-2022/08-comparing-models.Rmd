@@ -35,11 +35,13 @@ library(ggplot2)
   * balance of bias-variance tradeoff
 
 * Not all metrics appropriate for all applications
+
 ---
 
 # Too many metrics to discuss
 
 * Root mean squared error 
+
 * AUC (see pseudo-absence example)
   * true and false positive rates
 
@@ -52,12 +54,14 @@ library(ggplot2)
 # AIC and likelihood with sdmTMB
 
 * `AIC()` and `logLik()` functions work like `glm`  
+
 ```{r echo=TRUE, eval=FALSE}
-mesh <- make_mesh(pcod, 
-                  xy_cols = c("X", "Y"), 
-                  cutoff = 10)
+mesh <- make_mesh(pcod,
+  xy_cols = c("X", "Y"),
+  cutoff = 10
+)
 fit <- sdmTMB(
-  present ~ 1, 
+  present ~ 1,
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
@@ -91,9 +95,9 @@ fit <- sdmTMB(
 
 Random effects include
 
-* random intercepts, `(1|group)`
+* random intercepts, `(1 | group)`
 * smooth terms, `s(year)`
-* time varying parameters 
+* time-varying coefficients
 * spatially varying coefficients
 * all random fields
 
@@ -139,21 +143,23 @@ Vehtari, Gelman, and Gabry (2017)
 # Cross validation in sdmTMB
 
 ```{r echo=FALSE}
-mesh <- make_mesh(pcod, 
-                  xy_cols = c("X", "Y"), 
-                  cutoff = 10)
+mesh <- make_mesh(pcod,
+  xy_cols = c("X", "Y"),
+  cutoff = 10
+)
 ```
+
 .small[
 ```{r echo=TRUE}
-fit <- sdmTMB_cv(#<<
-  present ~ 1, 
+fit <- sdmTMB_cv( #<<
+  present ~ 1,
   data = pcod,
   mesh = mesh,
   family = binomial(link = "logit"),
-  k_folds = 8,#<<
-  fold_ids = NULL,#<<
-  parallel = TRUE,#<<
-  use_initial_fit = FALSE#<<
+  k_folds = 8, #<<
+  fold_ids = NULL, #<<
+  parallel = TRUE, #<<
+  use_initial_fit = FALSE #<<
 )
 ```
 ]
@@ -166,7 +172,7 @@ fit <- sdmTMB_cv(#<<
 
 # Cross validation in sdmTMB
 
-sdmTMB_cv returns:  
+`sdmTMB_cv()` returns:  
 
 A list of models (each `sdmTMB` object)  
 
@@ -191,7 +197,7 @@ A list of models (each `sdmTMB` object)
 * How to sample with time / years? 
   * LOOCV v LFOCV
 
-* sdmTMB_cv does random fold assignment
+* `sdmTMB_cv()` does random fold assignment
   * Custom folds specified with `fold_ids`
 
 ---
@@ -203,9 +209,9 @@ Test data creation agnostic to space
 ```{r echo = TRUE, eval=TRUE}
 set.seed(123)
 data(pcod)
-test <- pcod %>% 
-    group_by(year) %>% 
-    sample_n(25) # 230 - 250 samples / year
+test <- pcod %>%
+  group_by(year) %>%
+  sample_n(25) # 230 - 250 samples / year
 ```
 
 ---
@@ -213,8 +219,9 @@ test <- pcod %>%
 # Illustration
 
 ```{r fig.asp=0.6}
-ggplot(test, aes(X,Y)) + 
-  geom_point() + facet_wrap(~year)
+ggplot(test, aes(X, Y)) +
+  geom_point() +
+  facet_wrap(~year)
 ```
 
 
@@ -248,7 +255,8 @@ $$p(y^* | y) = \sum_{i=1}^{M} w_{i} p(y^*|y, m_{i})$$
 
 ```{r eval = FALSE, echo=TRUE}
 sdmTMB_stacking(model_list,
-                include_folds = NULL)
+  include_folds = NULL
+)
 ```
 
 `model_list` is a collection of models fit with `sdmTMB_cv`
