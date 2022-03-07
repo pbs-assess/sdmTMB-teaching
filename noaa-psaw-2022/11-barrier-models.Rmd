@@ -1,0 +1,113 @@
+---
+title: "Barrier models"
+subtitle: "NOAA PSAW Seminar Series"
+author: ""
+institute: ""
+date: "March 9, 2022"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("noaa-psaw-2022/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+library(sf)
+```
+
+# Adding a barrier mesh
+
+Why? 
+  * Coastlines / Islands / lakes (Bakka 2016) 
+
+.center[
+<img src="images/bakka_2016.png" width="450px" height = "400px"/>
+]
+
+---  
+
+# Adding a barrier mesh in INLA
+
+Specify `boundary` attribute to `inla.mesh.2d`  
+
+```{r, eval=FALSE, echo=TRUE}
+mesh <- inla.mesh.2d(boundary = poly,
+                     ...)
+```
+
+poly created as `sp` object  
+[INLA book](https://becarioprecario.bitbucket.io/spde-gitbook/ch-nonstationarity.html#ch:barrier)  
+[Haakon Bakka book](https://haakonbakkagit.github.io/btopic128.html)
+
+---  
+
+# Example: trawl surveys from Salish Sea
+
+WDFW has extensive survey data on US side of border
+  * described and analyzed in [Essington et al. (2021)](https://www.int-res.com/abstracts/meps/v657/p173-189/)
+
+We'll use single snapshot (2011), focusing on presence-absence of Dungeness crab
+
+---  
+
+# Crab data
+
+```{r load-crabs, echo=TRUE}
+crabs = readRDS("data/crabs.rds")
+crabs$present = as.factor(crabs$crab)
+
+ggplot(crabs, aes(lon,lat,col = present)) + 
+  geom_point()
+```
+
+---  
+
+# Get coastline data
+
+```{r eval=FALSE echo=TRUE}
+remotes::install_github("ropensci/rnaturalearthhires")
+
+map_data <- rnaturalearth::ne_countries(
+scale = "large",
+returnclass = "sf")
+
+puso <- suppressWarnings(suppressMessages(
+  st_crop(map_data,
+  c(xmin = -125, ymin = 48, xmax = -122, ymax = 49.5))))
+
+crs_utm10 <- 3157 # Pick a projection, here UTM9
+
+st_crs(puso) <- 4326 # 'WGS84'; necessary on some installs
+puso <- st_transform(puso, crs_utm10)
+
+# Project our survey data coordinates:
+survey <- crabs %>% 
+  st_as_sf(crs = 4326, coords = c("lon", "lat")) %>%
+  st_transform(crs_utm10)
+
+# Plot our coast and survey data:
+ggplot(puso) +
+  geom_sf() +
+  geom_sf(data = survey, size = 0.5)
+```
+
+
+
+---  
+
+# Crab data
+
+
+
