@@ -46,7 +46,7 @@ library(ggplot2)
   * true and false positive rates
 
 * AIC: widely used tool in ecology
-  * $AIC = -2logL + 2K$
+  * $\mathrm{AIC} = -2 \log L + 2K$
   * designed for fixed effects models (Burnham and Anderson 2002)
   
 ---
@@ -134,7 +134,7 @@ Random effects include
 * expected log pointwise predictive density
   * interpreted as theoretical expectation for new dataset  
   
-ELPD: $\frac{log(\sum(exp(logL(y^*|\theta))))} {N}$
+ELPD: $\frac{\log ( \sum( \exp( \log L(y^*|\theta))))} {N}$
 
 Vehtari, Gelman, and Gabry (2017)  
 
@@ -188,17 +188,19 @@ A list of models (each `sdmTMB` object)
 
 # How to choose folds? How many?
 
+.small[
 * Words of wisdom:
-  * Highly variable based on data, folds, sampling scheme
+  * Can be gighly variable based on data, folds, sampling scheme
   
 * Spatial sampling or random?
   * `blockCV` R package, Valavi et al. (2019)
   
 * How to sample with time / years? 
-  * LOOCV v LFOCV
+  * LOOCV (leave-one-out...) v. LFOCV (leave-future-out...)
 
 * `sdmTMB_cv()` does random fold assignment
   * Custom folds specified with `fold_ids`
+]
 
 ---
 
@@ -259,9 +261,11 @@ sdmTMB_stacking(model_list,
 )
 ```
 
-`model_list` is a collection of models fit with `sdmTMB_cv`
+* `model_list` is a collection of models fit with `sdmTMB_cv`
 
-`optim()` is used to find the best weights $w_{i}$ to maximize the combined predictive density
+* `optim()` is used to find the best weights $w_{i}$ to maximize the combined predictive density
+
+* Not in `main` branch yet
 
 ---
 
