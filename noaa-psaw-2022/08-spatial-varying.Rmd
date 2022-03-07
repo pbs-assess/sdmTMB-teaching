@@ -33,11 +33,19 @@ library(ggplot2)
 # When might we want a spatially varying coefficient?
 
 * When we suspect non-local effects of a regional forcing, that varies spatially
-  * e.g., the influence of ENSO depends on latitude
+  * e.g., the influence of ENSO depends on latitude; influence of Bering Sea cold pool on pollock
+  
+* When the question requires evaluating change at fine spatial scales
+  * e.g., there is no directional trend in species distribution shifts at broad scales, due to nuanced or opposing patterns over space being obscured 
 ---
 
-# Ecography paper figure here...
+# Ex: scale-dependent interpretation of species distribution shifts
 
+<img src="images/local_trend_COG_atf_ecography_2021.png" width="1000px" class="center" />
+
+.tiny[
+[Barnett, L.A.K., Ward, E.J. & Anderson, S.C. Improving estimates of species distribution change by incorporating local trends. Ecography, 44: 427-439. (2021)](https://doi.org/10.1111/ecog.05176)
+]
 ---
 
 # Spatially varying coefficients in sdmTMB
@@ -98,4 +106,4 @@ ggplot(p, aes(X, Y, fill = zeta_s)) + geom_raster() +
 * Predictor should be roughly mean zero and SD of 1 to help with estimation
 * Current sdmTMB limited to one effect; an unlimited version is in development in a branch
 
-See [vignette](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
+See vignette: [Fitting spatial trend models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
