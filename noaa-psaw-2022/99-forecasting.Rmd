@@ -24,4 +24,253 @@ do.call(knitr::opts_chunk$set, knitr_opts)
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
+data("pcod")
 ```
+
+# Types of forecasting we might be interested in 
+
+* Forecasting in time  
+  * missed survey year?
+  * future year
+  
+* Forecasting in space
+  * unsampled area (MPA, area beyond existing domain)
+
+---
+
+# Adding time steps
+
+* pretend data doesn't exist after 2013
+.small[
+```{r fit-extra, echo = TRUE, eval=FALSE}
+mesh <- make_mesh(dplyr::filter(pcod,year<2014), 
+  xy_cols = c("X", "Y"), cutoff = 10)
+fit <- sdmTMB(
+  present ~ s(depth), 
+  time = "year",  #<<
+  extra_time = c(2015L, 2016L, 2017L),  #<<
+  spatiotemporal = "AR1",#<<
+  data = dplyr::filter(pcod,year<2014),
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"   #<<
+)
+```
+]
+
+---
+
+# Predicting to missing / future years
+
+* Can't predict with IID spatiotemporal random fields  
+* Can't predict with years as factors  
+
+* Options: 
+  * Smooth over year, `s(year)` vs ignore year
+  * RW / AR(1) spatiotemporal fields vs no spatiotemporal field
+
+* Which of these approaches will likely have the highest uncertainty? The lowest? 
+
+---
+
+# Smooth year effect
+
+* Spatial only  
+
+```{r fit-spatial, echo=FALSE, eval=TRUE}
+mesh <- make_mesh(pcod, 
+  xy_cols = c("X", "Y"), cutoff = 10)
+
+fit <- sdmTMB(
+  present ~ s(depth) + s(year), #<<
+  time = "year",  
+  extra_time = c(2012, 2014, 2018:2025), 
+  spatiotemporal = "off",
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"  
+)
+
+nd <- data.frame("year" = unique(fit$data$year),
+                 "depth" = mean(pcod$depth),
+                 "X" = mean(pcod$X), "Y" = mean(pcod$Y))
+predictions <- predict(fit, newdata = nd, se_fit=TRUE)
+predictions$survey = ifelse(predictions$year %in% unique(pcod$year),"Y","N")
+
+ggplot(predictions, aes(year, est)) + 
+  geom_ribbon(aes(ymin=est-2*est_se, ymax = est+2*est_se), alpha=0.3) + 
+  geom_line() + 
+  geom_point(data = dplyr::filter(predictions, survey=="Y"), aes(year,est),col="blue")
+  
+```
+
+---
+
+# AR(1) spatiotemporal fields
+
+* No year effect
+
+```{r fit-ar1, echo=FALSE, eval=TRUE}
+mesh <- make_mesh(pcod, 
+  xy_cols = c("X", "Y"), cutoff = 10)
+
+fit <- sdmTMB(
+  present ~ s(depth), #<<
+  time = "year",  
+  extra_time = c(2012, 2014, 2018:2025), 
+  spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"  
+)
+
+nd <- data.frame("year" = unique(fit$data$year),
+                 "depth" = mean(pcod$depth),
+                 "X" = mean(pcod$X), "Y" = mean(pcod$Y))
+predictions <- predict(fit, newdata = nd, se_fit=TRUE)
+predictions$survey = ifelse(predictions$year %in% unique(pcod$year),"Y","N")
+
+ggplot(predictions, aes(year, est)) + 
+  geom_ribbon(aes(ymin=est-2*est_se, ymax = est+2*est_se), alpha=0.3) + 
+  geom_line() + 
+  geom_point(data = dplyr::filter(predictions, survey=="Y"), aes(year,est),col="blue")
+  
+```
+---
+
+
+# AR(1) spatiotemporal fields + smooth year effect
+
+
+```{r fit-ar1-smooth, echo=FALSE, eval=TRUE}
+mesh <- make_mesh(pcod, 
+  xy_cols = c("X", "Y"), cutoff = 10)
+
+fit <- sdmTMB(
+  present ~ s(depth) + s(year), #<<
+  time = "year",  
+  extra_time = c(2012, 2014, 2018:2025), 
+  spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"  
+)
+
+nd <- data.frame("year" = unique(fit$data$year),
+                 "depth" = mean(pcod$depth),
+                 "X" = mean(pcod$X), "Y" = mean(pcod$Y))
+predictions <- predict(fit, newdata = nd, se_fit=TRUE)
+predictions$survey = ifelse(predictions$year %in% unique(pcod$year),"Y","N")
+
+ggplot(predictions, aes(year, est)) + 
+  geom_ribbon(aes(ymin=est-2*est_se, ymax = est+2*est_se), alpha=0.3) + 
+  geom_line() + 
+  geom_point(data = dplyr::filter(predictions, survey=="Y"), aes(year,est),col="blue")
+  
+```
+
+---
+
+
+# Spatial forecasting / predicting to new areas
+
+* Previously explored BEI tree dataset  
+
+```{r echo=FALSE, eval=TRUE}
+dat <- data.frame(
+  x = spatstat.data::bei$x, 
+  y = spatstat.data::bei$y
+)
+ggplot(dat, aes(x, y)) +
+  geom_point(col = "darkblue", alpha = 0.1) +
+  coord_cartesian(expand = FALSE)
+```
+
+---
+
+# Mesh more uncertain in unsampled areas
+
+```{r}
+# scale controls resolution
+scale <- 50
+dat$x <- scale * floor(dat$x / scale)
+dat$y <- scale * floor(dat$y / scale)
+
+dat <- dplyr::group_by(dat, x, y) %>%
+  dplyr::summarise(n = n())
+
+mesh <- make_mesh(
+  dat, 
+  xy_cols = c("x", "y"), 
+  cutoff = 80 # min. distance between knots in X-Y units
+)
+#mesh$mesh$n # extract number of vertices/knots
+
+# quick visualization of mesh
+plot(mesh)
+```
+
+---
+
+# Re-fitting the model  
+
+Intercept only, 1 time slice  
+
+```{r fit-model, echo=TRUE}
+fit <- sdmTMB(
+  n ~ 1,
+  data = dat,
+  mesh = mesh,
+  family = truncated_nbinom2(link = "log"),
+)
+```
+
+---
+
+# Predict to grid  
+
+* Slower, but include `se_fit = TRUE`  
+
+```{r pred-fit, echo=TRUE, eval=TRUE}
+# makes all combinations of x and y:
+newdf <- expand.grid( 
+  x = seq(min(dat$x), max(dat$x), 5),
+  y = seq(min(dat$y), max(dat$y), 5)
+)
+p <- predict(fit, 
+  newdata = newdf, se_fit = TRUE)
+```
+
+---
+ 
+# Visualizing uncertainty
+
+```{r}
+ggplot() +
+  inlabru::gg(mesh$mesh) + 
+  geom_point(data = p, aes(x = x, y = y, col = est_se)) +
+  coord_equal()
+```
+
+---
+ 
+# Predicting outside the survey domain
+
+* Predict into border area  
+```{r pred-fit2, echo=FALSE, eval=TRUE}
+# makes all combinations of x and y:
+newdf <- expand.grid( 
+  x = seq(min(dat$x) - 100, max(dat$x) + 100, 5),
+  y = seq(min(dat$y) - 100, max(dat$y)+ 100, 5)
+)
+p <- predict(fit, 
+  newdata = newdf, se_fit = TRUE)
+ggplot() +
+  inlabru::gg(mesh$mesh) + #<<
+  geom_point(data = p, aes(x = x, y = y, col = est_se)) +
+  coord_equal()
+```
+
