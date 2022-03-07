@@ -35,6 +35,8 @@ library(ggplot2)
 
 # Why might we want time-varying effects?
 
+* Evolving responses 
+* Relationships influenced by unmeasured covariates (e.g. temperature and depth)
 * TODO
 
 ---
