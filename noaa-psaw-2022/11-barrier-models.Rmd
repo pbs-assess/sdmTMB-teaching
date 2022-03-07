@@ -201,3 +201,12 @@ tidy(fit,"ran_pars",conf.int = TRUE)
 tidy(fit_barrier,"ran_pars",conf.int = TRUE)
 ```
 
+---
+
+# Conclusions
+
+* Accounting for the barrier changes inference about spatial process
+
+* Without: less complexity in spatial field (large range, small variance)
+
+* With: larger spatial variation, much smaller range
