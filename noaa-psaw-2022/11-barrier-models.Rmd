@@ -65,6 +65,7 @@ We'll use single snapshot (2011)
 
 # Crab data
 
+.small[
 ```{r load-crabs, echo=TRUE, fig.asp=0.5}
 crabs = readRDS(here::here("noaa-psaw-2022/data/crabs.rds"))
 crabs$present = as.factor(crabs$crab)
@@ -72,7 +73,7 @@ crabs$present = as.factor(crabs$crab)
 ggplot(crabs, aes(lon,lat,col = present)) + 
   geom_point()
 ```
-
+]
 ---
 
 # Get coastline data for Puget Sound
@@ -129,7 +130,7 @@ crabs$Xkm <- surv_utm_coords[,1] / 1000
 crabs$Ykm <- surv_utm_coords[,2] / 1000
 
 spde <- make_mesh(crabs, xy_cols = c("Xkm", "Ykm"),
-  cutoff = 5)
+  cutoff = 7)
 ```
 ]
 
