@@ -138,19 +138,21 @@ cbind(est$b_rw_t, est_se$b_rw_t)
 ---
 
 # Other approaches to modeling time-varying intercept
-
+.small[
 ```{r eval = FALSE, echo=TRUE}
 density ~ s(depth) + 0 + as.factor(year)
 ```
-
+]
+.small[
 ```{r eval = FALSE, echo=TRUE}
 density ~ s(depth) + (1 | year)
 ```
-
+]
+.small[
 ```{r eval = FALSE, echo=TRUE}
-density ~ s(depth) + s(year, k = 7) # 7 years; not necessary
+density ~ s(depth) + s(year, k = 7) # 7 years; unnecessary
 ```
-
+]
 ---
 
 # These approaches are similar but subtly different
