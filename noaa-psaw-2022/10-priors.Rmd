@@ -254,8 +254,7 @@ fit <- sdmTMB(
   present ~ depth,
   data = pcod,
   mesh = mesh,
-  family = binomial(link = "logit"),
-  spatiotemporal = "off",
+  ...,
   control = sdmTMBcontrol(lower = list(b_j = c(NA,NA),#<<
                           upper = list(b_j = c(NA,0))))#<<
 )
