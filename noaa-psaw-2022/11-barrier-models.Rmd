@@ -42,15 +42,15 @@ Why?
 
 Specify `boundary` attribute to `inla.mesh.2d`  
 
-```{r, eval=FALSE, echo=TRUE}
+```{r inla-mesh, eval=FALSE, echo=TRUE}
 mesh <- inla.mesh.2d(boundary = poly,
                      ...)
 ```
 
 poly created as `sp` object  
 [INLA book](https://becarioprecario.bitbucket.io/spde-gitbook/ch-nonstationarity.html#ch:barrier)  
-[Haakon Bakka book](https://haakonbakkagit.github.io/btopic128.html)
-
+[Haakon Bakka book](https://haakonbakkagit.github.io/btopic128.html)  
+  
 ---  
 
 # Example: trawl surveys from Salish Sea
@@ -74,40 +74,112 @@ ggplot(crabs, aes(lon,lat,col = present)) +
 
 ---  
 
-# Get coastline data
+# Get coastline data for Puget Sound
 
-```{r eval=FALSE echo=TRUE}
+.small[
+```{r eval=FALSE, echo=TRUE}
 remotes::install_github("ropensci/rnaturalearthhires")
-
 map_data <- rnaturalearth::ne_countries(
 scale = "large",
 returnclass = "sf")
 
 puso <- suppressWarnings(suppressMessages(
   st_crop(map_data,
-  c(xmin = -125, ymin = 48, xmax = -122, ymax = 49.5))))
-
+  c(xmin = -125, ymin = 47, xmax = -122, ymax = 49))))
 crs_utm10 <- 3157 # Pick a projection, here UTM9
 
 st_crs(puso) <- 4326 # 'WGS84'; necessary on some installs
 puso <- st_transform(puso, crs_utm10)
 
+```
+]
+
+---  
+
+# Project and plot  
+
+.small[
+```{r proj-plot, echo=TRUE, eval=TRUE}
+puso <- readRDS("data/puso.rds")
 # Project our survey data coordinates:
 survey <- crabs %>% 
   st_as_sf(crs = 4326, coords = c("lon", "lat")) %>%
-  st_transform(crs_utm10)
-
-# Plot our coast and survey data:
+  st_transform(3157) # utm zone 10
+# coastline and data:
 ggplot(puso) +
   geom_sf() +
   geom_sf(data = survey, size = 0.5)
 ```
-
-
+]
 
 ---  
 
-# Crab data
+# Make the mesh
 
+.small[
+```{r mesh, echo=TRUE, eval=TRUE}
+# Extract the coordinates:
+surv_utm_coords <- st_coordinates(survey)
 
+# Scale coordinates to km so the range parameter
+# is on a reasonable scale for estimation:
+crabs$Xkm <- surv_utm_coords[,1] / 1000
+crabs$Ykm <- surv_utm_coords[,2] / 1000
+
+spde <- make_mesh(crabs, xy_cols = c("Xkm", "Ykm"),
+  cutoff = 5)
+```
+]
+
+---  
+
+# Plotting the initial mesh 
+
+```{r plot-mesh, echo=FALSE}
+plot(spde)
+```
+
+---  
+
+# Adding barrier mesh
+
+Use `add_barrier_mesh()`  
+
+```{r barrier, echo=TRUE, eval=FALSE}
+# Add on the barrier mesh component:
+bspde <- add_barrier_mesh(
+  spde_obj = spde, 
+  barrier_sf = puso, 
+  range_fraction = 0.1,
+  proj_scaling = 1000, 
+  plot = FALSE
+)
+```
+
+---  
+
+# Custom plotting of barrier mesh
+
+```{r plot-barrier, echo=FALSE, eval=FALSE}
+mesh_df_water <- bspde$mesh_sf[bspde$normal_triangles, ]
+mesh_df_land <- bspde$mesh_sf[bspde$barrier_triangles, ]
+ggplot(puso) +
+  geom_sf() +
+  geom_sf(data = mesh_df_water, size = 1, colour = "blue") +
+  geom_sf(data = mesh_df_land, size = 1, colour = "green")
+```
+
+---  
+
+# Fitting the model  
+
+* Fit model as before with a barrier mesh
+```{r fit-model, echo = TRUE}
+fit <- sdmTMB(present ~ 1, 
+  data = crabs, 
+  mesh = bspde,
+  family = binomial(link = "logit"))
+fit
+
+```
 
