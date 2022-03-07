@@ -33,7 +33,7 @@ Why? Spatial correlation affected by:
   * Coastlines / Islands / lakes (Bakka 2016) 
 
 .center[
-<img src="images/bakka_2016.png" width="450px" height = "400px"/>
+<img src="noaa-psaw-2022/images/bakka_2016.png" width="450px" height = "400px"/>
 ]
 
 ---  
@@ -66,7 +66,7 @@ We'll use single snapshot (2011)
 # Crab data
 
 ```{r load-crabs, echo=TRUE, fig.asp=0.5}
-crabs = readRDS("data/crabs.rds")
+crabs = readRDS(here::here("noaa-psaw-2022/data/crabs.rds"))
 crabs$present = as.factor(crabs$crab)
 
 ggplot(crabs, aes(lon,lat,col = present)) + 
@@ -101,7 +101,7 @@ puso <- st_transform(puso, crs_utm10)
 
 .small[
 ```{r echo=FALSE}
-puso <- readRDS("data/puso.rds")
+puso <- readRDS(here::here("noaa-psaw-2022/data/puso.rds"))
 
 ```
 ```{r proj-plot, echo=TRUE, eval=TRUE, fig.asp=0.5}
@@ -147,7 +147,7 @@ plot(spde)
 
 Use `add_barrier_mesh()`  
 
-```{r barrier, echo=TRUE, eval=FALSE}
+```{r barrier, echo=TRUE, eval=TRUE}
 # Add on the barrier mesh component:
 bspde <- add_barrier_mesh(
   spde_obj = spde, 
