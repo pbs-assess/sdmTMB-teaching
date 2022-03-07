@@ -42,6 +42,7 @@ Spatially varying effect of time:
 
 ```{r spat-varying-fit, echo=TRUE}
 pcod$year_scaled <- as.numeric(scale(pcod$year))
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
   density ~ s(depth, k = 5) + year_scaled,
   spatial_varying = ~ 0 + year_scaled, #<<
