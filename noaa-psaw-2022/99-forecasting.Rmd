@@ -40,11 +40,13 @@ data("pcod")
 
 # Adding time steps
 
-* pretend data doesn't exist after 2013
+* pretend data doesn't exist after 2013  
+
 .small[
 ```{r fit-extra, echo = TRUE, eval=FALSE}
 mesh <- make_mesh(dplyr::filter(pcod,year<2014), 
-  xy_cols = c("X", "Y"), cutoff = 10)
+  xy_cols = c("X", "Y"), cutoff = 10)  
+
 fit <- sdmTMB(
   present ~ s(depth), 
   time = "year",  #<<
@@ -247,6 +249,8 @@ p <- predict(fit,
 ---
  
 # Visualizing uncertainty
+
+* Why is uncertainty higher at vertices?  
 
 ```{r}
 ggplot() +
