@@ -94,4 +94,4 @@ ggplot(p, aes(X, Y, fill = zeta_s)) + geom_raster() +
 * Predictor should be roughly mean zero and SD of 1 to help with estimation
 * Current sdmTMB limited to one effect; an unlimited version is in development in a branch
 
-See TODO vignette
+See [vignette](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
