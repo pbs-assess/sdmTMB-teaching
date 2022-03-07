@@ -292,4 +292,3 @@ m_cv$elpd
 
 See [`?sdmTMB_cv`](https://pbs-assess.github.io/sdmTMB/reference/sdmTMB_cv.html) for more details.
 
----
