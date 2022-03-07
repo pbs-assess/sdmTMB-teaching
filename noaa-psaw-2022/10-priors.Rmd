@@ -55,7 +55,7 @@ fit <- sdmTMB(...,
 
 $\beta$ fixed effects  
 
-$\phi$ Observation variance parameter (variance for gaussian, overdispersion for nbinom2)  
+$\phi$ Observation variance parameter (variance for Gaussian, overdispersion for nbinom2)  
 
 $\rho$ AR(1) parameter for spatiotemporal fields  
 
