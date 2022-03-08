@@ -27,7 +27,9 @@ library(ggplot2)
 # What is a spatially varying coefficient?
 
 * Describes how the effect of a variable varies over space
+
   * e.g., how does the temporal trend in fish density vary among locations?
+  
   * e.g., how does fish distribution look when the PDO is high vs. low?
   
 <!-- Include base model equation with `zeta_s` representing the coefficient varying in space. -->
