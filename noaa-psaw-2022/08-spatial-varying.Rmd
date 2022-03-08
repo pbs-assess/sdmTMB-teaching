@@ -32,6 +32,17 @@ library(ggplot2)
 <!-- Include base model equation with `zeta_s` representing the coefficient varying in space. -->
 ---
 
+# Mathematically
+
+Minimal model: 
+
+$$g(u_{s}) = \omega_{s} + X_{\zeta}\zeta_{s}$$
+$\omega_{s}$ represents spatial field (intercept)  
+$X_{\zeta}$ is design matrix of covariates  
+$\zeta_{s}$ is estimated spatially varying coefficient  
+
+---
+
 # When might we want a spatially varying coefficient?
 
 * When we suspect non-local effects of a regional forcing, that varies spatially
