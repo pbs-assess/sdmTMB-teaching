@@ -74,7 +74,7 @@ Spatially varying effect of time:
 
 ```{r spat-varying-fit, echo=TRUE}
 pcod$year_scaled <- as.numeric(scale(pcod$year))
-mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
   density ~ s(depth, k = 5) + year_scaled,
   spatial_varying = ~ 0 + year_scaled, #<<
@@ -94,12 +94,10 @@ fit <- sdmTMB(
 ```{r plot-zeta}
 qcs_grid$year_scaled <- (qcs_grid$year - mean(pcod$year)) / sd(pcod$year)
 p <- predict(fit, qcs_grid)
-p <- dplyr::filter(p, year == 2011) # an year
+p <- dplyr::filter(p, year == 2011) # any year
 ggplot(p, aes(X, Y, fill = zeta_s)) + geom_raster() +
   scale_fill_gradient2()
 ```
-
-<!-- See the vignette on [Fitting spatial trend models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html) for more details. -->
 
 ---
 
@@ -107,12 +105,15 @@ ggplot(p, aes(X, Y, fill = zeta_s)) + geom_raster() +
 
 .small[
 ```{r owl-fit, echo=TRUE, eval=FALSE}
-mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
+mesh <- make_mesh(snow, c("X", "Y"), cutoff = 1.5)
 fit_owls <- sdmTMB(
   count ~ 1 + nao + (1 | year_factor),
   spatial_varying = ~ 0 + nao, #<<
-  family = nbinom2(link = "log"), data = snow, mesh = mesh,
-  time = "year", spatial = "on", spatiotemporal = "iid"
+  family = nbinom2(link = "log"), 
+  data = snow, mesh = mesh,
+  time = "year", 
+  spatial = "on",
+  spatiotemporal = "iid"
 )
 ```
 ]
