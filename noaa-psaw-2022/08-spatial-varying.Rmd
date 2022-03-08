@@ -85,17 +85,27 @@ ggplot(p, aes(X, Y, fill = zeta_s)) + geom_raster() +
 
 # Spatially varying effect of NAO on Snowy Owl eruptions
 
-```{r}
-# code here, don't eval
+.small[
+```{r owl-fit, echo=TRUE, eval=FALSE}
+mesh <- make_mesh(snow, xy_cols = c("X", "Y"), cutoff = 1.5)
+fit_owls <- sdmTMB(
+  count ~ 1 + nao + (1 | year_factor),
+  spatial_varying = ~ 0 + nao, #<<
+  family = nbinom2(link = "log"), data = snow, mesh = mesh,
+  time = "year", spatial = "on", spatiotemporal = "iid"
+)
 ```
+]
+
+<!-- Description: spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual citizen science Christmas Bird Counts 1979--2020 in Canada and the US. -->
 
 ---
 
 # Spatially varying effect of NAO on Snowy Owl eruptions
 
-```{r}
-# plot here as png
-```
+<img src="images/owl-nao-effect.png" width="1000px" class="center" />
+
+<!-- Interpretation: Points represent all count locations and circle area is scaled to the mean number of owls observed per year. We found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect.This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO. (The effect is multiplicative on owl count per NOA unit) -->
 
 ---
 
