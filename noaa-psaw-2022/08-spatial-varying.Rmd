@@ -59,7 +59,7 @@ $$g(u_{s}) = \omega_{s} + X_{\zeta}\zeta_{s}$$
 
 # Spatially varying coefficients in sdmTMB
 
-Spatially varying effect of time:
+Spatially varying effect of time on cod density:
 
 ```{r spat-varying-fit, echo=TRUE}
 pcod$year_scaled <- as.numeric(scale(pcod$year))
@@ -78,7 +78,7 @@ fit <- sdmTMB(
 
 ---
 
-# Spatially varying effect of time
+# Spatially varying effect of time on cod
 
 ```{r plot-zeta}
 qcs_grid$year_scaled <- (qcs_grid$year - mean(pcod$year)) / sd(pcod$year)
