@@ -93,6 +93,9 @@ ggplot(crabs, aes(lon, lat, col = present)) +
 .small[
 ```{r eval=FALSE, echo=TRUE}
 remotes::install_github("ropensci/rnaturalearthhires")
+```
+
+```{r echo=TRUE}
 map_data <- rnaturalearth::ne_countries(
   scale = "large",
   returnclass = "sf"
@@ -101,10 +104,10 @@ map_data <- rnaturalearth::ne_countries(
 puso <- suppressWarnings(suppressMessages(
   sf::st_crop(
     map_data,
-    c(xmin = -125, ymin = 47, xmax = -122, ymax = 49)
+    c(xmin = -125, ymin = 46.8, xmax = -122, ymax = 49)
   )
 ))
-crs_utm10 <- 3157 # Pick a projection, here UTM9
+crs_utm10 <- 3157 # Pick a projection, here UTM10
 
 # 'WGS84'; necessary on some installs:
 sf::st_crs(puso) <- 4326
@@ -117,13 +120,10 @@ puso <- sf::st_transform(puso, crs_utm10)
 # Project and plot  
 
 .small[
-```{r echo=FALSE}
-puso <- readRDS(here::here("noaa-psaw-2022/data/puso.rds"))
-```
 ```{r proj-plot, echo=TRUE, eval=TRUE, fig.asp=0.5}
 survey <- crabs %>%
-  st_as_sf(crs = 4326, coords = c("lon", "lat")) %>%
-  st_transform(3157) # utm zone 10
+  sf::st_as_sf(crs = 4326, coords = c("lon", "lat")) %>%
+  sf::st_transform(3157) # utm zone 10
 ggplot(puso) + # coastline and data:
   geom_sf() +
   geom_sf(data = survey, size = 0.5)
@@ -179,7 +179,7 @@ barrier_mesh <- add_barrier_mesh(
 
 ---
 
-# Custom plotting of mesh with barriers
+# Mesh knots/vertices over land (green) vs. water (blue)
 
 ```{r plot-barrier, echo=FALSE, eval=TRUE}
 mesh_df_water <- barrier_mesh$mesh_sf[barrier_mesh$normal_triangles, ]
