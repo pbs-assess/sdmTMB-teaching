@@ -190,7 +190,7 @@ A list of models (each `sdmTMB` object)
 
 .small[
 * Words of wisdom:
-  * Can be gighly variable based on data, folds, sampling scheme
+  * Can be highly variable based on data, folds, sampling scheme
   
 * Spatial sampling or random?
   * `blockCV` R package, Valavi et al. (2019)
