@@ -1,5 +1,5 @@
 ---
-title: "Example: Spatial modeling of presence only data"
+title: "Spatial modeling of presence-only data"
 subtitle: "NOAA PSAW Seminar Series"
 author: ""
 institute: ""
@@ -448,19 +448,12 @@ fit_nb <- sdmTMB(
   family = truncated_nbinom2(link = "log"),
 )
 
-# fit_pois <- sdmTMB(
-#   n ~ 1,
-#   data = dat,
-#   mesh = mesh,
-#   family = poisson(link = "log"),
-# )
 grid <- expand.grid(
   x = seq(min(dat$x), max(dat$x), length.out = 150),
   y = seq(min(dat$y), max(dat$y), length.out = 150)
 )
 grid$pred_pp <- predict(fit2, grid)$est
 grid$pred_nb <- predict(fit_nb, grid)$est
-# grid$pred_poiss <- predict(fit_pois, grid)$est
 ```
 
 ```{r compare-fig, fig.asp=1, out.width="500px", fig.width=6}
