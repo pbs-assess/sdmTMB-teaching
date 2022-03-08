@@ -68,6 +68,10 @@ $$g(u_{s}) = \omega_{s} + X_{\zeta}\zeta_{s}$$
 
 On the far right panel, you can see that the COG also indicates a southward shift, yet it is slight and only detectable in this case because of a narrow 95% CI.  From this alone it would be hard to say whether the change is really due to increased southward movement or productivity, or a decrease in productivity in the north. -->
 
+* Potential applied uses
+  * Determining spatial structure of assessment model inputs
+  * Determining quota allocation over space
+
 ---
 
 # Spatially varying coefficients in sdmTMB
