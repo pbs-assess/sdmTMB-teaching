@@ -29,128 +29,48 @@ library(ggplot2)
 # Types of forecasting we might be interested in 
 
 * Forecasting in time  
-  * missed survey year (interpolating or for AR1/RW estimation)
-  * future year
+  * e.g., missed survey year
+  * e.g., future year
   
 * Forecasting in space
-  * unsampled area (MPA, area beyond existing domain)
+  * e.g., unsampled area (MPA, area beyond existing domain)
 
 ---
 
-# Adding time steps
+class: center, middle, inverse
 
-* Pretend data doesn't exist after 2013  
-
-.small[
-```{r fit-extra, echo = TRUE, eval=FALSE}
-mesh <- make_mesh(dplyr::filter(pcod, year < 2014),
-  xy_cols = c("X", "Y"), cutoff = 10
-)
-
-fit <- sdmTMB(
-  present ~ s(depth),
-  time = "year", #<<
-  extra_time = c(2015, 2016, 2017), #<<
-  spatiotemporal = "AR1", #<<
-  data = dplyr::filter(pcod, year < 2014),
-  mesh = mesh,
-  family = binomial(link = "logit"),
-  spatial = "on" #<<
-)
-```
-]
+# Forecasting in time
 
 ---
 
-# Predicting to missing / future years
 
-* Can't predict with IID spatiotemporal random fields  
-* Can't predict with years as factors  
+# Predicting to missing/future years
+
+* Need a model for time: e.g., can't predict with years as factors
 
 * Options: 
-  * Smooth over year, `s(year)`, time-varying intercept, or ignore year
-  * RW / AR(1) spatiotemporal fields or no spatiotemporal field
-
-* Which of these approaches will likely have the highest uncertainty? The lowest? 
+  * AR(1) or random walk random fields
+  * Time-varying intercept
+  * Smoother on year (`s(year)`)
+  * Ignore time (fixed)
+  * Some combination of these
 
 ---
 
-# Random walk year effect
+# AR(1) spatiotemporal field
 
 ```{r pcod-mesh}
 mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 15)
 ```
 
-```{r fit-rw, echo=TRUE, eval=TRUE, results='hide'}
-# missing and forecasted years:
-extra_years <- c(2006, 2008, 2010, 2012, 2014, 2016, 2018:2025)
-fit_rw <- sdmTMB(
-  density ~ 0 + depth_scaled + depth_scaled2, #<<
-  time = "year",
-  time_varying = ~ 1, #<<
-  extra_time = extra_years, #<<
-  spatiotemporal = "IID",
-  data = pcod,
-  mesh = mesh,
-  family = tweedie(link = "log"),
-  spatial = "on",
-  silent = FALSE
-)
-```
-
----
-
-# Random walk year effect
-
-```{r pred-fit-rw, fig.asp=0.5}
-one_yr <- dplyr::filter(qcs_grid, year == 2017)
-grid <- purrr::map_dfr(unique(fit_rw$data$year), function(i) {
-  one_yr$year <- i
-  one_yr
-})
-p <- predict(fit_rw, newdata = grid, nsim = 200)
-ind <- get_index_sims(p)
-```
-
-```{r plot-ind-rw, fig.asp=0.5}
-ggplot(ind, aes(year, est)) + geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1) +
-  geom_vline(xintercept = extra_years, lty = 2, alpha = 0.2) +
-  theme(panel.grid = element_blank())
-```
-
-```{r}
-pa <- predict(fit_rw, newdata = grid)
-
-ggplot(pa, aes(X, Y, fill = epsilon_st)) +
-  geom_raster() +
-  facet_wrap(~year) +
-  scale_fill_gradient2()
-
-group_by(pa, year) %>% 
-  summarise(m = mean(epsilon_st)) %>% 
-  as.data.frame()
-
-pb <- predict(fit_rw, newdata = grid, nsim = 100)
-
-grid$se <- apply(pb, 1, sd)
-
-ggplot(grid, aes(X, Y, fill = se)) +
-  geom_raster() +
-  facet_wrap(~year) +
-  scale_fill_viridis_c() +
-  theme_minimal() +
-  coord_fixed()
-```
-
----
-
-# AR1 spatiotemporal field
-
+.small[
 ```{r fit-ar1, echo=TRUE, eval=TRUE, results='hide'}
 # missing and forecasted years:
-extra_years <- c(2006, 2008, 2010, 2012, 2014, 2016, 2018:2025)
-fit_ar1rf <- sdmTMB(
+extra_years <- c(
+  2006, 2008, 2010, 2012, 2014, 2016,
+  2018:2025
+)
+fit_ar1 <- sdmTMB(
   density ~ depth_scaled + depth_scaled2,
   time = "year",
   extra_time = extra_years, #<<
@@ -161,33 +81,16 @@ fit_ar1rf <- sdmTMB(
   spatial = "off",
   silent = FALSE
 )
-pc <- predict(fit_ar1rf, newdata = grid, nsim = 100)
-grid$se <- apply(pc, 1, sd)
+```
+]
 
-ggplot(grid, aes(X, Y, fill = se)) +
-  geom_raster() +
-  facet_wrap(~year) +
-  scale_fill_viridis_c() +
-  theme_minimal() +
-  coord_fixed()
+---
 
-pf <- predict(fit_ar1rf, newdata = grid)
-group_by(pf, year) %>% 
-  summarise(m = sd(epsilon_st)) %>% 
-  as.data.frame()
+# Random walk spatiotemporal field
 
-p1 <- predict(fit_ar1rf, newdata = NULL)
-r <- fit_ar1rf$tmb_obj$report(fit_ar1rf$tmb_obj$env$last.par.best)
-plot(p1$est, r$eta_i)
-
-p2 <- predict(fit_ar1rf, newdata = fit_ar1rf$data)
-
-plot(p1$est, p2$est)
-plot(r$eta_i, p2$est)
-
-
-extra_years <- c(2006, 2008, 2010, 2012, 2014, 2016, 2018:2025)
-fit_rwrf <- sdmTMB(
+.small[
+```{r fit-rw, echo=TRUE, eval=TRUE, results='hide'}
+fit_rw <- sdmTMB(
   density ~ depth_scaled + depth_scaled2,
   time = "year",
   extra_time = extra_years, #<<
@@ -198,122 +101,161 @@ fit_rwrf <- sdmTMB(
   spatial = "off",
   silent = FALSE
 )
-pd <- predict(fit_rwrf, newdata = grid, nsim = 100, sims_var = "proj_re_st_vector")
-grid$se <- apply(pd, 1, sd)
-grid$mean <- apply(pd, 1, mean)
-
-pe <- predict(fit_rwrf, newdata = grid)
-group_by(pe, year) %>% 
-  summarise(m = sd(epsilon_st)) %>% 
-  as.data.frame()
-
-ggplot(grid, aes(X, Y, fill = se)) +
-  geom_raster() +
-  facet_wrap(~year) +
-  # scale_fill_viridis_c() +
-  scale_fill_gradient2() +
-  theme_minimal() +
-  coord_fixed()
-
-pe <- predict(fit_rwrf, newdata = grid, return_tmb_object = T)
-ind <- get_index(pe)
-ggplot(ind, aes(year, est)) + geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1) +
-  geom_vline(xintercept = extra_years, lty = 2, alpha = 0.2) +
-  theme(panel.grid = element_blank()) +
-  scale_y_log10()
-
-
-r <- fit_rw$tmb_obj$report(fit_rw$tmb_obj$env$last.par.best)
-
-p1 <- predict(fit_rw, newdata = NULL)
-p2 <- predict(fit_rw, newdata = fit_rw$data)
-
-plot(p1$est, p2$est)
-p1$est - p2$est
-mean(p1$est)
-mean(p2$est)
-abline(0, 1)
-
-one_yr <- dplyr::filter(qcs_grid, year == 2017)
-grid <- purrr::map_dfr(unique(fit_rw$data$year), function(i) {
-  one_yr$year <- i
-  one_yr
-})
-
-p <- predict(fit_rwrf, newdata = grid)
-
-ggplot(p, aes(X, Y, fill = epsilon_st)) +
-  geom_raster() +
-  facet_wrap(~year) +
-  scale_fill_gradient2()
-
-group_by(p, year) %>% 
-  summarise(m = mean(epsilon_st)) %>% 
-  as.data.frame()
-
-p <- predict(fit_rwrf, newdata = grid, nsim = 100)
-ind <- get_index_sims(p)
-ggplot(ind, aes(year, est)) + geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1) +
-  geom_vline(xintercept = extra_years, lty = 2, alpha = 0.2) +
-  theme(panel.grid = element_blank()) +
-  scale_y_log10()
 ```
+]
 
-```{r}
-extra_years <- c(2006, 2008, 2010, 2012, 2014, 2016, 2018:2025)
-fit_rw2 <- sdmTMB(
-  density ~ depth_scaled + depth_scaled2,
+---
+
+# Random walk intercept + AR(1) fields
+
+.small[
+```{r, fit-rw-ar1, echo=TRUE, eval=TRUE, results='hide'}
+fit_rw_ar1 <- sdmTMB(
+  density ~ 0 + depth_scaled + depth_scaled2,
   time = "year",
+  time_varying = ~1, #<<
   extra_time = extra_years, #<<
   spatiotemporal = "AR1", #<<
   data = pcod,
-  control = sdmTMBcontrol(start = list(ar1_phi = qlogis((0.999999 + 1) / 2)), map = list(ar1_phi = factor(NA))),
   mesh = mesh,
   family = tweedie(link = "log"),
   spatial = "off",
   silent = FALSE
 )
+```
+]
+
+---
+
+# Smoother on year + AR(1) fields
+
+.small[
+```{r, fit-sm, echo=TRUE, eval=TRUE, results='hide'}
+fit_sm <- sdmTMB(
+  density ~ s(year) + depth_scaled + depth_scaled2, #<<
+  time = "year",
+  extra_time = extra_years, #<<
+  spatiotemporal = "AR1", #<<
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Comparing predicted density at a point in space
+
+```{r pred-all}
+newdf <- data.frame(
+  year = unique(fit_ar1$data$year),
+  X = mean(pcod$X),
+  Y = mean(pcod$Y),
+  depth_scaled = mean(pcod$depth_scaled),
+  depth_scaled2 = mean(pcod$depth_scaled)^2
+)
+fits <- list(fit_ar1, fit_rw, fit_rw_ar1, fit_sm)
+names(fits) <- c("AR1-fields", "RW-fields", "RW-time, AR1-fields", "s(year), AR1-fields")
+set.seed(123)
+preds <- purrr::map(fits, ~ predict(.x, newdf, nsim = 50L))
+preds_df <- purrr::map_dfr(preds, function(.x) {
+  reshape2::melt(.x, value.name = "est") %>%
+    rename(year = Var1, iter = Var2)
+}, .id = "type")
+pred_df <- purrr::map_dfr(fits, ~ predict(.x, newdf, se_fit = TRUE), .id = "type")
+```
+
+```{r plot-time-comparison, fig.asp=0.7}
+set.seed(1922)
+iters <- sample(1:max(preds_df$iter), 12L)
+ggplot(pred_df, aes(year, exp(est), ymin = exp(est - 2 * est_se), ymax = exp(est + 2 * est_se))) +
+  geom_ribbon(alpha = 0.2) +
+  geom_line(lwd = 1) +
+  scale_y_log10() +
+  facet_wrap(vars(type)) +
+  geom_vline(xintercept = unique(pcod$year), lty = 2, alpha = 0.2) +
+  theme(panel.grid = element_blank()) +
+  geom_line(aes(year, exp(est), group = iter),
+    alpha = 0.4,
+    data = filter(preds_df, iter %in% iters), inherit.aes = FALSE, lwd = 0.5
+  ) +
+  ylab("Fish density (log-distributed axis)") + xlab("")
+```
+
+---
+
+# AR(1) spatiotemporal fields evolve towards mean zero
+
+
+```{r pred-ar1-plot-eps}
 one_yr <- dplyr::filter(qcs_grid, year == 2017)
-grid <- purrr::map_dfr(unique(fit_rw$data$year), function(i) {
+grid <- purrr::map_dfr(unique(fit_ar1$data$year), function(i) {
   one_yr$year <- i
   one_yr
 })
-
-p2 <- predict(fit_rw2, newdata = grid, nsim = 150)
-ind2 <- get_index_sims(p2)
-ggplot(ind2, aes(year, est)) + geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1) +
-  geom_vline(xintercept = extra_years, lty = 2, alpha = 0.2) +
-  theme(panel.grid = element_blank()) +
-  scale_y_log10()
-
-```
-
-
-```{r pred-ar1-rf}
-p2 <- predict(fit_ar1rf, newdata = grid, nsim = 300)
-ind2 <- get_index_sims(p2)
+p_ar1 <- predict(fit_ar1, newdata = grid)
+ggplot(p_ar1, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2() +
+  coord_fixed()
 ```
 
 ---
 
-# AR1 spatiotemporal field
+# Random walk fields do not evolve towards mean
 
-```{r plot-ar1-rf, fig.asp=0.5}
-ggplot(ind2, aes(year, est)) + geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1) +
-  geom_vline(xintercept = extra_years, lty = 2, alpha = 0.2) +
-  theme(panel.grid = element_blank())
+```{r pred-rw-plot-eps}
+p_rw <- predict(fit_rw, newdata = grid)
+ggplot(p_rw, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2() +
+  coord_fixed()
+```
+
+
+---
+
+# Spatiotemporal field uncertainty grows without data
+
+(Here AR(1) fields; random walk similar.)
+
+```{r eps-se}
+eps_est <- predict(fit_ar1, newdata = grid, nsim = 100, sims_var = "proj_re_st_vector")
+grid$se <- apply(eps_est, 1, sd)
+ggplot(grid, aes(X, Y, fill = se)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  labs(fill = "Standard error\nof spatiotemporal field")
 ```
 
 ---
 
+# Forecasting and interpolating in time summary
 
-# Spatial forecasting / predicting to new areas
+* Use `extra_time` argument to fill in or forecast  
+  .xsmall[(a more flexible interface for forecasting may be forthcoming)]
+* Need a model for time
+* AR(1) field processes revert towards mean
+* Random walk field processes do not revert towards mean
+* Smoothers should be used with caution when forecasting  
+  .xsmall[(they continue whatever the basis functions were doing)]
 
-* Previously explored BEI tree dataset  
+---
+
+class: center, middle, inverse
+
+# Spatial forecasting:
+# Predicting to new areas
+
+---
+
+# Previously explored BEI tree dataset
 
 ```{r bei, echo=FALSE, eval=TRUE}
 dat <- data.frame(
