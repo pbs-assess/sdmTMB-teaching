@@ -153,6 +153,19 @@ fit_prior <- sdmTMB(
 
 ---
 
+# PC priors parameterized in terms of thresholds
+
+* $\mathrm{Pr}(\mathrm{range} > \texttt{range_gt} ) = 1 - \texttt{range_prob}$
+* $\mathrm{Pr}(\sigma < \texttt{sigma_lt} ) = 1 - \texttt{sigma_prob}$
+```{r echo = TRUE, eval = FALSE}
+pc_matern(
+  range_gt = 10, range_prob = 0.05, #<<
+  sigma_lt = 3, sigma_prob = 0.05 #<<
+)
+```
+
+---
+
 # Visualizing PC priors
 
 ```{r, echo=TRUE, fig.asp=0.7, out.width="550px"}
@@ -177,31 +190,18 @@ fit_prior <- sdmTMB(
   priors = sdmTMBpriors(matern_s = pc_matern(
     range_gt = 10, #<<
     sigma_lt = 3, #<<
-    range_prob = 0.05, #<<
-    sigma_prob = 0.05
-  )) #<<
+    range_prob = 0.05, # default #<<
+    sigma_prob = 0.05  # default #<<
+  ))
 )
 ```
 ]
 
 ---
 
-# PC priors parameterized in terms of thresholds
-
-* $Pr(h > $ range_gt $)$ = range_prob
-* $Pr(\sigma < $ sigma_lt $)$ = sigma_prob
-```{r echo = TRUE, eval = FALSE}
-pc_matern(
-  range_gt = 10, range_prob = 0.05, #<<
-  sigma_lt = 3, sigma_prob = 0.05
-) #<<
-```
-
----
-
 # Using PC priors with spatiotemporal model
 
-* Is range $h$ shared? `share_range` argument
+* Is range ( $h$ ) shared? `share_range` argument
   * if so, probably not needed to specify 2 sets of PC priors
   
 * For model without shared ranges, can specify separate PC priors
@@ -220,21 +220,18 @@ priors <- sdmTMBpriors(
 
 * Sometimes we may want to put hard bounds on a parameter
 * All optional, lower/upper both need not be specified
+* See `?sdmTMBcontrol`
 
-`?sdmTMBcontrol`
+* Example: constrain depth effect on occurrence to be negative
 
-* Example: constrain depth effect on occurrence to be negative  
 .small[
 ```{r eval=FALSE, echo=TRUE}
 fit <- sdmTMB(
   present ~ depth,
-  data = pcod,
-  mesh = mesh,
   ...,
-  control = sdmTMBcontrol(lower = list(
-    b_j = c(NA, NA), #<<
-    upper = list(b_j = c(NA, 0))
-  )) #<<
+  control = sdmTMBcontrol(
+    lower = list(b_j = c(NA, NA)), #<<
+    upper = list(b_j = c(NA, 0)))  #<<
 )
 ```
 ]
