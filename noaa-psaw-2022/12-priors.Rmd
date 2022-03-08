@@ -155,7 +155,7 @@ fit_prior <- sdmTMB(
 
 # PC priors parameterized in terms of thresholds
 
-* $\mathrm{Pr}(\mathrm{range} > \texttt{range_gt} ) = 1 - \texttt{range_prob}$
+* $\mathrm{Pr}(h > \texttt{range_gt} ) = 1 - \texttt{range_prob}$
 * $\mathrm{Pr}(\sigma < \texttt{sigma_lt} ) = 1 - \texttt{sigma_prob}$
 ```{r echo = TRUE, eval = FALSE}
 pc_matern(
@@ -221,7 +221,6 @@ priors <- sdmTMBpriors(
 * Sometimes we may want to put hard bounds on a parameter
 * All optional, lower/upper both need not be specified
 * See `?sdmTMBcontrol`
-
 * Example: constrain depth effect on occurrence to be negative
 
 .small[
@@ -231,7 +230,8 @@ fit <- sdmTMB(
   ...,
   control = sdmTMBcontrol(
     lower = list(b_j = c(NA, NA)), #<<
-    upper = list(b_j = c(NA, 0)))  #<<
+    upper = list(b_j = c(NA, 0))  #<<
+  )
 )
 ```
 ]

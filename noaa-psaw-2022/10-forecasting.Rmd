@@ -149,6 +149,8 @@ fit_sm <- sdmTMB(
 
 # Comparing predicted density at a point in space
 
+.xsmall[Vertical dashed lines indicate observations]
+
 ```{r pred-all}
 newdf <- data.frame(
   year = unique(fit_ar1$data$year),
@@ -168,7 +170,7 @@ preds_df <- purrr::map_dfr(preds, function(.x) {
 pred_df <- purrr::map_dfr(fits, ~ predict(.x, newdf, se_fit = TRUE), .id = "type")
 ```
 
-```{r plot-time-comparison, fig.asp=0.7}
+```{r plot-time-comparison, fig.asp=0.62}
 set.seed(1922)
 iters <- sample(1:max(preds_df$iter), 12L)
 ggplot(pred_df, aes(year, exp(est), ymin = exp(est - 2 * est_se), ymax = exp(est + 2 * est_se))) +
