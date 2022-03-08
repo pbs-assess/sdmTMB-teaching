@@ -28,6 +28,8 @@ library(ggplot2)
 
 * Describes how the effect of a variable varies over space
   * e.g., how does the temporal trend in fish density vary among locations?
+  
+<!-- Include base model equation with `zeta_s` representing the coefficient varying in space. -->
 ---
 
 # When might we want a spatially varying coefficient?
@@ -46,6 +48,11 @@ library(ggplot2)
 .tiny[
 [Barnett, L.A.K., Ward, E.J. & Anderson, S.C. Improving estimates of species distribution change by incorporating local trends. Ecography, 44: 427-439. (2021)](https://doi.org/10.1111/ecog.05176)
 ]
+
+<!-- To see how the interpretation of change in distribution depends on spatial scale, lets compare our fine-scale interpretation to a coarse-scale interpretation using a time series of the coastwide COG. These are results for arrowtooth flounder, where I am showing maps of the trend in population density over time, clusters of locations with similar trends, and the prediction of mean density over all years, which shows us that arrowtooth are most prevalent in the northern half of the region.  However, the trend map indicates that densities are mostly decreasing in the north and increasing in the central area toward the southern end of its core range.  Thus, it seems that arrowtooth are expanding southward as a traveling wave at the leading edge of the range.
+
+On the far right panel, you can see that the COG also indicates a southward shift, yet it is slight and only detectable in this case because of a narrow 95% CI.  From this alone it would be hard to say whether the change is really due to increased southward movement or productivity, or a decrease in productivity in the north. -->
+
 ---
 
 # Spatially varying coefficients in sdmTMB
@@ -65,7 +72,7 @@ fit <- sdmTMB(
 )
 ```
 
-<!-- See `zeta_s` in the output, which represents the coefficient varying in space. You'll want to ensure you set up your model such that it ballpark has a mean of 0 (e.g., by including it in `formula` too). -->
+<!-- See `zeta_s` in the output, which represents the coefficient varying in space. You'll want to ensure you set up your model such that it ballpark has a mean of 0 (e.g., by including it in `formula` too).
 
 ---
 
