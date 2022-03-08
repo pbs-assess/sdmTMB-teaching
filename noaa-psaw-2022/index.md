@@ -22,6 +22,21 @@ March 2nd and 9th 2022
 
 5. [Troubleshooting, tips, and tricks](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/05-extra.html)
 
+6. [Presence-only models](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/06-presence-only.html)
+
+7. [Time-varying coefficients](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/07-time-varying.html)
+
+8. [Spatially varying coefficients](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/08-spatial-varying.html)
+
+9. [Comparing models](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/09-comparing-models.html)
+
+10. [Forecasting](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/10-forecasting.html)
+
+11. [Physical barriers](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/11-barrier-models.html)
+
+12. [Priors and bounds](https://pbs-assess.github.io/sdmTMB-teaching/noaa-psaw-2022/12-priors.html)
+
+
 ### Shared Google Docs notes and questions
 
 <https://docs.google.com/document/d/1MxjLJ4Kz5ASIT15RQWApuf5xI1k-IHFTfd__rHAyuOM/edit#>
