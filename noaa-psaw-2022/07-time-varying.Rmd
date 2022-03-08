@@ -26,24 +26,25 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
-<!-- Outline? -->
-<!-- presence only -->
-<!-- time-varying coefs -->
-<!-- spatial varying coefs -->
-<!-- forecasting? -->
-<!-- barriers?? -->
-
+.small[
 # Why might we want time-varying effects?
 
-* Evolving responses 
-* Relationships influenced by unmeasured covariates (e.g. temperature and depth)
-* TODO
+* Time-varying slopes: 
+  * To allow for evolving responses to covariates (e.g., species moving deeper over time)
+  
+  * Example use: [English et al. (2021) Fish and Fisheries](https://doi.org/10.1111/faf.12613)  
+    Modelled groundfish density with depth; didn't want to constrain fish if they were moving deeper when water was warmer
+  
+* Time-varying intercepts:
+  * To allow variable means across time with constraints
+  * To have a model to interpolate or forecast over time
+]
 
 ---
 
-# Time-varying intercept
+# Time-varying intercepts
 
-Several ways in sdmTMB
+Several ways in sdmTMB:
 
 * factors: `as.factor(year)` (independent)
 * random effects: ` + (1 | year)` (drawn from normal distribution)
@@ -65,11 +66,10 @@ $$
 
 Defined by `time_varying` argument
 
-Takes a formula
+Takes a *one-sided* formula, e.g. `~ 1` or `~ 0 + depth`
 
 Note: initial coefficient is unconstrained, i.e. do not place same covariate in 
-the `formula` argument.
-
+the `formula` argument
 
 ---
 
@@ -139,7 +139,8 @@ cbind(est$b_rw_t, est_se$b_rw_t)
 
 ---
 
-# Other approaches to modeling time-varying intercept
+# Other approaches to modeling time-varying intercepts
+
 .small[
 ```{r eval = FALSE, echo=TRUE}
 density ~ s(depth) + 0 + as.factor(year)
@@ -267,13 +268,17 @@ ggplot(p, aes(depth, exp(est),
 # Time-varying coefficient notes
 
 * `time_varying` is a formula for coefficients that follow a random walk over time
-* Make sure a coefficient isn't in both `formula` and `time_varying`, this includes the intercept
-* The `time_varying` formula cannot have smoothers `s()` in it! Instead:
-  * Use polynomials `time_varying = x + I(x^2)`
-  * Use `formula = s(depth, by = factor_year)` (depth smoothers *independent* by year)
-  * Use `formula = s(depth, year)` (2D smooth)
 
-Example use: [English et al. (2021)](https://doi.org/10.1111/faf.12613).
-* Wanted to include depth in model, didn't want to constrain fish if they were moving deeper when water was warmer.
+--
+
+* Make sure a coefficient isn't in both `formula` and `time_varying`, this includes the intercept
+
+--
+
+* The `time_varying` formula cannot have smoothers `s()` in it! Instead:
+  * Polynomials: `time_varying = ~ x + I(x^2)`
+  * `formula = s(depth, by = factor_year)` (independent smooths) 
+  * `formula = s(depth, year)` (2D smooth)
+
 
 <!-- See the vignette [Intro to modelling with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/basic-intro.html) for more details. -->

@@ -33,23 +33,33 @@ Why? Spatial correlation affected by:
   * Coastlines / Islands / lakes (Bakka 2016) 
 
 .center[
-<img src="noaa-psaw-2022/images/bakka_2016.png" width="450px" height = "400px"/>
+<img src="images/bakka_2016.png" width="450px" height = "400px"/>
 ]
 
----  
+---
+
+# Example of barrier effects on a random field
+
+.center[
+<img src="images/barrier.png" width="390px"/>
+]
+
+---
 
 # Adding a barrier mesh in INLA
 
 Specify `boundary` attribute to `inla.mesh.2d`  
 
 ```{r inla-mesh, eval=FALSE, echo=TRUE}
-mesh <- inla.mesh.2d(boundary = poly,
-                     ...)
+mesh <- inla.mesh.2d(
+  boundary = poly,
+  ...
+)
 ```
 
-poly created as `sp` object  
-[INLA book](https://becarioprecario.bitbucket.io/spde-gitbook/ch-nonstationarity.html#ch:barrier)  
-[Haakon Bakka book](https://haakonbakkagit.github.io/btopic128.html)  
+poly created as an `sp` object  
+* [INLA book](https://becarioprecario.bitbucket.io/spde-gitbook/ch-nonstationarity.html#ch:barrier)  
+* [Haakon Bakka book](https://haakonbakkagit.github.io/btopic128.html)  
 
 ---
 
@@ -58,21 +68,24 @@ poly created as `sp` object
 WDFW has extensive survey data on US side of border
   * described and analyzed in [Essington et al. (2021)](https://www.int-res.com/abstracts/meps/v657/p173-189/)
 
-We'll use single snapshot (2011)
+We'll use a single snapshot (2011)
   * focusing on presence-absence of Dungeness crab
 
 ---
 
 # Crab data
 
-```{r load-crabs, echo=TRUE, fig.asp=0.5}
-crabs = readRDS(here::here("noaa-psaw-2022/data/crabs.rds"))
-crabs$present = as.factor(crabs$crab)
+Presence/absence of Dungeness crabs:
 
-ggplot(crabs, aes(lon,lat,col = present)) + 
+.small[
+```{r load-crabs, echo=FALSE, fig.asp=0.5}
+crabs <- readRDS(here::here("noaa-psaw-2022/data/crabs.rds"))
+crabs$present <- as.factor(crabs$crab)
+
+ggplot(crabs, aes(lon, lat, col = present)) +
   geom_point()
 ```
-
+]
 ---
 
 # Get coastline data for Puget Sound
@@ -81,17 +94,21 @@ ggplot(crabs, aes(lon,lat,col = present)) +
 ```{r eval=FALSE, echo=TRUE}
 remotes::install_github("ropensci/rnaturalearthhires")
 map_data <- rnaturalearth::ne_countries(
-scale = "large",
-returnclass = "sf")
+  scale = "large",
+  returnclass = "sf"
+)
 
 puso <- suppressWarnings(suppressMessages(
-  st_crop(map_data,
-  c(xmin = -125, ymin = 47, xmax = -122, ymax = 49))))
+  sf::st_crop(
+    map_data,
+    c(xmin = -125, ymin = 47, xmax = -122, ymax = 49)
+  )
+))
 crs_utm10 <- 3157 # Pick a projection, here UTM9
 
-st_crs(puso) <- 4326 # 'WGS84'; necessary on some installs
-puso <- st_transform(puso, crs_utm10)
-
+# 'WGS84'; necessary on some installs:
+sf::st_crs(puso) <- 4326
+puso <- sf::st_transform(puso, crs_utm10)
 ```
 ]
 
@@ -102,13 +119,12 @@ puso <- st_transform(puso, crs_utm10)
 .small[
 ```{r echo=FALSE}
 puso <- readRDS(here::here("noaa-psaw-2022/data/puso.rds"))
-
 ```
 ```{r proj-plot, echo=TRUE, eval=TRUE, fig.asp=0.5}
-survey <- crabs %>% 
+survey <- crabs %>%
   st_as_sf(crs = 4326, coords = c("lon", "lat")) %>%
   st_transform(3157) # utm zone 10
-ggplot(puso) +# coastline and data:
+ggplot(puso) + # coastline and data:
   geom_sf() +
   geom_sf(data = survey, size = 0.5)
 ```
@@ -125,11 +141,13 @@ surv_utm_coords <- st_coordinates(survey)
 
 # Scale coordinates to km so the range parameter
 # is on a reasonable scale for estimation:
-crabs$Xkm <- surv_utm_coords[,1] / 1000
-crabs$Ykm <- surv_utm_coords[,2] / 1000
+crabs$Xkm <- surv_utm_coords[, 1] / 1000
+crabs$Ykm <- surv_utm_coords[, 2] / 1000
 
-spde <- make_mesh(crabs, xy_cols = c("Xkm", "Ykm"),
-  cutoff = 5)
+mesh <- make_mesh(crabs,
+  xy_cols = c("Xkm", "Ykm"),
+  cutoff = 7
+)
 ```
 ]
 
@@ -138,22 +156,21 @@ spde <- make_mesh(crabs, xy_cols = c("Xkm", "Ykm"),
 # Plotting the initial mesh 
 
 ```{r plot-mesh, echo=FALSE, fig.asp=0.9}
-plot(spde)
+plot(mesh)
 ```
 
 ---
 
 # Adding barrier mesh
 
-Use `add_barrier_mesh()`  
+Use `add_barrier_mesh()` to add on barrier component:
 
 ```{r barrier, echo=TRUE, eval=TRUE}
-# Add on the barrier mesh component:
-bspde <- add_barrier_mesh(
-  spde_obj = spde, 
-  barrier_sf = puso, 
+barrier_mesh <- add_barrier_mesh(
+  spde_obj = mesh,
+  barrier_sf = puso,
   range_fraction = 0.1,
-  proj_scaling = 1000, 
+  proj_scaling = 1000,
   plot = FALSE
 )
 ```
@@ -163,8 +180,8 @@ bspde <- add_barrier_mesh(
 # Custom plotting of barrier mesh
 
 ```{r plot-barrier, echo=FALSE, eval=TRUE}
-mesh_df_water <- bspde$mesh_sf[bspde$normal_triangles, ]
-mesh_df_land <- bspde$mesh_sf[bspde$barrier_triangles, ]
+mesh_df_water <- barrier_mesh$mesh_sf[barrier_mesh$normal_triangles, ]
+mesh_df_land <- barrier_mesh$mesh_sf[barrier_mesh$barrier_triangles, ]
 ggplot(puso) +
   geom_sf() +
   geom_sf(data = mesh_df_water, size = 2, colour = "blue") +
@@ -177,16 +194,18 @@ ggplot(puso) +
 
 * Fit model as before with a barrier mesh
 ```{r fit-model1, echo = TRUE}
-fit_barrier <- sdmTMB(crab ~ 1, 
-  data = crabs, 
-  mesh = bspde,
-  family = binomial(link = "logit"))
+fit_barrier <- sdmTMB(crab ~ 1,
+  data = crabs,
+  mesh = barrier_mesh,
+  family = binomial(link = "logit")
+)
 ```
 ```{r fit-model2, echo = FALSE}
-fit <- sdmTMB(crab ~ 1, 
-  data = crabs, 
-  mesh = spde,
-  family = binomial(link = "logit"))
+fit <- sdmTMB(crab ~ 1,
+  data = crabs,
+  mesh = mesh,
+  family = binomial(link = "logit")
+)
 ```
 ---
 
@@ -194,11 +213,11 @@ fit <- sdmTMB(crab ~ 1,
 
 * Without barrier
 ```{r show-reg, echo=FALSE}
-tidy(fit,"ran_pars",conf.int = TRUE)
+tidy(fit, "ran_pars", conf.int = TRUE)
 ```
 * With barrier
 ```{r show-barrier, echo=FALSE}
-tidy(fit_barrier,"ran_pars",conf.int = TRUE)
+tidy(fit_barrier, "ran_pars", conf.int = TRUE)
 ```
 
 ---
@@ -210,3 +229,13 @@ tidy(fit_barrier,"ran_pars",conf.int = TRUE)
 * Without: less complexity in spatial field (large range, small variance)
 
 * With: larger spatial variation, much smaller range
+
+---
+
+# Advice
+
+* Accounting for spatial correlation barriers can affect local spatial predictions
+
+* Accounting for spatial correlation barriers can affect estimates of range and variance
+
+* But, if the goal is to sum up biomass or abundance across space (e.g., index standardization), the impact is usually subtle
