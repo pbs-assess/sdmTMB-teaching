@@ -48,7 +48,7 @@ Several ways in sdmTMB:
 
 * factors: `as.factor(year)` (independent)
 * random effects: ` + (1 | year)` (drawn from normal distribution)
-* smooth: ` + s(year)` (smoother)
+* smooth: ` + s(year)`
 * as random walk (shown next)
 
 ---
@@ -68,8 +68,8 @@ Defined by `time_varying` argument
 
 Takes a *one-sided* formula, e.g. `~ 1` or `~ 0 + depth`
 
-Note: initial coefficient is unconstrained, i.e. do not place same covariate in 
-the `formula` argument
+Note: initial coefficient is unconstrained, i.e. **do not place the same covariate in 
+the `formula` argument** (this includes the intercept)
 
 ---
 
@@ -153,7 +153,7 @@ density ~ s(depth) + (1 | year)
 ]
 .small[
 ```{r eval = FALSE, echo=TRUE}
-density ~ s(depth) + s(year, k = 7) # 7 years; unnecessary
+density ~ s(depth) + s(year)
 ```
 ]
 ---
