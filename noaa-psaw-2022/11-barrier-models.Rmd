@@ -230,13 +230,17 @@ tidy(fit_barrier, "ran_pars", conf.int = TRUE)
 
 * Accounting for the barrier changes inference about spatial process
 
+In this example:
+
 * Without: less complexity in spatial field (large range, small variance)
 
-* With: larger spatial variation, much smaller range
+* With: larger spatial variation, smaller better estimated range
 
 ---
 
 # Advice
+
+* Physical barriers aren't an issue for some coastlines
 
 * Don't choose a `range_fraction` that is much lower than 0.1
 
