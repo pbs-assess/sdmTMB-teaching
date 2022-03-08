@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Priors and parameter bounds</title>
+    <meta charset="utf-8" />
+    <meta name="date" content="2022-03-09" />
+    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Priors and parameter bounds
+## NOAA PSAW Seminar Series
+### 
+### March 9, 2022
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# Maximum likelihood doesn't involve priors!? 
+
+* Penalized maximum likelihood estimation
+
+* Maximize 
+
+`$$L(\theta | y) \cdot P(\theta | \alpha)$$`
+* `\(\theta\)` are parameters
+* `\(y\)` are data
+* `\(\alpha\)` are hyperparameters controlling prior distribution  
+
+---
+
+# Penalized estimation in sdmTMB
+
+
+
+```r
+fit &lt;- sdmTMB(
+  ...,
+* priors = sdmTMBpriors(...),
+  ...
+)
+```
+
+* `?sdmTMBpriors` 
+
+---
+
+# What can we put priors on?
+
+`\(\beta\)` fixed effects  
+
+`\(\phi\)` Observation dispersion parameter (e.g., standard deviation for Gaussian, overdispersion for nbinom2)  
+
+`\(\rho\)` AR(1) parameter for spatiotemporal fields  
+
+`\(p\)` Tweedie parameter (variance power)  
+
+`\(h\)` Matérn range  
+
+`\(\sigma\)` Matérn standard deviation
+
+---
+
+# Example: regression coefficients
+
+* Simple prior on `\(b_{1}\)`
+
+* Note: don't have to specify a prior on all coefficients  
+
+.small[
+
+```r
+mesh &lt;- make_mesh(pcod,
+  xy_cols = c("X", "Y"),
+  cutoff = 10
+)
+fit_prior &lt;- sdmTMB(
+  present ~ depth,
+  data = pcod, mesh = mesh,
+  family = binomial(link = "logit"),
+* priors = sdmTMBpriors(b = normal(
+*   location = c(4.2, NA),
+*   scale = c(0.1, NA))
+  )
+)
+```
+]
+
+
+---
+
+# Example: regression coefficients
+
+
+```r
+tidy(fit_prior)
+#&gt;          term    estimate   std.error
+#&gt; 1 (Intercept)  4.02959773 0.660616690
+#&gt; 2       depth -0.02345223 0.002575446
+```
+  
+Compare to model without priors  
+
+
+
+```r
+tidy(fit)
+#&gt;          term    estimate   std.error
+#&gt; 1 (Intercept)  4.07875568 0.665838251
+#&gt; 2       depth -0.02373447 0.002592988
+```
+
+---
+
+# Example: regression coefficients
+
+* Covariance in fixed effects can be included with `mvnormal()`
+
+.small[
+
+```r
+fit_prior &lt;- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(
+*   b = mvnormal(b_loc, scale = b_Sigma))
+)
+```
+]
+
+---
+
+# Example: Matérn priors
+
+* Spatial data may not be very informative w.r.t. spatial range and variance
+
+* Penalized complexity (PC) priors may help with model convergence
+  * [Fuglstad et al. 2016](https://www.tandfonline.com/doi/full/10.1080/01621459.2017.1415907?casa_token=TcqJrOvGCa4AAAAA%3AbPZ1eP-KoRmks3A-kI4QngKNDBNssNQBEAEQs98wemDSH0B_yZv_1q_f5waRhXVv2-ATm3RpmglH)  
+  
+* Penalty on complexity? 
+  * Simple random field = low variance, infinite range
+  * Complexity = increasing variance, small spatial range
+
+---
+
+# PC priors parameterized in terms of thresholds
+
+* `\(\mathrm{Pr}(h &gt; \texttt{range_gt} ) = 1 - \texttt{range_prob}\)`
+* `\(\mathrm{Pr}(\sigma &lt; \texttt{sigma_lt} ) = 1 - \texttt{sigma_prob}\)`
+
+```r
+pc_matern(
+* range_gt = 10, range_prob = 0.05,
+* sigma_lt = 3, sigma_prob = 0.05
+)
+```
+
+---
+
+# Visualizing PC priors
+
+
+```r
+sdmTMB::plot_pc_matern(
+  range_gt = 1, sigma_lt = 1.5, 
+  range_prob = 0.05, sigma_prob = 0.05
+)
+```
+
+&lt;img src="12-priors_files/figure-html/unnamed-chunk-8-1.png" width="550px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Implementing PC prior: spatial random field
+
+.small[
+
+```r
+fit_prior &lt;- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(matern_s = pc_matern(
+*   range_gt = 10,
+*   sigma_lt = 3,
+*   range_prob = 0.05, # default
+*   sigma_prob = 0.05  # default
+  ))
+)
+```
+]
+
+---
+
+# Using PC priors with spatiotemporal model
+
+* Is range ( `\(h\)` ) shared? `share_range` argument
+  * if so, probably not needed to specify 2 sets of PC priors
+  
+* For model without shared ranges, can specify separate PC priors
+
+
+```r
+priors &lt;- sdmTMBpriors(
+  matern_s = pc_matern(...),
+  matern_st = pc_matern(...)
+)
+```
+
+
+---
+
+# Bounds
+
+* Sometimes we may want to put hard bounds on a parameter
+* All optional, lower/upper both need not be specified
+* See `?sdmTMBcontrol`
+* Example: constrain depth effect on occurrence to be negative
+
+.small[
+
+```r
+fit &lt;- sdmTMB(
+  present ~ depth,
+  ...,
+  control = sdmTMBcontrol(
+*   lower = list(b_j = c(NA, NA)),
+*   upper = list(b_j = c(NA, 0))
+  )
+)
+```
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

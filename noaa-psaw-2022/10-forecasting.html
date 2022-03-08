@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Forecasting with sdmTMB</title>
+    <meta charset="utf-8" />
+    <meta name="date" content="2022-03-09" />
+    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Forecasting with sdmTMB
+## NOAA PSAW Seminar Series
+### 
+### March 9, 2022
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# Types of forecasting we might be interested in 
+
+* Forecasting in time  
+  * e.g., missed survey year
+  * e.g., future year
+  
+* Forecasting in space
+  * e.g., unsampled area (MPA, area beyond existing domain)
+
+---
+
+class: center, middle, inverse
+
+# Forecasting in time
+
+---
+
+
+# Predicting to missing/future years
+
+* Need a model for time: e.g., can't predict with years as factors
+
+* Options: 
+  * AR(1) or random walk random fields
+  * Time-varying intercept
+  * Smoother on year (`s(year)`)
+  * Ignore time (fixed)
+  * Some combination of these
+
+---
+
+# AR(1) spatiotemporal field
+
+
+
+.small[
+
+```r
+# missing and forecasted years:
+extra_years &lt;- c(
+  2006, 2008, 2010, 2012, 2014, 2016,
+  2018:2025
+)
+fit_ar1 &lt;- sdmTMB(
+  density ~ depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Random walk spatiotemporal field
+
+.small[
+
+```r
+fit_rw &lt;- sdmTMB(
+  density ~ depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "RW",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Random walk intercept + AR(1) fields
+
+.small[
+
+```r
+fit_rw_ar1 &lt;- sdmTMB(
+  density ~ 0 + depth_scaled + depth_scaled2,
+  time = "year",
+* time_varying = ~1,
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Smoother on year + AR(1) fields
+
+.small[
+
+```r
+fit_sm &lt;- sdmTMB(
+* density ~ s(year) + depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Comparing predicted density at a point in space
+
+.xsmall[Vertical dashed lines indicate observations]
+
+
+
+&lt;img src="10-forecasting_files/figure-html/plot-time-comparison-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# AR(1) spatiotemporal fields evolve towards mean zero
+
+
+&lt;img src="10-forecasting_files/figure-html/pred-ar1-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Random walk fields do not evolve towards mean
+
+&lt;img src="10-forecasting_files/figure-html/pred-rw-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+# Spatiotemporal field uncertainty grows without data
+
+(Here AR(1) fields; random walk similar.)
+
+&lt;img src="10-forecasting_files/figure-html/eps-se-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Forecasting and interpolating in time summary
+
+* Use `extra_time` argument to fill in or forecast  
+  .xsmall[(a more flexible interface for forecasting may be forthcoming)]
+* Need a model for time
+* AR(1) field processes revert towards mean
+* Random walk field processes do not revert towards mean
+* Smoothers should be used with caution when forecasting  
+  .xsmall[(they continue whatever the basis functions were doing)]
+
+---
+
+class: center, middle, inverse
+
+# Spatial forecasting:
+# Predicting to new areas
+
+---
+
+# Previously explored BEI tree dataset
+
+&lt;img src="10-forecasting_files/figure-html/bei-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Mesh more uncertain in unsampled areas
+
+&lt;img src="10-forecasting_files/figure-html/bei2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Re-fitting the model  
+
+Intercept only, 1 time slice  
+
+
+```r
+fit &lt;- sdmTMB(
+  n ~ 1,
+  data = dat,
+  mesh = mesh,
+  family = truncated_nbinom2(link = "log"),
+)
+```
+
+---
+
+# Predict to grid  
+
+* Slower, but include `se_fit = TRUE`
+* Could also use `predict(..., nsim = 500)` and summarize matrix
+
+
+```r
+# makes all combinations of x and y:
+newdf &lt;- expand.grid(
+  x = seq(min(dat$x), max(dat$x), 5),
+  y = seq(min(dat$y), max(dat$y), 5)
+)
+p &lt;- predict(fit,
+  newdata = newdf, se_fit = TRUE
+)
+```
+
+---
+ 
+# Visualizing uncertainty
+
+* Why is uncertainty higher at vertices?  
+
+&lt;img src="10-forecasting_files/figure-html/vis-vert-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+ 
+# Predicting outside the survey domain
+
+* Predict into border area
+
+&lt;img src="10-forecasting_files/figure-html/pred-fit2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
