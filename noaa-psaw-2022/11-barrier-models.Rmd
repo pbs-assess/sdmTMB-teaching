@@ -1,5 +1,5 @@
 ---
-title: "Barrier models"
+title: "Random fields with physical barriers"
 subtitle: "NOAA PSAW Seminar Series"
 author: ""
 institute: ""
@@ -27,10 +27,10 @@ library(ggplot2)
 library(sf)
 ```
 
-# Adding a barrier mesh
+# Adding a barrier to a random field?
 
 Why? Spatial correlation affected by:
-  * Coastlines / Islands / lakes (Bakka 2016) 
+  * Coastlines / Islands / lakes ([Bakka 2016](https://arxiv.org/abs/1608.03787)) 
 
 .center[
 <img src="images/bakka_2016.png" width="450px" height = "400px"/>
@@ -46,7 +46,7 @@ Why? Spatial correlation affected by:
 
 ---
 
-# Adding a barrier mesh in INLA
+# Adding a barrier within INLA
 
 Specify `boundary` attribute to `inla.mesh.2d`  
 
@@ -161,23 +161,25 @@ plot(mesh)
 
 ---
 
-# Adding barrier mesh
+# Adding barrier attributes to the mesh
 
-Use `add_barrier_mesh()` to add on barrier component:
+Use `sdmTMB::add_barrier_mesh()` to add on barrier component.
+
+Choose a fraction of the range across physical barriers. Values of 0.1 or 0.2 seem to work well.
 
 ```{r barrier, echo=TRUE, eval=TRUE}
 barrier_mesh <- add_barrier_mesh(
   spde_obj = mesh,
   barrier_sf = puso,
-  range_fraction = 0.1,
-  proj_scaling = 1000,
+  range_fraction = 0.1, #<<
+  proj_scaling = 1000, # data km but projection m
   plot = FALSE
 )
 ```
 
 ---
 
-# Custom plotting of barrier mesh
+# Custom plotting of mesh with barriers
 
 ```{r plot-barrier, echo=FALSE, eval=TRUE}
 mesh_df_water <- barrier_mesh$mesh_sf[barrier_mesh$normal_triangles, ]
@@ -192,7 +194,8 @@ ggplot(puso) +
 
 # Fitting the model  
 
-* Fit model as before with a barrier mesh
+* Fit model as before with a barrier
+
 ```{r fit-model1, echo = TRUE}
 fit_barrier <- sdmTMB(crab ~ 1,
   data = crabs,
@@ -215,6 +218,7 @@ fit <- sdmTMB(crab ~ 1,
 ```{r show-reg, echo=FALSE}
 tidy(fit, "ran_pars", conf.int = TRUE)
 ```
+
 * With barrier
 ```{r show-barrier, echo=FALSE}
 tidy(fit_barrier, "ran_pars", conf.int = TRUE)
@@ -233,6 +237,8 @@ tidy(fit_barrier, "ran_pars", conf.int = TRUE)
 ---
 
 # Advice
+
+* Don't choose a `range_fraction` that is much lower than 0.1
 
 * Accounting for spatial correlation barriers can affect local spatial predictions
 
