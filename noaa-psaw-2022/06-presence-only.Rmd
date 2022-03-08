@@ -249,7 +249,7 @@ ggplot(p, aes(x, y, fill = exp(est))) +
 
 ```{r auc, echo=TRUE}
 all_dat$p <- predict(fit)$est # total predictions, logit
-rocr <- ROCR::prediction(plogis(all_dat$p), all_dat$present)
+rocr <- ROCR::prediction(exp(all_dat$p), all_dat$present)
 ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 ```
 
