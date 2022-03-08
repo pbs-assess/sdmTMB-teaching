@@ -140,3 +140,5 @@ fit_owls <- sdmTMB(
 * Current sdmTMB limited to one effect; an unlimited version is in development in a branch
 
 See vignette: [Fitting spatial trend models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
+
+See sdmTMB paper appendix for Snowy Owl model.
