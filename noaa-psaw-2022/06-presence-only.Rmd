@@ -129,6 +129,8 @@ all_dat$wt <- nW^(1 - all_dat$present)
 
 # IWLR & sdmTMB
 
+* convergence may be affected by size of pseudo-absences    
+
 ```{r iwlr-fit, echo = TRUE}
 fit <- sdmTMB(
   present ~ 1,
@@ -143,7 +145,7 @@ fit <- sdmTMB(
 
 # Inspecting the model output
 
-* But intercept and log-likelihood affected by `nW` ([Renner et al. 2015](https://doi.org/10.1214/13-AOAS667))
+* But intercept and log-likelihood affected by `nW` ([Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352))
 
 .small[
 ```{r inspect1, echo=TRUE}
