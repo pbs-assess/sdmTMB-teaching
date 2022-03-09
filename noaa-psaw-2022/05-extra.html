@@ -3,8 +3,8 @@
   <head>
     <title>Related packages, troubleshooting, tips</title>
     <meta charset="utf-8" />
+    <meta name="author" content="" />
     <meta name="date" content="2022-03-02" />
-    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -14,7 +14,6 @@ class: center, middle, inverse, title-slide
 
 # Related packages, troubleshooting, tips
 ## NOAA PSAW Seminar Series
-### 
 ### March 2, 2022
 
 ---
@@ -133,7 +132,7 @@ One or more standard errors being `NaN` is a problem:
 
 ```r
 fit
-#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Spatiotemporal model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ depth * year
 #&gt; Mesh: mesh
 #&gt; Data: pcod
@@ -164,15 +163,15 @@ We could also look directly at the TMB `sdreport`:
 fit$sd_report
 #&gt; sdreport(.) result
 #&gt;               Estimate   Std. Error
-#&gt; b_j       4.148809e+01 24.316054703
-#&gt; b_j       2.349209e-02  0.002301295
+#&gt; b_j       4.148809e+01 24.316054476
+#&gt; b_j       2.349196e-02  0.002301295
 #&gt; b_j      -1.860347e-02  0.012087876
-*#&gt; b_j      -2.357974e-05          NaN
-#&gt; ln_tau_O  5.202919e-01  0.153541430
-#&gt; ln_kappa -2.572838e+00  0.088994367
+*#&gt; b_j      -2.357968e-05          NaN
+#&gt; ln_tau_O  5.202919e-01  0.153541429
+#&gt; ln_kappa -2.572838e+00  0.088994368
 *#&gt; Warning:
 *#&gt; Hessian of fixed effects was not positive definite.
-*#&gt; Maximum gradient component: 6.946878
+*#&gt; Maximum gradient component: 8.97279
 ```
 ]
 
@@ -186,7 +185,7 @@ Log likelihood gradient with respect to fixed effects:
 
 ```r
 max(fit$gradients)
-#&gt; [1] 6.946878
+#&gt; [1] 8.97279
 ```
 ]
 
