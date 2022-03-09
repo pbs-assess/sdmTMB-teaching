@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="" xml:lang="">
   <head>
-    <title>Example: Spatial modeling of presence only data</title>
+    <title>Spatial modeling of presence-only data</title>
     <meta charset="utf-8" />
     <meta name="date" content="2022-03-09" />
     <script src="libs/header-attrs-2.12/header-attrs.js"></script>
@@ -12,7 +12,7 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
-# Example: Spatial modeling of presence only data
+# Spatial modeling of presence-only data
 ## NOAA PSAW Seminar Series
 ### 
 ### March 9, 2022
@@ -244,7 +244,7 @@ summary(fit)
 
 ```r
 all_dat$p &lt;- predict(fit)$est # total predictions, logit
-rocr &lt;- ROCR::prediction(plogis(all_dat$p), all_dat$present)
+rocr &lt;- ROCR::prediction(exp(all_dat$p), all_dat$present)
 ROCR::performance(rocr, measure = "auc")@y.values[[1]]
 #&gt; [1] 0.8155031
 ```

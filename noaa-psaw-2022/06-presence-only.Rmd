@@ -233,6 +233,7 @@ ggplot(p, aes(x, y, fill = est)) +
 # Hint: inverse link function also available in `fit$family$linkinv()`
 ggplot(p, aes(x, y, fill = exp(est))) +
   geom_raster() +
+  labs(fill = "Intensity\n(average point density)") +
   scale_fill_viridis_c(trans = "sqrt") +
   coord_fixed(expand = FALSE) #+
 # geom_point(aes(x, y, size = n),
@@ -457,11 +458,11 @@ grid$pred_nb <- predict(fit_nb, grid)$est
 ```
 
 ```{r compare-fig, fig.asp=1, out.width="500px", fig.width=6}
-g1 <- ggplot(grid, aes(x, y, fill = plogis(pred_pp))) +
+g1 <- ggplot(grid, aes(x, y, fill = exp(pred_pp))) +
   geom_raster() +
   scale_fill_viridis_c(trans = "log", breaks = c(0.001, 0.005, 0.02, 0.1)) +
   coord_fixed(expand = FALSE) +
-  labs(fill = "Tree probability of\npresence (intensity)") +
+  labs(fill = "Intensity\n(average point density)") +
   ggtitle("Point process with quadrature points")
 
 # TODO: fill lab right??
