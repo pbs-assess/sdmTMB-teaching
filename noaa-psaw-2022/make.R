@@ -29,7 +29,7 @@ if (!PARALLEL) {
 } else {
   future::plan(future::multisession)
   options(future.rng.onMisuse = "ignore")
-  furrr::future_walk(files, function(.x) {
+  furrr::future_walk(rev(files), function(.x) {
     render_separately(paste0(here::here(folder, .x), ".Rmd"))
   })
 }
