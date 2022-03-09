@@ -26,13 +26,13 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
-# Types of forecasting we might be interested in 
+# Types of prediction we might be interested in 
 
-* Forecasting in time  
-  * e.g., missed survey year
-  * e.g., future year
+* Time  
+  * e.g., interpolating over missed survey year
+  * e.g., forecasting future year
   
-* Forecasting in space
+* Extrapolating in space
   * e.g., unsampled area (MPA, area beyond existing domain)
 
 ---
@@ -191,7 +191,6 @@ ggplot(pred_df, aes(year, exp(est), ymin = exp(est - 2 * est_se), ymax = exp(est
 
 # AR(1) spatiotemporal fields evolve towards mean zero
 
-
 ```{r pred-ar1-plot-eps}
 one_yr <- dplyr::filter(qcs_grid, year == 2017)
 grid <- purrr::map_dfr(unique(fit_ar1$data$year), function(i) {
@@ -218,7 +217,6 @@ ggplot(p_rw, aes(X, Y, fill = epsilon_st)) +
   scale_fill_gradient2() +
   coord_fixed()
 ```
-
 
 ---
 
@@ -252,8 +250,7 @@ ggplot(grid, aes(X, Y, fill = se)) +
 
 class: center, middle, inverse
 
-# Spatial forecasting:
-# Predicting to new areas
+# Spatial extrapolation
 
 ---
 

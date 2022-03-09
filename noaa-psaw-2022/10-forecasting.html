@@ -3,8 +3,8 @@
   <head>
     <title>Forecasting with sdmTMB</title>
     <meta charset="utf-8" />
-    <meta name="author" content="" />
     <meta name="date" content="2022-03-09" />
+    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -14,6 +14,7 @@ class: center, middle, inverse, title-slide
 
 # Forecasting with sdmTMB
 ## NOAA PSAW Seminar Series
+### 
 ### March 9, 2022
 
 ---
@@ -25,13 +26,13 @@ class: center, middle, inverse, title-slide
 
 
 
-# Types of forecasting we might be interested in 
+# Types of prediction we might be interested in 
 
-* Forecasting in time  
-  * e.g., missed survey year
-  * e.g., future year
+* Time  
+  * e.g., interpolating over missed survey year
+  * e.g., forecasting future year
   
-* Forecasting in space
+* Extrapolating in space
   * e.g., unsampled area (MPA, area beyond existing domain)
 
 ---
@@ -160,7 +161,6 @@ fit_sm &lt;- sdmTMB(
 
 # AR(1) spatiotemporal fields evolve towards mean zero
 
-
 &lt;img src="10-forecasting_files/figure-html/pred-ar1-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
 
 ---
@@ -168,7 +168,6 @@ fit_sm &lt;- sdmTMB(
 # Random walk fields do not evolve towards mean
 
 &lt;img src="10-forecasting_files/figure-html/pred-rw-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
-
 
 ---
 
@@ -194,8 +193,7 @@ fit_sm &lt;- sdmTMB(
 
 class: center, middle, inverse
 
-# Spatial forecasting:
-# Predicting to new areas
+# Spatial extrapolation
 
 ---
 
