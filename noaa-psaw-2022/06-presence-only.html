@@ -3,8 +3,8 @@
   <head>
     <title>Spatial modeling of presence-only data</title>
     <meta charset="utf-8" />
+    <meta name="author" content="" />
     <meta name="date" content="2022-03-09" />
-    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -14,7 +14,6 @@ class: center, middle, inverse, title-slide
 
 # Spatial modeling of presence-only data
 ## NOAA PSAW Seminar Series
-### 
 ### March 9, 2022
 
 ---
@@ -113,6 +112,8 @@ all_dat$wt &lt;- nW^(1 - all_dat$present)
 
 # IWLR &amp; sdmTMB
 
+* convergence may be affected by size of pseudo-absences    
+
 
 ```r
 fit &lt;- sdmTMB(
@@ -128,13 +129,13 @@ fit &lt;- sdmTMB(
 
 # Inspecting the model output
 
-* But intercept and log-likelihood affected by `nW` ([Renner et al. 2015](https://doi.org/10.1214/13-AOAS667))
+* But intercept and log-likelihood affected by `nW` ([Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352))
 
 .small[
 
 ```r
 summary(fit)
-#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Spatiotemporal model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ 1
 #&gt; Mesh: mesh
 #&gt; Data: all_dat
@@ -194,7 +195,7 @@ fit &lt;- sdmTMB(
 
 ```r
 summary(fit)
-#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Spatiotemporal model fit by ML ['sdmTMB']
 #&gt; Formula: present/wt ~ 1
 #&gt; Mesh: mesh
 #&gt; Data: all_dat
@@ -289,7 +290,7 @@ ROCR::performance(rocr, measure = "auc")@y.values[[1]]
   
 
 ```
-#&gt; [1] 0.8451451
+#&gt; [1] 0.8451724
 ```
 
 ---
