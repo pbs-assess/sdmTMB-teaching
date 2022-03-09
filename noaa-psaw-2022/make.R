@@ -2,6 +2,7 @@ PARALLEL <- TRUE
 
 folder <- "noaa-psaw-2022"
 files <- list.files(folder, pattern = "\\.Rmd$")
+files <- gsub("\\.Rmd$", "", files)
 
 rm <- function(x) if (file.exists(x)) file.remove(x)
 rm_folder <- function(x) if (file.exists(x)) unlink(x, recursive = TRUE)
@@ -28,7 +29,7 @@ if (!PARALLEL) {
 } else {
   future::plan(future::multisession)
   options(future.rng.onMisuse = "ignore")
-  furrr::future_walk(files, function(.x) {
+  furrr::future_walk(rev(files), function(.x) {
     render_separately(paste0(here::here(folder, .x), ".Rmd"))
   })
 }
