@@ -112,13 +112,13 @@ On the far right panel, you can see that the COG also indicates a southward shif
 .small[
 
 ```r
-mesh &lt;- make_mesh(snow, c("X", "Y"), 
-                  cutoff = 1.5)
+mesh &lt;- make_mesh(snow, c("X", "Y"), cutoff = 1.5)
 fit_owls &lt;- sdmTMB(
   count ~ 1 + nao + (1 | year_factor),
 * spatial_varying = ~ 0 + nao,
   family = nbinom2(link = "log"), 
-  data = snow, mesh = mesh,
+  data = snow, 
+  mesh = mesh,
   time = "year", 
   spatial = "on",
   spatiotemporal = "iid"
@@ -126,7 +126,12 @@ fit_owls &lt;- sdmTMB(
 ```
 ]
 
-&lt;!-- Description: spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual citizen science Christmas Bird Counts 1979--2020 in Canada and the US. --&gt;
+&lt;!-- Description: spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual citizen science Christmas Bird Counts 1979--2020 in Canada and the US. 
+
+Our only fixed effect will be the NAO climate index (`nao`), but because of the wide spatial extent of these surveys, we also expect that the effect of NAO might not be consistent throughout North America. Therefore, the effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`.
+
+Because there does not appear to be much correlation between years, year will be included as a random factor: `(1 | year_factor)`, allowing the mean estimate for each of these spatiotemporal fields to vary. 
+--&gt;
 
 ---
 
