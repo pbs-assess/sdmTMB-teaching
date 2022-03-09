@@ -41,7 +41,7 @@ March 2nd and 9th 2022
 
 Week 1: <https://docs.google.com/document/d/1MxjLJ4Kz5ASIT15RQWApuf5xI1k-IHFTfd__rHAyuOM/edit#>
 
-Week 2: <https://docs.google.com/document/d/1pxAxE65h0WEnS4UuMCBn3mkYEzogjojlkUcDUDm2zno/edit#>
+Week 2: <https://docs.google.com/document/d/1j35twC1pwjCU8FEyxlAg_62ce-1icQc9XLIXJcSz-EU/edit#>
 
 ### Draft manuscript:
 

@@ -110,7 +110,7 @@ fit &lt;- sdmTMB(
 
 ```r
 fit
-*#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+*#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ poly(log(depth), 2)
 #&gt; Mesh: mesh
 #&gt; Data: pcod
@@ -136,7 +136,7 @@ fit
 
 ```r
 fit
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 *#&gt; Formula: present ~ poly(log(depth), 2)
 *#&gt; Mesh: mesh
 *#&gt; Data: pcod
@@ -162,7 +162,7 @@ fit
 
 ```r
 fit
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ poly(log(depth), 2)
 #&gt; Mesh: mesh
 #&gt; Data: pcod
@@ -187,7 +187,7 @@ fit
 
 ```r
 fit
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ poly(log(depth), 2)
 #&gt; Mesh: mesh
 #&gt; Data: pcod
@@ -619,12 +619,12 @@ By sampling from the joint precision matrix
 ```r
 *psims &lt;- predict(fit, newdata = qcs_grid, nsim = 500)
 dim(psims)
-#&gt; [1] 65826    12
+#&gt; [1] 65826   500
 psims[1:3, 1:4]
-#&gt;         X    Y    depth depth_scaled
-#&gt; 28072 456 5636 347.0834    1.5608122
-#&gt; 28947 458 5636 223.3348    0.5697699
-#&gt; 29827 460 5636 203.7408    0.3633693
+#&gt;           [,1]      [,2]      [,3]       [,4]
+#&gt; 2003 -4.281085 -2.569879 -3.618530 -3.6595682
+#&gt; 2003  1.475317  1.390593  1.308786  0.9383632
+#&gt; 2003  2.659430  2.241994  2.265373  1.9791928
 
 *p$sd &lt;- apply(psims, 1, sd)
 ```
