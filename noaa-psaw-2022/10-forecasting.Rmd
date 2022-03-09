@@ -331,7 +331,8 @@ p <- predict(fit,
 # Visualizing uncertainty
 
 * Why is uncertainty higher at vertices?  
-
+  * Fewer neighbors, e.g. [this tutorial](https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/)
+  
 ```{r vis-vert}
 ggplot() +
   inlabru::gg(mesh$mesh) +
