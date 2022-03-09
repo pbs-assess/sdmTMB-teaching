@@ -3,8 +3,8 @@
   <head>
     <title>Introduction to sdmTMB</title>
     <meta charset="utf-8" />
+    <meta name="author" content="" />
     <meta name="date" content="2022-03-02" />
-    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -14,7 +14,6 @@ class: center, middle, inverse, title-slide
 
 # Introduction to sdmTMB
 ## NOAA PSAW Seminar Series
-### 
 ### March 2, 2022
 
 ---
@@ -188,7 +187,7 @@ Size of mesh has the single largest impact on fitting speed
 d &lt;- data.frame(x = runif(500), y = runif(500))
 mesh &lt;- make_mesh(d, xy_cols = c("x", "y"), cutoff = 0.1)
 mesh$mesh$n
-#&gt; [1] 86
+#&gt; [1] 87
 plot(mesh)
 ```
 
@@ -484,7 +483,6 @@ Covered in examples in next slides.
 * `tidy()`: `?tidy.sdmTMB`
 * `get_index()`
 *  `...`
-
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
