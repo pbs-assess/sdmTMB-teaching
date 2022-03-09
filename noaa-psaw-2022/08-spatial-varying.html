@@ -52,6 +52,8 @@ Minimal model:
 * When we suspect non-local effects of a regional forcing, that varies spatially
   * e.g., the influence of ENSO depends on latitude; influence of Bering Sea cold pool on pollock
   
+--
+
 * When the question requires evaluating change at fine spatial scales
   * e.g., there is no directional trend in species distribution shifts at broad scales, due to nuanced or opposing patterns over space being obscured 
   
@@ -97,6 +99,8 @@ fit &lt;- sdmTMB(
 
 On the far right panel, you can see that the COG also indicates a southward shift, yet it is slight and only detectable in this case because of a narrow 95% CI.  From this alone it would be hard to say whether the change is really due to increased southward movement or productivity, or a decrease in productivity in the north. --&gt;
 
+--
+
 * Potential applied uses
   * Determining spatial structure of assessment model inputs
   * Determining quota allocation over space
@@ -126,11 +130,11 @@ fit_owls &lt;- sdmTMB(
 
 ---
 
-# Influence of NAO on Snowy Owl
+# Influence of NAO on Snowy Owls is greatest in southeast
 
 &lt;img src="images/owl-nao-effect.png" width="1000px" class="center" /&gt;
 
-&lt;!-- Interpretation: Points represent all count locations and circle area is scaled to the mean number of owls observed per year. We found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect.This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO. (The effect is multiplicative on owl count per NOA unit) --&gt;
+&lt;!-- Interpretation: Points represent all count locations and circle area is scaled to the mean number of owls observed per year. We found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect.This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO. (The effect is multiplicative on owl count per NAO unit) --&gt;
 
 ---
 
@@ -138,8 +142,14 @@ fit_owls &lt;- sdmTMB(
 
 * Unlike `time_varying`, likely *do* want the same coefficient in the main `formula` effects
   * `spatial_varying` represents a random field with mean zero
+--
+
 * Predictor should be roughly mean zero and SD of 1 to help with estimation
+--
+
 * Current sdmTMB limited to one effect; an unlimited version is in development in a branch
+--
+
 
 See vignette: [Fitting spatial trend models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
 
