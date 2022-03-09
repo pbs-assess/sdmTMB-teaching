@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="" xml:lang="">
   <head>
-    <title>Priors and parameter bounds</title>
+    <title>Forecasting with sdmTMB</title>
     <meta charset="utf-8" />
     <meta name="date" content="2022-03-09" />
     <script src="libs/header-attrs-2.12/header-attrs.js"></script>
@@ -12,7 +12,7 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
-# Priors and parameter bounds
+# Forecasting with sdmTMB
 ## NOAA PSAW Seminar Series
 ### 
 ### March 9, 2022
@@ -26,225 +26,240 @@ class: center, middle, inverse, title-slide
 
 
 
-# Maximum likelihood doesn't involve priors!? 
+# Types of forecasting we might be interested in 
 
-* Penalized maximum likelihood estimation
-
-* Maximize 
-
-`$$L(\theta | y) \cdot P(\theta | \alpha)$$`
-* `\(\theta\)` are parameters
-* `\(y\)` are data
-* `\(\alpha\)` are hyperparameters controlling prior distribution  
+* Forecasting in time  
+  * e.g., missed survey year
+  * e.g., future year
+  
+* Forecasting in space
+  * e.g., unsampled area (MPA, area beyond existing domain)
 
 ---
 
-# Penalized estimation in sdmTMB
+class: center, middle, inverse
 
+# Forecasting in time
+
+---
+
+
+# Predicting to missing/future years
+
+* Need a model for time: e.g., can't predict with years as factors
+
+* Options: 
+  * AR(1) or random walk random fields
+  * Time-varying intercept
+  * Smoother on year (`s(year)`)
+  * Ignore time (fixed)
+  * Some combination of these
+
+---
+
+# AR(1) spatiotemporal field
+
+
+
+.small[
+
+```r
+# missing and forecasted years:
+extra_years &lt;- c(
+  2006, 2008, 2010, 2012, 2014, 2016,
+  2018:2025
+)
+fit_ar1 &lt;- sdmTMB(
+  density ~ depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Random walk spatiotemporal field
+
+.small[
+
+```r
+fit_rw &lt;- sdmTMB(
+  density ~ depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "RW",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Random walk intercept + AR(1) fields
+
+.small[
+
+```r
+fit_rw_ar1 &lt;- sdmTMB(
+  density ~ 0 + depth_scaled + depth_scaled2,
+  time = "year",
+* time_varying = ~1,
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Smoother on year + AR(1) fields
+
+.small[
+
+```r
+fit_sm &lt;- sdmTMB(
+* density ~ s(year) + depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Comparing predicted density at a point in space
+
+.xsmall[Vertical dashed lines indicate observations]
+
+
+
+&lt;img src="10-forecasting_files/figure-html/plot-time-comparison-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# AR(1) spatiotemporal fields evolve towards mean zero
+
+
+&lt;img src="10-forecasting_files/figure-html/pred-ar1-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Random walk fields do not evolve towards mean
+
+&lt;img src="10-forecasting_files/figure-html/pred-rw-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+# Spatiotemporal field uncertainty grows without data
+
+(Here AR(1) fields; random walk similar.)
+
+&lt;img src="10-forecasting_files/figure-html/eps-se-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Forecasting and interpolating in time summary
+
+* Use `extra_time` argument to fill in or forecast  
+  .xsmall[(a more flexible interface for forecasting may be forthcoming)]
+* Need a model for time
+* AR(1) field processes revert towards mean
+* Random walk field processes do not revert towards mean
+* Smoothers should be used with caution when forecasting  
+  .xsmall[(they continue whatever the basis functions were doing)]
+
+---
+
+class: center, middle, inverse
+
+# Spatial forecasting:
+# Predicting to new areas
+
+---
+
+# Previously explored BEI tree dataset
+
+&lt;img src="10-forecasting_files/figure-html/bei-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Mesh more uncertain in unsampled areas
+
+&lt;img src="10-forecasting_files/figure-html/bei2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Re-fitting the model  
+
+Intercept only, 1 time slice  
 
 
 ```r
 fit &lt;- sdmTMB(
-  ...,
-* priors = sdmTMBpriors(...),
-  ...
-)
-```
-
-* `?sdmTMBpriors` 
-
----
-
-# What can we put priors on?
-
-`\(\beta\)` fixed effects  
-
-`\(\phi\)` Observation dispersion parameter (e.g., standard deviation for Gaussian, overdispersion for nbinom2)  
-
-`\(\rho\)` AR(1) parameter for spatiotemporal fields  
-
-`\(p\)` Tweedie parameter (variance power)  
-
-`\(h\)` Matérn range  
-
-`\(\sigma\)` Matérn standard deviation
-
----
-
-# Example: regression coefficients
-
-* Simple prior on `\(b_{1}\)`
-
-* Note: don't have to specify a prior on all coefficients  
-
-.small[
-
-```r
-mesh &lt;- make_mesh(pcod,
-  xy_cols = c("X", "Y"),
-  cutoff = 10
-)
-fit_prior &lt;- sdmTMB(
-  present ~ depth,
-  data = pcod, mesh = mesh,
-  family = binomial(link = "logit"),
-* priors = sdmTMBpriors(b = normal(
-*   location = c(4.2, NA),
-*   scale = c(0.1, NA))
-  )
-)
-```
-]
-
-
----
-
-# Example: regression coefficients
-
-
-```r
-tidy(fit_prior)
-#&gt;          term    estimate   std.error
-#&gt; 1 (Intercept)  4.17801612 0.286589370
-#&gt; 2       depth -0.02399596 0.002047891
-```
-  
-Compare to model without priors  
-
-
-
-```r
-tidy(fit)
-#&gt;          term    estimate   std.error
-#&gt; 1 (Intercept)  4.07875568 0.665838251
-#&gt; 2       depth -0.02373447 0.002592988
-```
-
----
-
-# Example: regression coefficients
-
-* Covariance in fixed effects can be included with `mvnormal()`
-
-.small[
-
-```r
-fit_prior &lt;- sdmTMB(
-  present ~ depth,
-  data = pcod,
+  n ~ 1,
+  data = dat,
   mesh = mesh,
-  family = binomial(link = "logit"),
-  spatiotemporal = "off",
-  priors = sdmTMBpriors(
-*   b = mvnormal(b_loc, scale = b_Sigma))
-)
-```
-]
-
----
-
-# Example: Matérn priors
-
-* Spatial data may not be very informative w.r.t. spatial range and variance
-
-* Penalized complexity (PC) priors may help with model convergence
-  * [Fuglstad et al. 2016](https://www.tandfonline.com/doi/full/10.1080/01621459.2017.1415907?casa_token=TcqJrOvGCa4AAAAA%3AbPZ1eP-KoRmks3A-kI4QngKNDBNssNQBEAEQs98wemDSH0B_yZv_1q_f5waRhXVv2-ATm3RpmglH)  
-  
-* Penalty on complexity? 
-  * Simple random field = low variance, infinite range
-  * Complexity = increasing variance, small spatial range
-
----
-
-# PC priors parameterized in terms of thresholds
-
-* `\(\mathrm{Pr}(h &gt; \texttt{range_gt} ) = 1 - \texttt{range_prob}\)`
-* `\(\mathrm{Pr}(\sigma &lt; \texttt{sigma_lt} ) = 1 - \texttt{sigma_prob}\)`
-
-```r
-pc_matern(
-* range_gt = 10, range_prob = 0.05,
-* sigma_lt = 3, sigma_prob = 0.05
+  family = truncated_nbinom2(link = "log"),
 )
 ```
 
 ---
 
-# Visualizing PC priors
+# Predict to grid  
+
+* Slower, but include `se_fit = TRUE`
+* Could also use `predict(..., nsim = 500)` and summarize matrix
 
 
 ```r
-sdmTMB::plot_pc_matern(
-  range_gt = 1, sigma_lt = 1.5, 
-  range_prob = 0.05, sigma_prob = 0.05
+# makes all combinations of x and y:
+newdf &lt;- expand.grid(
+  x = seq(min(dat$x), max(dat$x), 5),
+  y = seq(min(dat$y), max(dat$y), 5)
+)
+p &lt;- predict(fit,
+  newdata = newdf, se_fit = TRUE
 )
 ```
-
-&lt;img src="12-priors_files/figure-html/unnamed-chunk-8-1.png" width="550px" style="display: block; margin: auto;" /&gt;
 
 ---
+ 
+# Visualizing uncertainty
 
-# Implementing PC prior: spatial random field
+* Why is uncertainty higher at vertices?  
 
-.small[
-
-```r
-fit_prior &lt;- sdmTMB(
-  present ~ depth,
-  data = pcod,
-  mesh = mesh,
-  family = binomial(link = "logit"),
-  spatiotemporal = "off",
-  priors = sdmTMBpriors(matern_s = pc_matern(
-*   range_gt = 10,
-*   sigma_lt = 3,
-*   range_prob = 0.05, # default
-*   sigma_prob = 0.05  # default
-  ))
-)
-```
-]
+&lt;img src="10-forecasting_files/figure-html/vis-vert-1.png" width="700px" style="display: block; margin: auto;" /&gt;
 
 ---
+ 
+# Predicting outside the survey domain
 
-# Using PC priors with spatiotemporal model
+* Predict into border area
 
-* Is range ( `\(h\)` ) shared? `share_range` argument
-  * if so, probably not needed to specify 2 sets of PC priors
-  
-* For model without shared ranges, can specify separate PC priors
-
-
-```r
-priors &lt;- sdmTMBpriors(
-  matern_s = pc_matern(...),
-  matern_st = pc_matern(...)
-)
-```
-
-
----
-
-# Bounds
-
-* Sometimes we may want to put hard bounds on a parameter
-* All optional, lower/upper both need not be specified
-* See `?sdmTMBcontrol`
-* Example: constrain depth effect on occurrence to be negative
-
-.small[
-
-```r
-fit &lt;- sdmTMB(
-  present ~ depth,
-  ...,
-  control = sdmTMBcontrol(
-*   lower = list(b_j = c(NA, NA)),
-*   upper = list(b_j = c(NA, 0))
-  )
-)
-```
-]
+&lt;img src="10-forecasting_files/figure-html/pred-fit2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

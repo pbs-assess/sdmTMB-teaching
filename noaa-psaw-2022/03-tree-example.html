@@ -3,8 +3,8 @@
   <head>
     <title>Example: Spatial modeling of trees in a rainforest</title>
     <meta charset="utf-8" />
-    <meta name="author" content="" />
     <meta name="date" content="2022-03-02" />
+    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -14,6 +14,7 @@ class: center, middle, inverse, title-slide
 
 # Example: Spatial modeling of trees in a rainforest
 ## NOAA PSAW Seminar Series
+### 
 ### March 2, 2022
 
 ---
@@ -174,7 +175,7 @@ fit &lt;- sdmTMB(
 
 ```r
 summary(fit)
-*#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+*#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: n ~ 1
 #&gt; Mesh: mesh
 #&gt; Data: dat
@@ -199,7 +200,7 @@ summary(fit)
 
 ```r
 summary(fit)
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 *#&gt; Formula: n ~ 1
 *#&gt; Mesh: mesh
 *#&gt; Data: dat
@@ -224,7 +225,7 @@ summary(fit)
 
 ```r
 summary(fit)
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: n ~ 1
 #&gt; Mesh: mesh
 #&gt; Data: dat
@@ -249,7 +250,7 @@ summary(fit)
 
 ```r
 summary(fit)
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: n ~ 1
 #&gt; Mesh: mesh
 #&gt; Data: dat
@@ -275,13 +276,13 @@ summary(fit)
 # Main effects:
 tidy(fit)
 #&gt;          term estimate std.error
-#&gt; 1 (Intercept) 2.676762 0.3710162
+#&gt; 1 (Intercept) 2.676762 0.3710164
 
 # Variance-related terms:
 tidy(fit, effects = "ran_pars")
 #&gt;      term   estimate std.error
-#&gt; 1   range 233.469544        NA
-#&gt; 3     phi   3.606949        NA
+#&gt; 1   range 233.469561        NA
+#&gt; 3     phi   3.606950        NA
 #&gt; 4 sigma_O   1.020086        NA
 ```
 
@@ -448,6 +449,7 @@ See `?predict.sdmTMB`
 
 &lt;img src="03-tree-example_files/figure-html/unnamed-chunk-11-1.png" width="700px" style="display: block; margin: auto;" /&gt;
 ]
+
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

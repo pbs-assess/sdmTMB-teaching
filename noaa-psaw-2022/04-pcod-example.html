@@ -3,8 +3,8 @@
   <head>
     <title>Example: Spatial modeling of Pacific cod</title>
     <meta charset="utf-8" />
-    <meta name="author" content="" />
     <meta name="date" content="2022-03-02" />
+    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -14,6 +14,7 @@ class: center, middle, inverse, title-slide
 
 # Example: Spatial modeling of Pacific cod
 ## NOAA PSAW Seminar Series
+### 
 ### March 2, 2022
 
 ---
@@ -110,7 +111,7 @@ fit &lt;- sdmTMB(
 
 ```r
 fit
-*#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+*#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ poly(log(depth), 2)
 #&gt; Mesh: mesh
 #&gt; Data: pcod
@@ -136,7 +137,7 @@ fit
 
 ```r
 fit
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 *#&gt; Formula: present ~ poly(log(depth), 2)
 *#&gt; Mesh: mesh
 *#&gt; Data: pcod
@@ -162,7 +163,7 @@ fit
 
 ```r
 fit
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ poly(log(depth), 2)
 #&gt; Mesh: mesh
 #&gt; Data: pcod
@@ -187,7 +188,7 @@ fit
 
 ```r
 fit
-#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Spatial model fit by ML ['sdmTMB']
 #&gt; Formula: present ~ poly(log(depth), 2)
 #&gt; Mesh: mesh
 #&gt; Data: pcod
@@ -619,12 +620,12 @@ By sampling from the joint precision matrix
 ```r
 *psims &lt;- predict(fit, newdata = qcs_grid, nsim = 500)
 dim(psims)
-#&gt; [1] 65826    12
+#&gt; [1] 65826   500
 psims[1:3, 1:4]
-#&gt;         X    Y    depth depth_scaled
-#&gt; 28072 456 5636 347.0834    1.5608122
-#&gt; 28947 458 5636 223.3348    0.5697699
-#&gt; 29827 460 5636 203.7408    0.3633693
+#&gt;           [,1]      [,2]      [,3]      [,4]
+#&gt; 2003 -3.885039 -2.635392 -2.872531 -2.065613
+#&gt; 2003  1.763187  1.551831  1.975748  2.350533
+#&gt; 2003  2.839124  2.629982  2.853298  3.209577
 
 *p$sd &lt;- apply(psims, 1, sd)
 ```
