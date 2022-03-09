@@ -79,7 +79,7 @@ fit &lt;- sdmTMB(
 
 ---
 
-# Spatially varying effect of time on cod
+# Local trends in cod population density
 
 &lt;img src="08-spatial-varying_files/figure-html/plot-zeta-1.png" width="700px" style="display: block; margin: auto;" /&gt;
 
@@ -103,12 +103,13 @@ On the far right panel, you can see that the COG also indicates a southward shif
 
 ---
 
-# Spatially varying effect of NAO on Snowy Owl eruptions
+# Spatially varying effect of NAO on Snowy Owls
 
 .small[
 
 ```r
-mesh &lt;- make_mesh(snow, c("X", "Y"), cutoff = 1.5)
+mesh &lt;- make_mesh(snow, c("X", "Y"), 
+                  cutoff = 1.5)
 fit_owls &lt;- sdmTMB(
   count ~ 1 + nao + (1 | year_factor),
 * spatial_varying = ~ 0 + nao,
@@ -125,7 +126,7 @@ fit_owls &lt;- sdmTMB(
 
 ---
 
-# Spatially varying effect of NAO on Snowy Owl eruptions
+# Influence of NAO on Snowy Owl
 
 &lt;img src="images/owl-nao-effect.png" width="1000px" class="center" /&gt;
 
