@@ -3,8 +3,8 @@
   <head>
     <title>Model selection with sdmTMB</title>
     <meta charset="utf-8" />
+    <meta name="author" content="" />
     <meta name="date" content="2022-03-09" />
-    <script src="libs/header-attrs-2.12/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -14,7 +14,6 @@ class: center, middle, inverse, title-slide
 
 # Model selection with sdmTMB
 ## NOAA PSAW Seminar Series
-### 
 ### March 9, 2022
 
 ---
@@ -219,11 +218,11 @@ mesh &lt;- make_mesh(pcod, c("X", "Y"), cutoff = 10)
 )
 # Sum of log likelihoods of left-out data:
 m_cv$sum_loglik
-#&gt; [1] -12541.86
+#&gt; [1] -7042.998
 # Expected log pointwise predictive density
 # of left-out data:
 m_cv$elpd
-#&gt; [1] -1.00918
+#&gt; [1] -1.017055
 ```
 
 ---
@@ -249,6 +248,7 @@ Rather than choose best model, we can do model averaging
 * Estimate weights to maximize combined predictive density
 
 `$$p(y^* | y) = \sum_{i=1}^{M} w_{i} p(y^*|y, m_{i})$$`
+`\(y^*\)` is new data (e.g. test); `\(\sum_{i=1}^{M} w_{i} = 1\)`  
 
 ---
 

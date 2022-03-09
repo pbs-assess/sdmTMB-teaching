@@ -248,6 +248,7 @@ Rather than choose best model, we can do model averaging
 * Estimate weights to maximize combined predictive density
 
 $$p(y^* | y) = \sum_{i=1}^{M} w_{i} p(y^*|y, m_{i})$$
+$y^*$ is new data (e.g. test); $\sum_{i=1}^{M} w_{i} = 1$  
 
 ---
 
