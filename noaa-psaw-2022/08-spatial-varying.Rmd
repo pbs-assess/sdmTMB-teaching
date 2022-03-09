@@ -131,6 +131,10 @@ fit_owls <- sdmTMB(
 ```
 ]
 
+<!-- Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
+The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
+The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. -->
+
 <!-- Description: spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual citizen science Christmas Bird Counts 1979--2020 in Canada and the US. 
 
 Our only fixed effect will be the NAO climate index (`nao`), but because of the wide spatial extent of these surveys, we also expect that the effect of NAO might not be consistent throughout North America. Therefore, the effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`.
