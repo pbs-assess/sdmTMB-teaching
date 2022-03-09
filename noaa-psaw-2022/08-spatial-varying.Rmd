@@ -69,7 +69,8 @@ mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
   density ~ s(depth, k = 5) + year_scaled,
   spatial_varying = ~ 0 + year_scaled, #<<
-  data = pcod, mesh = mesh, 
+  data = pcod, 
+  mesh = mesh, 
   time = "year",
   family = tweedie(link = "log"),
   spatiotemporal = "off"
