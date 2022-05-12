@@ -1,6 +1,6 @@
 # Spatial and spatiotemporal models with sdmTMB for estimating species distribution and index standardization
 
-In this workshop, we will introduce fitting spatial and spatiotemporal generalized linear mixed effects models (GLMMs) with Gaussian random fields. Such models are increasingly used for species distribution modelling and survey index standardization. They can be particularly useful when accounting for differences in survey protocols or incorporating climate variables. We will introduce this class of models and focus on fitting and understanding them with sdmTMB—an R package with a flexible and user-friendly interface.
+In this course, we will introduce fitting spatial and spatiotemporal generalized linear mixed effects models (GLMMs) with Gaussian random fields. Such models are increasingly used for species distribution modelling and survey index standardization. They can be particularly useful when accounting for differences in survey protocols or incorporating climate variables. We will introduce this class of models and focus on fitting and understanding them with sdmTMB—an R package with a flexible and user-friendly interface.
 
 Topics will include:
 * An introduction to Gaussian random fields
