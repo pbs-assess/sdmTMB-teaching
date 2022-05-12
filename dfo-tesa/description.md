@@ -3,7 +3,7 @@
 In this workshop, we will introduce fitting spatial and spatiotemporal
 generalized linear mixed effects models (GLMMs) with Gaussian random fields.
 Such models are increasingly used for species distribution modelling and survey
-index standardization—including to account for differences in survey protocols
+index standardization, especially when wanting to account for differences in survey protocols
 or to incorporate climate variables. This workshop will introduce this
 class of models and focus on fitting and understanding them with the sdmTMB R
 package—a package that has a flexible and user-friendly interface.
