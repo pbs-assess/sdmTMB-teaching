@@ -5,7 +5,7 @@ generalized linear mixed effects models (GLMMs) with Gaussian random fields.
 Such models are increasingly used for species distribution modelling and survey
 index standardization—particularly to control for survey protocol
 inconsistencies or to incorporate climate variables. Such models are also
-sometimes referred to by fancy terms such as "geostatistical", spatial "latent
+sometimes referred to by terms such as "geostatistical", spatial "latent
 variables", "spatially explicit", "predictive-process", and "SPDE". This
 workshop will introduce this class of models and focus on fitting and
 understanding them with the sdmTMB R package—a package that has a flexible
