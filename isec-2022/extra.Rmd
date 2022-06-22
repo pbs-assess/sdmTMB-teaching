@@ -1,3 +1,19 @@
+# Why sdmTMB
+
+<img src="logo-sdmTMB.png" height="230px" class="centering"/>
+
+--
+
+1. Familiar syntax; ease of interaction
+
+--
+
+2. *Fast* (e.g., compared to INLA or mgcv*)
+
+--
+
+3. Features (e.g., anisotropy, breakpoints, index standardization)
+
 
 <!-- advanced stuff to feature: -->
 

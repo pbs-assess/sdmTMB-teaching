@@ -128,7 +128,7 @@ Latent variables can cause complex spatial correlation
 
 --
 
-Gaussian random fields are an increasingly popular method for approximating these surfaces
+Gaussian random fields are an increasingly popular method for approximating these patterns
 
 ---
 
@@ -150,26 +150,29 @@ Solutions:
 
 ---
 
-# Why sdmTMB
+# Why sdmTMB?
 
-<img src="logo-sdmTMB.png" height="230px" class="centering"/>
+<img src="logo-sdmTMB.png" height="130px" class="centering"/>
 
---
-
-1. Familiar syntax; ease of interaction
+.small[Familiar syntax; ease of interaction]
 
 --
 
-2. *Fast* (e.g., compared to INLA or mgcv*)
+.small[*Fast* (marginal) maximum likelihood estimation via TMB (or MCMC via Stan)]
 
 --
 
-3. Features (e.g., anisotropy, breakpoints, index standardization)
+.small[Features: e.g., includes spatial anisotropy; not (easily) possible with INLA]
 
+--
+
+.small[
+Widely applicable to species distribution modelling (**sdm**TMB) or any GLMMs for spatially referenced data
+]
 
 ---
 
-# sdmTMB models can be cast as GLMMs
+# sdmTMB models as GLMMs
 
 <br>
 <br>
@@ -215,12 +218,20 @@ head(pcod)
 ```
 ]
 
+```{r nothing00, eval=FALSE}
+tibble::as_tibble(head(pcod)) %>% 
+  dplyr::select(year, density, lon, lat, X, Y) %>% 
+  head(n = 3)
+```
+
+
 .xsmall[
 ```
-#> year density depth    X     Y
-#> 2003   113.    201  446  5793
-#> 2003    41.7   212  446  5800
-#> 2003     0.    220  449  5800
+#>  year density   lon    lat   X     Y
+#> <int>   <dbl> <dbl>  <dbl> <dbl> <dbl>
+#>  2003   113.  -130.0  52.3  446  5793
+#>  2003    41.7 -130.0  52.3  446  5800
+#>  2003     0   -130.0  52.4  449  5802
 ```
 ]
 
@@ -759,23 +770,15 @@ filter(p1, year == 2003) %>%  # any year
 
 ---
 
-# sdmTMB is an accessible R package for modeling spatial processes
+# Why sdmTMB
 
---
+<img src="logo-sdmTMB.png" height="230px" class="centering"/>
 
-Familiar syntax to widely used functions/packages; `glm()`, mgcv, glmmTMB, etc.
+1. Familiar syntax; ease of interaction
 
---
+2. *Fast*
 
-Performs fast (marginal) maximum likelihood estimation via TMB
-
---
-
-Includes spatial anisotropy, which is not (easily) possible with INLA
-
---
-  
-Widely applicable to species distribution modelling, stock assessment inputs, bycatch models, etc. that include spatially referenced data
+3. Features (e.g., anisotropy, breakpoints, index standardization)
 
 ---
 
