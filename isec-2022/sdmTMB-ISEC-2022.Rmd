@@ -821,7 +821,7 @@ Anderson, S.C., E.J. Ward, P.A. English, L.A.K. Barnett. 2022. sdmTMB: an R pack
 Eric Ward (NOAA), Philina English (DFO), Lewis Barnett (NOAA)
 
 *Software inspiration and dependencies:*  
-VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), INLA (Rue et al. 2009; Lindren et al. 2011), glmmTMB (Brooks et al. 2017), mgcv (Wood et al. 2011)
+VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), INLA (Rue et al. 2009; Lindgren et al. 2011), glmmTMB (Brooks et al. 2017), mgcv (Wood et al. 2011)
 
 *sdmTMB improvements:*  
 Jim Thorson, Joe Watson, Cole Monnahan, Julia Indivero, Max Lindmark, Stan Kotwicki
