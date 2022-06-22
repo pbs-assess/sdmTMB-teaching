@@ -76,21 +76,12 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
-<!--
-
-- motivation
-- speed
-- feature comparison
-- basic syntax
-- examples of use
-
-- VAST
-- VAST focuses on fisheries models, 2 part models... super powerful, but makes interface complex
-
-- powerful models
-- 
-
--->
+```{r rnaturalearthhires}
+if (!require("rnaturalearthhires", quietly = TRUE)) {
+  stop("Please install 'rnaturalearthhires'.\n",
+  "`remotes::install_github('ropensci/rnaturalearthhires')`")
+}
+```
 
 # Geostatistical data are ubiquitous in ecology
 
