@@ -674,12 +674,12 @@ cowplot::plot_grid(g1, g2, nrow = 1, align = "hv")
 # Time-varying coefficients
 
 
-```{r}
-pcod_mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 15)
+```{r tv0}
+pcod_mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 10)
 ```
 
 .xsmall[
-```{r, echo=TRUE}
+```{r tv1, echo=TRUE}
 fit_tv <- sdmTMB(
   density ~ 0 + as.factor(year),
   time_varying = ~ 0 + depth_scaled + I(depth_scaled^2), #<<
@@ -692,7 +692,7 @@ fit_tv <- sdmTMB(
 ```
 ]
 
-```{r}
+```{r tv2}
 nd <- expand.grid(
   depth_scaled = seq(min(pcod$depth_scaled) + 0.2,
     max(pcod$depth_scaled) - 0.2,
@@ -704,7 +704,7 @@ p <- predict(fit_tv, newdata = nd, se_fit = TRUE, re_form = NA)
 ```
 
 
-```{r, fig.asp=0.55, out.width='550px', fig.width=6.2}
+```{r timevarying-plot, fig.asp=0.55, out.width='550px', fig.width=6.2}
 ggplot(p, aes(depth_scaled, exp(est),
   ymin = exp(est - 1.96 * est_se),
   ymax = exp(est + 1.96 * est_se),
@@ -723,13 +723,13 @@ ggplot(p, aes(depth_scaled, exp(est),
 
 # Spatially varying coefficients
 
-```{r}
+```{r svc0}
 pcod$centered_year <- pcod$year - mean(pcod$year)
 mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 5)
 ```
 
 .xsmall[
-```{r, echo=TRUE}
+```{r svc1, echo=TRUE}
 fit_sv <- sdmTMB(
   density ~ centered_year, 
   spatial_varying = ~ 0 + centered_year, #<<
@@ -740,13 +740,13 @@ fit_sv <- sdmTMB(
 ```
 ]
 
-```{r}
+```{r svc2}
 nd <- qcs_grid
 nd$centered_year <- nd$year - mean(pcod$year)
 p1 <- predict(fit_sv, newdata = nd)
 ```
 
-```{r, out.width='550px', fig.width=6.2}
+```{r spatial-varying-plot, out.width='550px', fig.width=6.2}
 b <- tidy(fit_sv)
 centered_year_effect <- b$estimate[b$term == "centered_year"]
 filter(p1, year == 2003) %>%  # any year
@@ -795,69 +795,6 @@ Includes spatial anisotropy, which is not (easily) possible with INLA
 --
   
 Widely applicable to species distribution modelling, stock assessment inputs, bycatch models, etc. that include spatially referenced data
-
-
-<!-- <img src="images/sdmTMB_workflow.png" height = "500px" width="900px" /> -->
-
-<!-- # Preparing data: getting into constant distance coordinates -->
-
-<!-- # Getting into UTMs -->
-
-<!-- Need a projection that preserves constant distance -->
-
-<!-- UTMs work well for regional analyses -->
-
-<!-- Helper function: `sdmTMB::add_utm_columns()` -->
-
-<!-- Internally, guesses at UTM zone and uses the sf package:   -->
-<!-- `sf::st_as_sf()`, `sf::st_transform()`, and `sf::st_coordinates()` -->
-
-<!-- Or use the sf or sp packages yourself -->
-
-<!-- # Example of adding UTM columns -->
-
-<!-- d <- data.frame( -->
-<!--   lat = c(52.1, 53.4),  -->
-<!--   lon = c(-130.0, -131.4) -->
-<!-- ) -->
-<!-- d <- sdmTMB::add_utm_columns(d, c("lon", "lat")) -->
-<!-- d -->
-
-<!-- * Note default `units = "km"` -->
-<!-- * Why? Range parameter estimated in units of X and Y -->
-<!-- * Should be not too big or small for estimation -->
-
-
-<!-- --- -->
-
-<!-- # Logistic functions for threshold analyses -->
-
-<!-- cpue ~ logistic(temperature) -->
-
-<!-- df <- data.frame(x = seq(1, 100)) -->
-<!-- slope <- 0.1 -->
-<!-- df$y <- 3.0 / (1 + exp(-0.1 * (df$x - 50))) -->
-<!-- ggplot(df, aes(x, y)) + -->
-<!--   geom_line(col = "blue") + -->
-<!--   xlab("Temperature") + -->
-<!--   ylab("CPUE") + -->
-<!--   ggtitle("Logistic function") -->
-
-
-
-<!-- # After model fitting -->
-
-<!-- Inspecting, summarizing, predicting, etc. -->
-
-<!-- Covered in examples in next slides. -->
-
-<!-- * `predict()`: `?predict.sdmTMB` -->
-<!-- * `residuals()`: `?residuals.sdmTMB` -->
-<!-- * `print()` -->
-<!-- * `tidy()`: `?tidy.sdmTMB` -->
-<!-- * `get_index()` -->
-<!-- *  `...` -->
-
 
 ---
 
