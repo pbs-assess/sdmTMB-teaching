@@ -147,7 +147,7 @@ Solutions:
 
 --
 
-* Gaussian predictive process models
+* Gaussian predictive process models (Banerjee et al. 2008, Latimer et al. 2009)
 
 --
 
@@ -155,78 +155,35 @@ Solutions:
 
 --
 
-* Stochastic Partial Differential Equation (SPDE) approach (Lindgren et al. 2011)
+* Stochastic Partial Differential Equation (SPDE) approach (Lindgren et al. 2011, INLA)
 
 ---
 
 # Why sdmTMB
 
-<img src="logo-sdmTMB.png" height="230px" class="centerimg"/>
+<img src="logo-sdmTMB.png" height="230px" class="centering"/>
 
 --
 
-* Familiar syntax; ease of interaction
+Familiar syntax; ease of interaction
 
 --
 
-* *Fast* (e.g., compared to INLA or mgcv*)
+*Fast* (e.g., compared to INLA or mgcv*)
 
 --
 
-* Features (e.g., anisotropy, breakpoints, index standardization)
+Features (e.g., anisotropy, breakpoints, index standardization)
 
 
 ---
 
-# TMB and hence sdmTMB is fast
+# sdmTMB models can be cast as GLMMs
 
-.xsmall[
-4–16 times faster than INLA*
-]
+<br>
+<br>
 
-```{r speed1, out.width="500px", fig.width=5, fig.asp=0.68}
-speed <- readRDS(here::here("isec-2022", "timing.rds"))
-speed <- speed[!is.na(speed$model_clean), ]
-
-cols <- RColorBrewer::brewer.pal(6, "Dark2")
-
-colour_vect <- c(
-  "sdmTMB" = cols[1],
-  "inlabru EB" = cols[3],
-  "spaMM" = cols[4],
-  "mgcv::bam\n(discretize = TRUE) SPDE" = cols[2]
-)
-
-leg <- tribble(
-  ~model_clean, ~mean_mesh_n, ~time,
-  "sdmTMB", 173, 0.26,
-  "inlabru EB", 173, 3.5,
-  "spaMM", 500, 2.0,
-  "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
-)
-
-speed %>%
-  # filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
-  # filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE") %>%
-  ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
-  geom_line(lwd = 0.7) +
-  scale_y_log10() +
-  scale_x_log10(breaks = c(250, 500, 1000)) +
-  ggsidekick::theme_sleek() +
-  theme(panel.grid.major = element_line(colour = "grey90")) +
-  theme(legend.position = c(0.4, 0.85)) +
-  geom_text(aes(label = model_clean), data = leg, hjust = 0) +
-  scale_fill_manual(values = colour_vect) +
-  scale_colour_manual(values = colour_vect) +
-  labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
-  coord_cartesian(expand = FALSE, ylim = c(0.09, 45)) +
-  theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
-```
-
-.tiny[
-* SPDE-based GLM with a spatial random field and increasing mesh complexity
-* 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
+<img src="eqn.png" height="320px" class="centering"/>
 
 ---
 
@@ -260,17 +217,65 @@ class: center, middle, inverse
 
 # The built-in Pacific Cod dataset
 
+.xsmall[
 ```{r fake-pcod-head, echo=TRUE, eval=FALSE}
 library(sdmTMB)
 head(pcod)
 ```
+]
 
+.xsmall[
 ```
-#>    year density depth     X     Y
-#>   <int>   <dbl> <dbl> <dbl> <dbl>
-#> 1  2003   113.    201  446. 5793.
-#> 2  2003    41.7   212  446. 5800.
-#> 3  2003     0     220  449. 5802.
+#> year density depth    X     Y
+#> 2003   113.    201  446  5793
+#> 2003    41.7   212  446  5800
+#> 2003     0.    220  449  5800
+```
+]
+
+```{r plot-pcod-raw, out.width="575px", fig.width=6}
+lims_x <- c(230957.7 + 105000, 1157991 - 570000) + c(-10000, 10000)
+lims_y <- c(5366427 + 270000, 6353456 - 513000) + c(-10000, 10000)
+land <- "grey86"
+land_border <- "grey86"
+
+map_data <- rnaturalearth::ne_countries(
+  scale = "large",
+  returnclass = "sf", country = "canada"
+)
+# Crop the polygon for plotting and efficiency:
+# st_bbox(map_data) # find the rough coordinates
+bc_coast <- suppressWarnings(suppressMessages(
+  sf::st_crop(
+    map_data,
+    c(xmin = -134, ymin = 46, xmax = -120, ymax = 57)
+  )
+))
+utm_zone9 <- 3156
+bc_coast_proj <- sf::st_transform(bc_coast, crs = utm_zone9)
+
+pcod_temp <- pcod
+pcod_temp$X1000 <- pcod_temp$X * 1000
+pcod_temp$Y1000 <- pcod_temp$Y * 1000
+
+ggplot(bc_coast_proj) +
+  geom_sf(colour = land_border, lwd = 0.3, fill = land) +
+  geom_point(data = pcod_temp, mapping = aes(X1000, Y1000,
+    size = density, colour = density
+  )) +
+  theme_light() +
+  scale_x_continuous(
+    limits = lims_x
+  ) +
+  scale_y_continuous(
+    limits = lims_y
+  ) +
+  xlab("") +
+  ylab("") +
+  labs(colour = expression("Density" ~ (kg / km^2))) +
+  scale_size_area() +
+  scale_colour_viridis_c(trans = "log10") +
+  guides(size = "none")
 ```
 
 ---
@@ -278,14 +283,12 @@ head(pcod)
 # Construct a mesh
 
 .small[
-- `make_mesh()` helps make SPDE mesh with INLA
-- `cutoff` is in units of x and y (minimum triangle size)
-- or supply any INLA mesh to `make_mesh(..., mesh = )`
-
 ```{r mesh-demo, echo=TRUE, fig.asp=0.8, out.width='400px', fig.width=7}
 mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 8)
 plot(mesh)
 ```
+
+Or supply any INLA mesh to `make_mesh(..., mesh = )`
 ]
 
 ---
@@ -310,11 +313,11 @@ fit <- sdmTMB(
 
 .small[
 ```{r summary, echo=TRUE, eval=FALSE}
-summary(fit)
+fit
 ```
 ]
 
-.small[
+.xsmall[
 ```{r summary-output, echo=TRUE}
 #> Spatial model fit by ML ['sdmTMB']
 #> Formula: density ~ s(depth)
@@ -329,18 +332,6 @@ summary(fit)
 #> Smooth terms:
 #>            Std. Dev.
 #> sds(depth)     13.07
-#> 
-#> ...
-```
-]
-
----
-
-# Summary
-
-.small[
-```{r summary-output2, echo=TRUE}
-#> ...
 #> 
 #> Dispersion parameter: 12.18
 #> Tweedie p: 1.57
@@ -483,7 +474,7 @@ All have `link` arguments. See `?sdmTMB::Families`.
 
 # Spatial fields can be turned on/off
 
-* By default `sdmTMB()` estimates a spatial field  
+By default `sdmTMB()` estimates a spatial field  
 
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
@@ -500,7 +491,7 @@ fit <- sdmTMB(
 
 # Spatiotemporal fields can be turned on/off
 
-* By default `sdmTMB()` estimates a spatiotemporal field if the `time` argument is specified
+By default `sdmTMB()` estimates a spatiotemporal field if the `time` argument is specified
 
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
@@ -585,26 +576,63 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
   guides(fill = "none")
 ```
 
-.small[Random walk = AR1 with 1.0 correlation]
+---
+
+class: center, middle, inverse
+
+# Speed
 
 ---
 
-# Spatial vs. spatiotemporal fields
+# TMB and hence sdmTMB is fast
 
-* A spatial field can be thought of as a spatial intercept
+.xsmall[
+4–16 times faster than INLA*
+]
 
-  * a wiggly spatial process that is constant in time
-  
---
+```{r speed1, out.width="500px", fig.width=5, fig.asp=0.68}
+speed <- readRDS(here::here("isec-2022", "timing.rds"))
+speed <- speed[!is.na(speed$model_clean), ]
 
-* Spatiotemporal variation represents separate fields estimated for each time
-  slice (possibly correlated)
-  
-  * wiggly spatial processes that change through time
+cols <- RColorBrewer::brewer.pal(6, "Dark2")
 
---
+colour_vect <- c(
+  "sdmTMB" = cols[1],
+  "inlabru EB" = cols[3],
+  "spaMM" = cols[4],
+  "mgcv::bam\n(discretize = TRUE) SPDE" = cols[2]
+)
 
-* Refer to [model description](https://pbs-assess.github.io/sdmTMB/articles/model-description.html) vignette for math notation
+leg <- tribble(
+  ~model_clean, ~mean_mesh_n, ~time,
+  "sdmTMB", 173, 0.26,
+  "inlabru EB", 173, 3.5,
+  "spaMM", 500, 2.0,
+  "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
+)
+
+speed %>%
+  # filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
+  # filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE") %>%
+  ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
+  geom_line(lwd = 0.7) +
+  scale_y_log10() +
+  scale_x_log10(breaks = c(250, 500, 1000)) +
+  ggsidekick::theme_sleek() +
+  theme(panel.grid.major = element_line(colour = "grey90")) +
+  theme(legend.position = c(0.4, 0.85)) +
+  geom_text(aes(label = model_clean), data = leg, hjust = 0) +
+  scale_fill_manual(values = colour_vect) +
+  scale_colour_manual(values = colour_vect) +
+  labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
+  coord_cartesian(expand = FALSE, ylim = c(0.09, 45)) +
+  theme(panel.spacing.x = unit(20, "pt"), legend.position = "none")
+```
+
+.tiny[
+* SPDE-based GLM with a spatial random field and increasing mesh complexity
+* 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
 
 ---
 
@@ -704,15 +732,15 @@ ggplot(p, aes(depth_scaled, exp(est),
 # Spatially varying coefficients
 
 ```{r}
-pcod$scaled_year <- (pcod$year - mean(pcod$year))
+pcod$centered_year <- pcod$year - mean(pcod$year)
 mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 5)
 ```
 
 .xsmall[
 ```{r, echo=TRUE}
 fit_sv <- sdmTMB(
-  density ~ scaled_year, 
-  spatial_varying = ~ 0 + scaled_year, #<<
+  density ~ centered_year, 
+  spatial_varying = ~ 0 + centered_year, #<<
   data = pcod,
   mesh = mesh, 
   family = tweedie(link = "log")
@@ -722,15 +750,15 @@ fit_sv <- sdmTMB(
 
 ```{r}
 nd <- qcs_grid
-nd$scaled_year <- (nd$year - mean(pcod$year))
+nd$centered_year <- nd$year - mean(pcod$year)
 p1 <- predict(fit_sv, newdata = nd)
 ```
 
 ```{r, out.width='550px', fig.width=6.2}
 b <- tidy(fit_sv)
-scaled_year_effect <- b$estimate[b$term == "scaled_year"]
+centered_year_effect <- b$estimate[b$term == "centered_year"]
 filter(p1, year == 2003) %>%  # any year
-  ggplot(aes(X, Y, fill = exp(scaled_year_effect + zeta_s_scaled_year))) +
+  ggplot(aes(X, Y, fill = exp(centered_year_effect + zeta_s_centered_year))) +
   geom_raster() +
   coord_fixed() +
   scale_fill_gradient2(midpoint = 1) +
@@ -758,15 +786,23 @@ ggplot(df, aes(x, y)) +
 
 ---
 
-# sdmTMB highlights
+# sdmTMB is an accessible R package for modeling spatial processes
 
-sdmTMB is a user-friendly R package for modeling spatial processes
+--
 
-* Familiar syntax to widely used functions/packages; `glm()`, mgcv, glmmTMB, etc.
+Familiar syntax to widely used functions/packages; `glm()`, mgcv, glmmTMB, etc.
+
+--
+
+Performs fast (marginal) maximum likelihood estimation via TMB
+
+--
+
+Includes spatial anisotropy, which is not (easily) possible with INLA
+
+--
   
-* Performs fast (marginal) maximum likelihood estimation via TMB
-  
-* Widely applicable to species distribution modelling, stock assessment inputs, bycatch models, etc. that include spatially referenced data
+Widely applicable to species distribution modelling, stock assessment inputs, bycatch models, etc. that include spatially referenced data
 
 
 <!-- <img src="images/sdmTMB_workflow.png" height = "500px" width="900px" /> -->
@@ -833,21 +869,17 @@ sdmTMB is a user-friendly R package for modeling spatial processes
 
 ---
 
-# Installing sdmTMB
-
-Currently:
-
-* Install a C++ compiler
-  * e.g., [Rtools](https://cran.r-project.org/bin/windows/Rtools/rtools40.html) on Windows
-  * e.g., Xcode command line tools on a Mac:  
-  `xcode-select --install`
+# Learning more
 
 .small[
-```{r, eval=FALSE, echo=TRUE}
-# install.packages("remotes")
-remotes::install_github("pbs-assess/sdmTMB", 
-  dependencies = TRUE)
-```
-]
+**GitHub:**  
+<https://github.com/pbs-assess/sdmTMB>
 
-Should be on CRAN soon so the C++ compiler won't be necessary.
+**Documentation:**  
+<https://pbs-assess.github.io/sdmTMB/index.html>
+
+**Preprint:**  
+Anderson, S.C., E.J. Ward, P.A. English, L.A.K. Barnett. 2022. sdmTMB: an R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields. bioRxiv 2022.03.24.485545; <https://doi.org/10.1101/2022.03.24.485545>
+
+**Coming to a CRAN server near you soon(?)**
+]

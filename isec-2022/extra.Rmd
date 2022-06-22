@@ -15,6 +15,47 @@
 
 ---
 
+# Installing sdmTMB
+
+.small[
+Currently:
+
+Install a C++ compiler
+* e.g., [Rtools](https://cran.r-project.org/bin/windows/Rtools/rtools40.html) on Windows
+* e.g., Xcode command line tools on a Mac:  
+  `xcode-select --install`
+]
+
+```{r, eval=FALSE, echo=TRUE}
+# install.packages("remotes")
+remotes::install_github("pbs-assess/sdmTMB", 
+  dependencies = TRUE)
+```
+
+.small[
+Should be on CRAN (very?) soon for easier installation.
+]
+
+---
+
+# Spatial vs. spatiotemporal fields
+
+* A spatial field can be thought of as a spatial intercept
+
+  * a wiggly spatial process that is constant in time
+  
+--
+
+* Spatiotemporal variation represents separate fields estimated for each time
+  slice (possibly correlated)
+  
+  * wiggly spatial processes that change through time
+
+--
+
+* Refer to [model description](https://pbs-assess.github.io/sdmTMB/articles/model-description.html) vignette for math notation
+
+
 # Residuals
 
 .small[
