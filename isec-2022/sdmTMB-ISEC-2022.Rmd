@@ -759,25 +759,6 @@ filter(p1, year == 2003) %>%  # any year
 
 ---
 
-# Breakpoint functions for threshold analyses
-
-```{r breakpt, echo=TRUE, eval=FALSE}
-cpue ~ breakpt(temperature)
-```
-
-```{r make-breakpt, out.width='500px', fig.width=5}
-df <- data.frame(x = seq(1, 100))
-slope <- 0.1
-df$y <- ifelse(df$x < 50, slope * df$x, slope * 50)
-ggplot(df, aes(x, y)) +
-  geom_line(col = "black") +
-  xlab("Temperature") +
-  ylab("CPUE") +
-  ggtitle("Breakpoint function")
-```
-
----
-
 # sdmTMB is an accessible R package for modeling spatial processes
 
 --
