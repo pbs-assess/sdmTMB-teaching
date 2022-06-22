@@ -1,0 +1,6 @@
+*.rtf
+*.js
+*.html
+^scrap.R$
+*cache*
+*keynote*

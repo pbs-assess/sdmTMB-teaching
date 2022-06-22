@@ -1,0 +1,136 @@
+
+<!-- advanced stuff to feature: -->
+
+<!-- - time-varying coefficients -->
+<!-- - spatially varying coefficients -->
+<!-- - PC Matern priors -->
+<!-- - smoothers like mgcv -->
+<!-- - nice and stable Tweedie -->
+<!-- - MLE-MCMC residuals -->
+<!-- - nice predict() and prediction data frame -->
+<!-- - nice summary() -->
+<!-- - nice tidy() -->
+<!-- - passing to tmbstan -->
+<!-- - wide variety of families -->
+
+---
+
+# Residuals
+
+.small[
+Randomized quantile residuals from Laplace approximation
+
+```{r residuals, eval=FALSE, echo=TRUE}
+r <- residuals(fit)
+```
+
+Same but MCMC-based with fixed effects at MLE (slower)
+
+```{r mcmc-residuals, eval=FALSE, echo=TRUE}
+r <- residuals(fit, type = "mle-mcmc")
+```
+
+Simulation-based residuals with the DHARMa package
+
+```{r dharma-residuals, eval=FALSE, echo=TRUE}
+simulate(fit, nsim = 300) %>% 
+  dharma_residuals(fit)
+```
+
+See `?residuals.sdmTMB()`.
+]
+
+---
+
+# sdmTMB workflow
+
+1. Prepare data .xsmall[(convert to UTMs, scale covariates, ...)]
+
+2. Construct a mesh
+
+3. Fit the model
+
+4. Inspect the model .xsmall[(and possibly refit the model)]
+
+5. Predict from the model
+
+6. Calculate any derived quantities
+
+---
+
+# sdmTMB workflow
+
+1. Prepare data: .blue[`add_utm_columns()`]
+
+2. Construct a mesh: .blue[`make_mesh()`]
+
+3. Fit the model: .blue[`sdmTMB()`]
+
+4. Inspect the model: .blue[`print()`], .blue[`tidy()`], .blue[`residuals()`]
+
+5. Predict from the model: .blue[`predict()`]
+
+6. Get derived quantities: .blue[`get_index()`], .blue[`get_cog()`]
+
+---
+
+# Constructing a mesh
+
+`make_mesh()` has 2 shortcuts to mesh construction
+
+1. K-means algorithm: used to cluster points (e.g., `n_knots = 100`)
+
+2. Cutoff: minimum allowed distance between vertices (e.g., `cutoff = 10`)
+  
+Alternatively, build any INLA mesh and supply it to the `mesh` argument in `make_mesh()`
+
+---
+
+# Constructing a mesh
+
+.small[
+Size of mesh has the single largest impact on fitting speed
+
+`cutoff` is in units of x and y (minimum triangle size)
+]
+
+.small[
+```{r make-mesh, echo=TRUE, fig.asp=1, out.width='280px', fig.width=5.5}
+d <- data.frame(x = runif(500), y = runif(500))
+mesh <- make_mesh(d, xy_cols = c("x", "y"), cutoff = 0.1)
+plot(mesh)
+```
+]
+
+
+
+# Visualization with visreg
+
+.small[
+Default plot is in link space with partial randomized quantile residuals:
+
+
+```{r visreg, echo=FALSE, fig.asp=0.6, eval=FALSE}
+visreg::visreg(fit, xvar = "depth")
+```
+
+]
+
+---
+
+# Visualization with ggeffects
+
+.xsmall[
+Fork of ggeffects; pull request will be made soon.
+
+`ggeffects::ggeffect()` also works for marginal effects, but *not* for smoothers.
+]
+
+.small[
+```{r ggeffects, echo=FALSE, out.width="500px", fig.asp=0.5, eval=FALSE}
+ggeffects::ggpredict(fit2, terms = "depth [50:300]") %>% 
+  plot()
+```
+]
+
+---
