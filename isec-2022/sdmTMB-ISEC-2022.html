@@ -36,13 +36,14 @@ Plan
 1. spatial models
 2. random field approaches
 3. why sdmTMB?
-4. fast
-5. accessible syntax
+4. accessible syntax
   - example
   - basic syntax walk through
-6. advanced functionality
-7. grab bag of functionality
+5. fast
+6. advanced functionality examples
 8. summary
+9. finding out more
+10. acknowledgements
 
 --&gt;
 
@@ -237,7 +238,6 @@ fit
 ```
 ]
 
-
 ---
 
 # Tidy (extract parameter values)
@@ -280,7 +280,7 @@ head(p)
 
 ---
 
-# Visualizing the predictions
+# Visualizing predictions
 
 .small[
 
@@ -447,8 +447,24 @@ class: center, middle, inverse
 &lt;img src="sdmTMB-ISEC-2022_files/figure-html/speed1-1.png" width="500px" style="display: block; margin: auto;" /&gt;
 
 .tiny[
-* SPDE-based GLM with a spatial random field and increasing mesh complexity
-* 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
+`*` Maximum marginal likelihood vs. approximate Bayes  
+`*` SPDE-based GLM with a spatial random field and increasing mesh complexity  
+`*` 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
+
+---
+
+# TMB and hence sdmTMB is fast
+
+.xsmall[
+4–16 times faster than INLA*
+]
+
+&lt;img src="sdmTMB-ISEC-2022_files/figure-html/speed-xkcd-1.png" width="500px" style="display: block; margin: auto;" /&gt;
+
+.tiny[
+`*` Maximum marginal likelihood vs. approximate Bayes  
+`*` SPDE-based GLM with a spatial random field and increasing mesh complexity  
+`*` 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
 
 ---
 
@@ -565,7 +581,7 @@ Anderson, S.C., E.J. Ward, P.A. English, L.A.K. Barnett. 2022. sdmTMB: an R pack
 Eric Ward (NOAA), Philina English (DFO), Lewis Barnett (NOAA)
 
 *Software inspiration and dependencies:*  
-VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), INLA (Rue et al. 2009; Lindgren et al. 2011), glmmTMB (Brooks et al. 2017), mgcv (Wood et al. 2011)
+VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), glmmTMB (Brooks et al. 2017), INLA (Rue et al. 2009; Lindgren et al. 2011), inlabru (Bachl et al. 2019), mgcv (Wood et al. 2011)
 
 *sdmTMB improvements:*  
 Jim Thorson, Joe Watson, Cole Monnahan, Julia Indivero, Max Lindmark, Stan Kotwicki

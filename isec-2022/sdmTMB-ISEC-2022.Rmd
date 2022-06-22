@@ -21,13 +21,14 @@ Plan
 1. spatial models
 2. random field approaches
 3. why sdmTMB?
-4. fast
-5. accessible syntax
+4. accessible syntax
   - example
   - basic syntax walk through
-6. advanced functionality
-7. grab bag of functionality
+5. fast
+6. advanced functionality examples
 8. summary
+9. finding out more
+10. acknowledgements
 
 -->
 
@@ -95,15 +96,13 @@ mesh <- make_mesh(predictor_dat, xy_cols = c("X", "Y"), cutoff = 0.01)
 sim_dat <- sdmTMB_simulate(
   formula = ~ 1,
   data = predictor_dat,
-  # time = "year",
   mesh = mesh,
   family = gaussian(),
   range = 0.5,
-  # sigma_E = 0.1,
   phi = 0.05,
   sigma_O = 0.6,
   seed = 123,
-  B = c(0) # B0 = intercept, B1 = a1 slope
+  B = 0
 )
 
 set.seed(123)
@@ -343,7 +342,6 @@ fit
 ```
 ]
 
-
 ---
 
 # Tidy (extract parameter values)
@@ -377,7 +375,7 @@ dplyr::select(p, X, Y, est, est_non_rf, est_rf, omega_s) %>%
 
 ---
 
-# Visualizing the predictions
+# Visualizing predictions
 
 .small[
 ```{r vis-predictions-fake, eval=FALSE, echo=TRUE}
@@ -610,13 +608,12 @@ leg <- tribble(
   ~model_clean, ~mean_mesh_n, ~time,
   "sdmTMB", 173, 0.26,
   "inlabru EB", 173, 3.5,
-  "spaMM", 500, 2.0,
+  # "spaMM", 500, 2.0,
   "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
 )
 
 speed %>%
-  # filter(model_clean != "mgcv::bam\n(discretize = F) SPDE") %>%
-  # filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE") %>%
+  filter(model_clean != "spaMM") %>%
   ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
   geom_line(lwd = 0.7) +
@@ -634,8 +631,52 @@ speed %>%
 ```
 
 .tiny[
-* SPDE-based GLM with a spatial random field and increasing mesh complexity
-* 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
+`*` Maximum marginal likelihood vs. approximate Bayes  
+`*` SPDE-based GLM with a spatial random field and increasing mesh complexity  
+`*` 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
+
+---
+
+# TMB and hence sdmTMB is fast
+
+.xsmall[
+4–16 times faster than INLA*
+]
+
+```{r speed-xkcd, out.width="500px", fig.width=5, fig.asp=0.68}
+leg2 <- tribble(
+  ~model_clean, ~mean_mesh_n, ~time,
+  "sdmTMB", 170, 0.5,
+  "inlabru EB", 170, 3.5,
+  # "spaMM", 500, 2.0,
+  "mgcv::bam\n(discretize = TRUE) SPDE", 249, 20.5
+)
+leg2 <- leg2 %>% filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE")
+speed %>%
+  filter(model_clean != "spaMM") %>%
+  # filter(model_clean != "mgcv::bam\n(discretize = TRUE) SPDE") %>%
+  ggplot(aes(mean_mesh_n, time, colour = model_clean)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = model_clean), alpha = 0.2, colour = NA) +
+  geom_line(lwd = 0.7) +
+  # scale_y_log10() +
+  # scale_x_log10(breaks = c(250, 500, 1000)) +
+  ggsidekick::theme_sleek() +
+  theme(panel.grid.major = element_line(colour = "grey90")) +
+  theme(legend.position = c(0.4, 0.85)) +
+  geom_text(aes(label = model_clean), data = leg2, hjust = 0) +
+  scale_fill_manual(values = colour_vect) +
+  scale_colour_manual(values = colour_vect) +
+  labs(y = "Time (s)", x = "Mesh nodes", colour = "Model", fill = "Model") +
+  coord_cartesian(expand = FALSE, ylim = c(0, 6)) +
+  theme(panel.spacing.x = unit(20, "pt"), legend.position = "none") +
+  annotate("text", x = 170, y = 5.5, label = "Without log axes", hjust = 0,
+    fontface = 2, size = 4.5, colour = "grey20")
+```
+
+.tiny[
+`*` Maximum marginal likelihood vs. approximate Bayes  
+`*` SPDE-based GLM with a spatial random field and increasing mesh complexity  
+`*` 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
 
 ---
 
@@ -805,7 +846,7 @@ Anderson, S.C., E.J. Ward, P.A. English, L.A.K. Barnett. 2022. sdmTMB: an R pack
 Eric Ward (NOAA), Philina English (DFO), Lewis Barnett (NOAA)
 
 *Software inspiration and dependencies:*  
-VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), INLA (Rue et al. 2009; Lindgren et al. 2011), glmmTMB (Brooks et al. 2017), mgcv (Wood et al. 2011)
+VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), glmmTMB (Brooks et al. 2017), INLA (Rue et al. 2009; Lindgren et al. 2011), inlabru (Bachl et al. 2019), mgcv (Wood et al. 2011)
 
 *sdmTMB improvements:*  
 Jim Thorson, Joe Watson, Cole Monnahan, Julia Indivero, Max Lindmark, Stan Kotwicki
