@@ -133,11 +133,11 @@ ggplot(sim_dat, aes(X, Y, fill = exp(eta))) +
   scale_size(range = c(0, 8))
 ```
 
---
-* Latent variables can cause complex spatial correlation
+Latent variables can cause complex spatial correlation
+
 --
 
-* Gaussian random fields are an increasingly popular method for approximating these surfaces
+Gaussian random fields are an increasingly popular method for approximating these surfaces
 
 ---
 
@@ -165,15 +165,15 @@ Solutions:
 
 --
 
-Familiar syntax; ease of interaction
+1. Familiar syntax; ease of interaction
 
 --
 
-*Fast* (e.g., compared to INLA or mgcv*)
+2. *Fast* (e.g., compared to INLA or mgcv*)
 
 --
 
-Features (e.g., anisotropy, breakpoints, index standardization)
+3. Features (e.g., anisotropy, breakpoints, index standardization)
 
 
 ---
@@ -381,6 +381,7 @@ dplyr::select(p, X, Y, est, est_non_rf, est_rf, omega_s) %>%
 ```{r vis-predictions-fake, eval=FALSE, echo=TRUE}
 ggplot(p, aes(X, Y, fill = exp(est))) +
   geom_raster()
+
 ggplot(p, aes(X, Y, fill = omega_s)) +
   geom_raster()
 ```
@@ -403,7 +404,7 @@ cowplot::plot_grid(g1, g2, nrow = 1L)
 
 class: center, middle, inverse
 
-# Syntax: formula interface, families, random fields
+# Syntax
 
 ---
 
