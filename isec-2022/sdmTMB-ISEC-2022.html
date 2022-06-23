@@ -10,23 +10,23 @@
   </head>
   <body>
     <textarea id="source">
-class: center, middle, inverse, title-slide
 
-.title[
+
+class: middle, inverse
+
 # sdmTMB: an R package for fast, flexible, and accessible generalized linear mixed effects models with spatial and spatiotemporal random fields
+
+Sean C. Anderson&lt;sup&gt;1&lt;/sup&gt;, Eric J. Ward&lt;sup&gt;2&lt;/sup&gt;,&lt;br&gt;
+Philina A. English&lt;sup&gt;1&lt;/sup&gt;, Lewis A.K. Barnett&lt;sup&gt;2&lt;/sup&gt;
+
+.xsmall[
+&lt;sup&gt;1&lt;/sup&gt;Fisheries and Oceans Canada  
+&lt;sup&gt;2&lt;/sup&gt;U.S. National Oceanic and Atmospheric Administration
 ]
-.subtitle[
-## ISEC 2022
-]
-.author[
-### Sean C. Anderson<sup>1</sup>, Eric J. Ward<sup>2</sup>, Philina A. English<sup>1</sup>, Lewis A.K. Barnett<sup>2</sup>
-]
-.institute[
-### <sup>1</sup>Fisheries and Oceans Canada <sup>2</sup>U.S. National Oceanic and Atmospheric Administration
-]
+
+&lt;!-- &lt;img src="logo-sdmTMB.png" height="130px" class="centering"/&gt; --&gt;
 
 ---
-
 
 &lt;!-- Build with: xaringan::inf_mr() --&gt;
 
@@ -89,11 +89,11 @@ Solutions:
 
 &lt;img src="logo-sdmTMB.png" height="130px" class="centering"/&gt;
 
-.small[Familiar syntax; ease of interaction]
+.small[Familiar syntax (similar to glmmTMB, mgcv)]
 
 --
 
-.small[*Fast* (marginal) maximum likelihood estimation via TMB (or MCMC via Stan)]
+.small[*Fast* marginal maximum likelihood estimation via TMB (or MCMC via Stan)]
 
 --
 
@@ -102,7 +102,7 @@ Solutions:
 --
 
 .small[
-Widely applicable to species distribution modelling (**sdm**TMB) or any GLMMs for spatially referenced data
+Widely applicable to species distribution modelling (**sdm**TMB) or most geostatistical data
 ]
 
 ---
@@ -116,7 +116,7 @@ Widely applicable to species distribution modelling (**sdm**TMB) or any GLMMs fo
 
 ---
 
-# sdmTMB()
+# `sdmTMB()`
 
 Set up is similar to `glmmTMB()`. Common arguments:
 
@@ -548,7 +548,7 @@ fit_sv &lt;- sdmTMB(
 
 # Why sdmTMB
 
-&lt;img src="logo-sdmTMB.png" height="200px" class="centering"/&gt;
+&lt;img src="logo-sdmTMB.png" height="175px" class="centering"/&gt;
 
 1. Familiar syntax; ease of interaction
 

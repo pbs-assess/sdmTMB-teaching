@@ -11,6 +11,23 @@ output:
     nature:
       highlightLines: true
       countIncrementalSlides: false
+    seal: false
+---
+
+class: middle, inverse
+
+# sdmTMB: an R package for fast, flexible, and accessible generalized linear mixed effects models with spatial and spatiotemporal random fields
+
+Sean C. Anderson<sup>1</sup>, Eric J. Ward<sup>2</sup>,<br>
+Philina A. English<sup>1</sup>, Lewis A.K. Barnett<sup>2</sup>
+
+.xsmall[
+<sup>1</sup>Fisheries and Oceans Canada  
+<sup>2</sup>U.S. National Oceanic and Atmospheric Administration
+]
+
+<!-- <img src="logo-sdmTMB.png" height="130px" class="centering"/> -->
+
 ---
 
 <!-- Build with: xaringan::inf_mr() -->
@@ -153,11 +170,11 @@ Solutions:
 
 <img src="logo-sdmTMB.png" height="130px" class="centering"/>
 
-.small[Familiar syntax; ease of interaction]
+.small[Familiar syntax (similar to glmmTMB, mgcv)]
 
 --
 
-.small[*Fast* (marginal) maximum likelihood estimation via TMB (or MCMC via Stan)]
+.small[*Fast* marginal maximum likelihood estimation via TMB (or MCMC via Stan)]
 
 --
 
@@ -166,7 +183,7 @@ Solutions:
 --
 
 .small[
-Widely applicable to species distribution modelling (**sdm**TMB) or any GLMMs for spatially referenced data
+Widely applicable to species distribution modelling (**sdm**TMB) or most geostatistical data
 ]
 
 ---
@@ -180,7 +197,7 @@ Widely applicable to species distribution modelling (**sdm**TMB) or any GLMMs fo
 
 ---
 
-# sdmTMB()
+# `sdmTMB()`
 
 Set up is similar to `glmmTMB()`. Common arguments:
 
@@ -813,7 +830,7 @@ filter(p1, year == 2003) %>%  # any year
 
 # Why sdmTMB
 
-<img src="logo-sdmTMB.png" height="200px" class="centering"/>
+<img src="logo-sdmTMB.png" height="175px" class="centering"/>
 
 1. Familiar syntax; ease of interaction
 
