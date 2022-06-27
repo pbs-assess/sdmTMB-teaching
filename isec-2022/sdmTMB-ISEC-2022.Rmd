@@ -16,7 +16,8 @@ output:
 
 class: middle, inverse
 
-# sdmTMB: an R package for fast, flexible, and accessible generalized linear mixed effects models with spatial and spatiotemporal random fields
+<h1>sdmTMB: an R package for fast,<br>
+flexible, and accessible generalized linear mixed effects models with spatial and spatiotemporal random fields</h1>
 
 Sean C. Anderson<sup>1</sup>, Eric J. Ward<sup>2</sup>,<br>
 Philina A. English<sup>1</sup>, Lewis A.K. Barnett<sup>2</sup>
@@ -148,7 +149,7 @@ Gaussian random fields are an increasingly popular method for approximating thes
 
 ---
 
-# Random fields can be computationally challenging
+# Random fields are computationally challenging
 
 Solutions:
 
@@ -183,7 +184,7 @@ Solutions:
 --
 
 .small[
-Widely applicable to species distribution modelling (**sdm**TMB) or most geostatistical data
+Widely applicable to **s**pecies **d**istribution **m**odelling (**sdm**TMB)
 ]
 
 ---
@@ -199,7 +200,8 @@ Widely applicable to species distribution modelling (**sdm**TMB) or most geostat
 
 # `sdmTMB()`
 
-Set up is similar to `glmmTMB()`. Common arguments:
+Set up is similar to `glmmTMB()`.  
+Common arguments:
 
 ```r
 fit <- sdmTMB(
@@ -427,7 +429,7 @@ class: center, middle, inverse
 
 # Formula interface
 
-Similar formula interface to widely used R packages:
+Similar interface to widely used R packages:
 
 .small[
 ```{r formulas1, echo=TRUE, eval=FALSE}
@@ -509,7 +511,8 @@ fit <- sdmTMB(
 
 # Spatiotemporal fields can be added
 
-By default `sdmTMB()` estimates a spatiotemporal field if the `time` argument is specified
+By default `sdmTMB()` estimates a spatiotemporal  
+field if the `time` argument is specified
 
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
@@ -537,7 +540,7 @@ fit <- sdmTMB(
 
 ---
 
-# Independent (IID) spatiotemporal fields
+# Independent spatiotemporal fields
 
 ```{r iid-demo}
 predictor_dat <- expand.grid(
