@@ -1,0 +1,302 @@
+---
+title: "Class exercises"
+format: html
+editor: visual
+
+execute: 
+  echo: true
+  eval: false
+---
+
+```{r}
+library(sdmTMB)
+library(ggplot2)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+theme_set(theme_minimal())
+```
+
+## Simulating
+
+Try simulating some random fields to see how the range and sigma affect the random field. This chunk created a random grid, and constructs a mesh using a minimum cutoff distance of 0.05.
+
+```{r}
+# A grid of X and Y values:
+predictor_dat <- expand.grid(
+  X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100)
+)
+mesh <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.05)
+
+```
+
+The basic function for simulating random fields in sdmTMB is `sdmTMB_simulate`. The formula here contains an intercept (but could include covariates), the family is gaussian to specify that we simulate a normally distributed response. The range (or distance at which correlation declines to \~ 0.13) is 0.6. The two important variance parameters are `sigma_O` (controlling the variance of omega, the spatial field) and `phi` (controlling the observation error variance). This chunk will simulate and plot a random field,
+
+```{r eval=FALSE}
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.6, # Try changing this (spatial range)
+  sigma_O = 0.2, # Try changing this (spatial standard deviation)
+  phi = 0.01, # observation error standard deviation; not used
+  B = 0
+)
+
+ggplot(sim_dat, aes(X, Y, fill = mu)) +
+  geom_raster() +
+  scale_fill_gradient2()
+
+```
+
+As a reminder, the range is scaled based on the units of the locations -- here the X and Y variables range between 0 and 1, but for other data the range may be different.
+
+1.  Re-run the following simulation and plotting repeatedly with different values for range and sigma_O. How do these affect the random field?
+2.  Now try increasing the observation error standard deviation `phi`. When this is much larger than `sigma_O`, the spatial field will look like noise
+
+## Pacific cod case study
+
+#### Exploring the data
+
+It's worth first exploring the data, which represents survey data on Pacific cod collected from Queen Charlotte Sound (British Columbia).
+
+```{r}
+head(pcod)
+```
+
+The data contains original locations (`lon` and `lat`), UTM transformed locations in zone 9 (`X` and `Y`). It also contains a couple of different responses -- `present` (describing the presence-absence of Pacific cod) and `density` (CPUE) in units of kg/km\^2. If the `X` and `Y` columns didn't already exist, we could have created those with \`sdmTMB::add_utm_columns()\`.
+
+Look at the data spatially:
+
+```{r}
+ggplot(pcod, aes(X, Y, size = density)) + geom_point()
+```
+
+And by year
+
+```{r}
+ggplot(pcod, aes(X, Y, size = density, colour = log(density + 1))) +
+  geom_point() +
+  facet_wrap(~year)
+```
+
+#### Constructing a mesh
+
+```{r}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+plot(mesh)
+```
+
+1.  Try to adjust the size of the cutoff distance to explore the effects of decreasing the mesh resolution
+
+#### Fitting a model with a spatial field
+
+This first model includes a smoother (P-spline) on depth, and models total density using a Tweedie distribution. The spatial field is estimated, but spatiotemporal fields are not.
+
+```{r}
+fit1 <- sdmTMB(
+  density ~ s(depth),
+  data = pcod,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  silent = FALSE
+)
+```
+
+We can look at the maximum gradient and standard errors. Is this consistent with convergence?
+
+```{r}
+max(fit1$gradients)
+fit1$sd_report
+```
+
+We can use the tidy function to get the coefficients for the fixed effects,
+
+```{r}
+tidy(fit1, conf.int = TRUE)
+```
+
+and by setting `effects = "ran_pars"`, can extract random components
+
+```{r}
+tidy(fit1, effects = "ran_pars", conf.int = TRUE)
+```
+
+There are 2 ways we can plot the marginal depth effects on density. If we had other predictors in the model, we could set them. First, we can create new dataframe of all potential values,
+
+```{r}
+nd <- data.frame(depth = seq(0, 400, length.out = 100))
+p <- predict(
+  fit1,
+  newdata = nd,
+  re_form = ~ 0, # means only include the fixed effects
+  se_fit = TRUE # means calculate standard errors
+)
+
+ggplot(p, aes(depth, exp(est),
+  ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se))) +
+  geom_line() + geom_ribbon(alpha = 0.4)
+```
+
+The second approach is to use our experimental helper function for simple 1D smooths:
+
+```{r}
+plot_smooth(fit1)
+plot_smooth(fit1, ggplot = TRUE) + coord_cartesian(xlim = c(0, 400))
+```
+
+#### Prediction
+
+Let's now predict on a grid that covers the entire survey. This dataframe \`qcs_grid\` is built into the package:
+
+```{r}
+head(qcs_grid)
+nd <- dplyr::filter(qcs_grid, year == 2003) # any one year will do
+```
+
+To predict on a new data frame, we can specify `newdata`,
+
+```{r}
+p <- predict(fit1, newdata = nd)
+```
+
+We can also plot each of the components of the predict object spatially
+
+```{r}
+# Depth effect contribution:
+# (Everything not a random field)
+ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
+  geom_raster() +
+  coord_fixed()
+
+# Spatial random field:
+ggplot(p, aes(X, Y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+
+# Overall estimate of density in link (log) space:
+ggplot(p, aes(X, Y, fill = est)) +
+  geom_raster() +
+  coord_fixed()
+
+# Overall estimate of density:
+ggplot(p, aes(X, Y, fill = exp(est))) +
+  geom_raster() +
+  coord_fixed()
+
+```
+
+#### Fitting a model with a spatial field and spatiotemporal fields
+
+Next, we expand this model to include independent spatiotemporal random fields. To simplify this model, we will not include the effect of depth. The spatial random fields should largely account for this effect. We'll include mean estimates for each year with \`0 + as.factor(year)\`. The \`\~ 0\` part tells R to not include a separate intercept. Without it we'd be estimating the first year as an intercept and years after that as deviations from that.
+
+```{r}
+
+fit2 <- sdmTMB(
+  density ~ 0 + as.factor(year), #<<
+  data = pcod,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  time = "year", #<<
+  spatiotemporal = "iid", #<<
+  silent = FALSE
+)
+
+fit2
+
+```
+
+What is larger: sigma_O (the spatial standard deviation) or sigma_E (the spatiotemporal standard deviation)?
+
+Inspect the sd_report and maximum gradient for fit2 \-- has the model converged?
+
+```{r}
+tidy(fit2, conf.int = TRUE)
+tidy(fit2, effects = "ran_pars", conf.int = TRUE)
+```
+
+Again, predict on the survey grid:
+
+```{r}
+p2 <- predict(fit2, newdata = qcs_grid)
+```
+
+```{r}
+# Overall prediction in in log space:
+ggplot(p2, aes(X, Y, fill = est)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed()
+
+# What are these?
+ggplot(p2, aes(X, Y, fill = exp(est_non_rf))) +
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+Why do these spatial random field effects look the same every year?
+
+```{r}
+ggplot(p2, aes(X, Y, fill = omega_s)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2() +
+  coord_fixed()
+```
+
+Here are the spatiotemporal random field effects each year. What processes might this represent?
+
+```{r}
+ggplot(p2, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2() +
+  coord_fixed()
+```
+
+By default, sdmTMB shares the 'range' parameter across the spatial and spatiotemporal random fields because it's often hard to estimate. Reminder: the range is the distance at which spatial correlation is effectively independent (\~ 0.13 correlation). Try fitting the same model but let the range be estimated separately for the spatial and spatiotemporal parts. Look at the help file: ?sdmTMB
+
+Hint, see the argument \`share_range\`
+
+```{r}
+fit3 <- sdmTMB(
+  density ~ 0 + as.factor(year),
+  data = pcod,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  time = "year",
+  spatiotemporal = "iid",
+  share_range = FALSE, #<<
+  silent = FALSE
+)
+
+fit3
+tidy(fit3, "ran_pars", conf.int = TRUE)
+
+```
+
+What is different now in this model?
+
+Is the spatial or spatiotemporal range larger, and what does this mean?
+
+Finally, let's calculate an area-weighted population index. All grid cells are 2 x 2 km = 4 km\^2.
+
+```{r}
+pred2 <- predict(fit2, newdata = qcs_grid, return_tmb_object = TRUE, area = 4)
+ind <- get_index(pred2, bias_correct = FALSE)
+```
+
+In applied situations, you would want to set \`bias_correct = TRUE\` but this is much slower.
+
+There's also an experimental (faster) option ?get_index_sims
+
+```{r}
+ggplot(ind, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  ylim(0, NA)
+```
