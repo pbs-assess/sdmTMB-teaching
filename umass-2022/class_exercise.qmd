@@ -1,6 +1,6 @@
 ---
 title: "Class exercises"
-format: html
+format: pdf
 editor: visual
 
 execute: 
@@ -11,6 +11,7 @@ execute:
 ```{r}
 library(sdmTMB)
 library(ggplot2)
+library(visreg)
 options(ggplot2.continuous.colour = "viridis")
 options(ggplot2.continuous.fill = "viridis")
 theme_set(theme_minimal())
@@ -123,7 +124,7 @@ and by setting `effects = "ran_pars"`, can extract random components
 tidy(fit1, effects = "ran_pars", conf.int = TRUE)
 ```
 
-There are 2 ways we can plot the marginal depth effects on density. If we had other predictors in the model, we could set them. First, we can create new dataframe of all potential values,
+There are 3 ways we can plot the marginal depth effects on density. If we had other predictors in the model, we could set them. First, we can create new data frame of all potential values,
 
 ```{r}
 nd <- data.frame(depth = seq(0, 400, length.out = 100))
@@ -139,11 +140,16 @@ ggplot(p, aes(depth, exp(est),
   geom_line() + geom_ribbon(alpha = 0.4)
 ```
 
-The second approach is to use our experimental helper function for simple 1D smooths:
+The second approach is to pass the `sdmTMB` object to the `visreg` package. This shows the conditional effects, where all values other than depth are held at a particular value.
 
 ```{r}
-plot_smooth(fit1)
-plot_smooth(fit1, ggplot = TRUE) + coord_cartesian(xlim = c(0, 400))
+visreg::visreg(fit1)
+```
+
+Third, we can use the `ggeffects` package which can be used to show the marginal effects of the smoothed variables (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html)
+
+```{r}
+ggeffects::ggeffect(fit1)
 ```
 
 #### Prediction
@@ -224,6 +230,8 @@ Again, predict on the survey grid:
 p2 <- predict(fit2, newdata = qcs_grid)
 ```
 
+Prettier maps can be made by adding coastlines, to see examples check out the [mapping vignette](https://pbs-assess.github.io/sdmTMB/articles/pretty-plots.html)
+
 ```{r}
 # Overall prediction in in log space:
 ggplot(p2, aes(X, Y, fill = est)) +
@@ -284,11 +292,11 @@ What is different now in this model?
 
 Is the spatial or spatiotemporal range larger, and what does this mean?
 
-Finally, let's calculate an area-weighted population index. All grid cells are 2 x 2 km = 4 km\^2.
+Finally, let's calculate an area-weighted population index. for details, see the [index standardization vignette](https://pbs-assess.github.io/sdmTMB/articles/index-standardization.html). All grid cells are 2 x 2 km = 4 km\^2.
 
 ```{r}
-pred2 <- predict(fit2, newdata = qcs_grid, return_tmb_object = TRUE, area = 4)
-ind <- get_index(pred2, bias_correct = FALSE)
+pred2 <- predict(fit2, newdata = qcs_grid, return_tmb_object = TRUE)
+ind <- get_index(pred2, bias_correct = FALSE, area = 4)
 ```
 
 In applied situations, you would want to set \`bias_correct = TRUE\` but this is much slower.
@@ -299,4 +307,113 @@ There's also an experimental (faster) option ?get_index_sims
 ggplot(ind, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   ylim(0, NA)
+```
+
+#### Fitting a model with time varying coefficients
+
+We can model effects of time (here, year) in several ways with `sdmTMB`. Above, we treated year as a factor -- so each year had an estimated intercept as a fixed effect. This approach is generally used in stock assessments, to get unbiased estimates of trends. But for some applications, we may want to model year effects in other ways. If year effects were thought to be distributed around a common mean, we could treat them as random effects, e.g.
+
+```{r}
+pcod$fyear <- as.factor(pcod$year)
+fit4 <- sdmTMB(
+  density ~ (1|fyear),#<<
+  data = pcod,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  time = "year",
+  spatiotemporal = "iid",
+  share_range = TRUE,
+  silent = FALSE
+)
+
+```
+
+Alternatively, we can model year effects as smooth terms, like we would with a GAM. Similar to the example above where we model depth effects with smooth terms, we can model year with P-splines.
+
+When we first used splines above, we only used the `s()` notation, with no additional arguments. That doesn't work for this application because the default basis dimension is 10, and there are only 9 years surveyed. More details on the basis dimension can be found here: <https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/smooth.construct.ps.smooth.spec.html>
+
+We can initially set the basis dimension to 7, and the P-spline will assign more penalty to increased complexity (wiggliness).
+
+```{r}
+fit5 <- sdmTMB(
+  density ~ s(year, k=7),#<<
+  data = pcod,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  time = "year",
+  spatiotemporal = "iid",
+  share_range = TRUE,
+  silent = FALSE
+)
+```
+
+1.  Try to plot the smooth year effects
+2.  Change the basis dimension to 3 and plot it again to get a sense for how much the wiggliness changes
+
+The other way we can model temporal effects is by treating them as random walks, similar to a dynamic linear model (DLM). This approach will generally be less smooth than the P-spline above. We don't include an intercept in the main formula, but use the `time_varying` component to specify which coefficients should be included as random walks. This model just includes an intercept, though other slope coefficients could also be modeled as time-varying.
+
+```{r}
+fit6 <- sdmTMB(
+  density ~ -1,#<<
+  data = pcod,
+  time_varying = ~ 1,#<<
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  time = "year",
+  spatiotemporal = "iid",
+  share_range = TRUE,
+  silent = FALSE
+)
+```
+
+#### Fitting a model with spatially varying coefficients
+
+Spatial varying coefficient models are a way to model covariate effects that may be spatially non-stationary. Examples might be in some ecosystems where the effect of temperature or oxygen has a spatial component. We can specify these with the `spatial_varying` argument. The `pcod` dataset doesn't include environmental variables, but we can model the time trend as spatially varying. See also the [spatial trend vignette](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
+
+The only thing we need to do is turn time into a standardized variable, which we'll call `scaled_year`. This is done to help with estimation. The new variable is passed into the main formula, and the `spatial_varying` formula,
+
+```{r}
+pcod$scaled_year <- (pcod$year - mean(pcod$year)) / sd(pcod$year)
+
+fit7 <- sdmTMB(
+  density ~ scaled_year,
+  data = pcod,
+  spatial_varying = ~ 0 + scaled_year,#<<
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  time = "year",
+  spatiotemporal = "off",
+  silent = FALSE
+)
+```
+
+This spatial trend model can be thought of as a very complex linear regression model, where the intercept and slopes are spatial field. We've used `sigma_O` to represent the standard deviation of the spatially constant field ( intercept ) and now use `sigma_Z` to represent the standard deviation of the year slope.
+
+We can look at these parameters with
+
+```{r}
+tidy(fit7, "ran_pars", conf.int = TRUE)
+```
+
+To look at the effects, we need to predict on a grid. We also need to add a column for `scaled_year` to match the fitting:
+
+```{r}
+nd <- qcs_grid
+nd$scaled_year <- (nd$year - mean(pcod$year)) / sd(pcod$year)
+p1 <- predict(fit7, newdata = nd)
+```
+
+We will just pick out a single year to plot since they should all be the same for the slopes. Note that these are in log space. `zeta_s` are the spatially varying coefficients.
+
+```{r}
+ggplot(filter(p1, year == 2003), 
+       aes("X", "Y", fill = zeta_s_scaled_year)) +
+    geom_raster() +
+    facet_wrap(~year) +
+    coord_fixed() +
+    scale_fill_viridis_c()
 ```

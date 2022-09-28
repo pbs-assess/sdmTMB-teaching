@@ -1212,6 +1212,19 @@ ggplot(cog, aes(est_x, est_y, colour = year)) +
 
 ---
 
+# Lots of features not covered today
+
+* Time / spatially varying coefficients
+* Barrier models (coastlines, islands)
+* Priors and Bayesian estimation
+* Model checking / residuals
+* Model selection / comparison / ensembles
+* Thresholds / break points
+* Presence only models
+* Delta (hurdle) models
+
+---
+
 # Getting help
 
 * sdmTMB GitHub repository:  
@@ -1222,6 +1235,7 @@ ggplot(cog, aes(est_x, est_y, colour = year)) +
 
 *  New features to suggest? Bugs?  
   <https://github.com/pbs-assess/sdmTMB/issues>
+  * Discussion board: <https://github.com/pbs-assess/sdmTMB/discussions>
   
 *  Resources and reference material: 
   <https://github.com/pbs-assess/sdmTMB/wiki/resources>
