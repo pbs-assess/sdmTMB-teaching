@@ -1,6 +1,6 @@
-PARALLEL <- TRUE
+PARALLEL <- FALSE
 
-folder <- "noaa-psaw-2022"
+folder <- "dfo-tesa-2023"
 files <- list.files(folder, pattern = "\\.Rmd$")
 files <- gsub("\\.Rmd$", "", files)
 

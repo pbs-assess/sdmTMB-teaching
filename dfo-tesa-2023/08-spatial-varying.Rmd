@@ -86,7 +86,7 @@ fit <- sdmTMB(
 qcs_grid$year_scaled <- (qcs_grid$year - mean(pcod$year)) / sd(pcod$year)
 p <- predict(fit, qcs_grid)
 p <- dplyr::filter(p, year == 2011) # any year
-ggplot(p, aes(X, Y, fill = zeta_s)) + geom_raster() +
+ggplot(p, aes(X, Y, fill = zeta_s_year_scaled)) + geom_raster() +
   scale_fill_gradient2()
 ```
 
