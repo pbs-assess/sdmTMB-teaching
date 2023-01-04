@@ -162,7 +162,7 @@ sim_dat3 <- sdmTMB_simulate(
   sigma_O = 0,
   sigma_E = 0.1,
   spatiotemporal = "ar1", #< field type
-  rho = 0.99, #< AR(1) field correlation
+  rho = 0.6, #< AR(1) field correlation
   phi = 0.001,
   B = 0 # intercept
 )
@@ -176,3 +176,4 @@ ggplot(sim_dat3, aes(X, Y, fill = epsilon_st)) +
 
 1.  In the previous chunk, try setting the AR(1) random field correlation (`rho`) to values ranging from 0 to near 1 (e.g., 0.99). What do you observe?
 2.  When might you observe a process that resembles the above?
+3.  What happens when `rho` is < 0? Is `rho` more likely to be > or < than 0 in ecological systems? Can you think of a situation where `rho < 0`?
