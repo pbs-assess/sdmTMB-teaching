@@ -410,7 +410,7 @@ p1 <- predict(fit7, newdata = nd)
 We will just pick out a single year to plot since they should all be the same for the slopes. Note that these are in log space. `zeta_s` are the spatially varying coefficients.
 
 ```{r}
-ggplot(filter(p1, year == 2003), 
+ggplot(dplyr::filter(p1, year == 2003), 
        aes("X", "Y", fill = zeta_s_scaled_year)) +
     geom_raster() +
     facet_wrap(~year) +
