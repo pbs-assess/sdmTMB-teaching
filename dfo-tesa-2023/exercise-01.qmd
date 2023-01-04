@@ -1,8 +1,7 @@
 ---
-title: "Simulation"
-format: pdf
+title: "Simulating random fields"
+format: html
 editor: visual
-
 execute: 
   echo: true
   eval: false
@@ -10,11 +9,10 @@ execute:
 
 # Goals:
 
-- Understand the spatial range.
-- Become familiar with spatial random fields through simulation.
-- Becomes familiar with spatiotemporal random fields and how they can combine
-  with spatial random fields.
-- Understand how correlation in spatiotemporal random fields looks.
+-   Understand the spatial range.
+-   Become familiar with spatial random fields through simulation.
+-   Become familiar with spatiotemporal random fields and how they can combine with spatial random fields.
+-   Understand how correlation in spatiotemporal random fields looks.
 
 ```{r}
 library(sdmTMB)
@@ -43,9 +41,9 @@ abline(v = range, lty = 2)
 
 Here we have a unitless distance from 0 to 1. In real situations these would be in something like m or km and so the range would be units of m or km.
 
-**Exercise:**
+### Exercise:
 
-1.  **Try running the previous chunk over and over with various `range` values. Note how the correlation function changes.**
+1.  Try running the previous chunk over and over with various `range` values. Note how the correlation function changes.
 
 # Spatial simulation
 
@@ -85,6 +83,7 @@ sim_dat <- sdmTMB_simulate(
   phi = 0.001, #< try changing this observation error standard deviation
   B = 0 # intercept
 )
+# head(sim_dat)
 
 ggplot(sim_dat, aes(X, Y, fill = observed)) +
   geom_raster()
@@ -92,10 +91,10 @@ ggplot(sim_dat, aes(X, Y, fill = observed)) +
 
 As a reminder, the range is scaled based on the units of the locations---here the X and Y variables range between 0 and 1 and are unitless, but for other data the range may be different or in units of m or km, for example.
 
-**Exercise:**
+### Exercise:
 
-1.  **Try running the previous chunk over and over. Try changing the `range` and `sigma_O` values. What do you observe?**
-2.  **Try increasing the observation error standard deviation `phi`. Re-run it many times. Try making it equal to `sigma_O` and twice its size. What happens when observation error is much larger than `sigma_O`**?
+1.  Try running the previous chunk over and over. Try changing the `range` and `sigma_O` values. What do you observe?
+2.  Try increasing the observation error standard deviation `phi`. Re-run it many times. Try making it equal to `sigma_O` and twice its size. What happens when observation error is much larger than `sigma_O`?
 
 # Spatiotemporal simulation
 
@@ -120,7 +119,7 @@ sim_dat2 <- sdmTMB_simulate(
   phi = 0.001,
   B = 0 # intercept
 )
-# head(sim_dat)
+# head(sim_dat2)
 ```
 
 ```{r spatial-fields}
@@ -144,11 +143,15 @@ ggplot(sim_dat2, aes(X, Y, fill = observed)) +
   scale_fill_gradient2()
 ```
 
-**Exercise:**
+### Exercise:
 
-1.  **Try running the previous 4 chunks over and over and observe the various components.**
-2.  **What do you notice about `omega_s` (spatial random field) across the time slices? Conversely, what do you notice about `epsilon_st` across time?**
-3.  **Try increasing `sigma_E` (spatiotemporal SD) to be larger than `sigma_O` (spatial SD). How do the observations change?**
+1.  Try running the previous 4 chunks over and over and observe the various components.
+2.  What do you notice about `omega_s` (spatial random field) across the time slices? Conversely, what do you notice about `epsilon_st` across time?
+3.  Try increasing `sigma_E` (spatiotemporal SD) to be larger than `sigma_O` (spatial SD). How do the observations change?
+
+# Correlated spatiotemporal fields
+
+The above spatiotemporal fields were left as their default: independent across years (`spatiotemporal = "iid"`). They can also be correlated. Here we will simulate and plot spatiotemporal fields with various levels of correlation.
 
 ```{r}
 sim_dat3 <- sdmTMB_simulate(
@@ -160,7 +163,7 @@ sim_dat3 <- sdmTMB_simulate(
   range = 0.5,
   sigma_O = 0,
   sigma_E = 0.1,
-  spatiotemporal = "ar1", #< field type (default: IID or independent across years)
+  spatiotemporal = "ar1", #< field type
   rho = 0.99, #< AR(1) field correlation
   phi = 0.001,
   B = 0 # intercept
@@ -171,6 +174,7 @@ ggplot(sim_dat3, aes(X, Y, fill = epsilon_st)) +
   scale_fill_gradient2()
 ```
 
-**Exercise:**
+### Exercise:
 
-1.  **In the previous chunk try setting the AR(1) random field correlation to values ranging from 0 to a value near 1 (e.g., 0.99). What do you observe?**
+1.  In the previous chunk try setting the AR(1) random field correlation to values ranging from 0 to a value near 1 (e.g., 0.99). What do you observe?
+2.  When might you observe a process that resembles the above?
