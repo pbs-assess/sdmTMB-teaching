@@ -24,9 +24,9 @@ theme_set(theme_light())
 
 # Understanding the spatial range
 
-The spatial range is the distance at which two data points are effectively independent. This is the distance at which correlation declines to approximately 0.13.
+The spatial range is the distance at which two data points are effectively independent. Technically, this is the distance at which correlation declines to approximately 0.13.
 
-We can visualize the implied Matern correlation function for various range values:
+We can visualize the Matérn correlation function for various range values:
 
 ```{r}
 range <- 0.5 #< try changing this
@@ -47,9 +47,9 @@ Here we have a unitless distance from 0 to 1. In real situations these would be 
 
 # Spatial simulation
 
-Try simulating some random fields.
+Next we will simulate some spatial random fields to understand what they look like and how their parameters control them.
 
-First, this chunk creates a set of X and Y spatial coordinates and constructs a mesh using a minimum triangle edge length cutoff distance of 0.05.
+First, this chunk creates a set of X and Y spatial coordinates and constructs a mesh using a minimum triangle edge length cutoff distance of 0.05. We need this for the internal random field calculations with the SPDE.
 
 ```{r}
 # A grid of X and Y values:
@@ -62,11 +62,11 @@ plot(mesh)
 
 The basic function for simulating random fields in sdmTMB is `sdmTMB_simulate()`.
 
--   The formula here contains an intercept (but could include covariates)
+-   The formula here contains only an intercept but could include covariates.
 
 -   The family is Gaussian to specify that we simulate a normally distributed response.
 
--   The range (or distance at which two data points are effectively independent; correlation declines to \~0.13) is 0.6.
+-   The range (see above) is 0.6.
 
 -   The two important standard deviation parameters are `sigma_O` (controlling the variance of `omega`, the spatial random field) and `phi` (controlling the observation error variance).
 
@@ -89,12 +89,10 @@ ggplot(sim_dat, aes(X, Y, fill = observed)) +
   geom_raster()
 ```
 
-As a reminder, the range is scaled based on the units of the locations---here the X and Y variables range between 0 and 1 and are unitless, but for other data the range may be different or in units of m or km, for example.
-
 ### Exercise:
 
 1.  Try running the previous chunk over and over. Try changing the `range` and `sigma_O` values. What do you observe?
-2.  Try increasing the observation error standard deviation `phi`. Re-run it many times. Try making it equal to `sigma_O` and twice its size. What happens when observation error is much larger than `sigma_O`?
+2.  Try increasing the observation error standard deviation `phi` and re-running it many times. Try making it equal to `sigma_O` and twice its size. What happens when observation error is much larger than `sigma_O`?
 
 # Spatiotemporal simulation
 
@@ -146,7 +144,7 @@ ggplot(sim_dat2, aes(X, Y, fill = observed)) +
 ### Exercise:
 
 1.  Try running the previous 4 chunks over and over and observe the various components.
-2.  What do you notice about `omega_s` (spatial random field) across the time slices? Conversely, what do you notice about `epsilon_st` across time?
+2.  What do you notice about `omega_s` (spatial random field) across the time slices? Conversely, what do you notice about `epsilon_st` (spatiotemporal random fields) across time?
 3.  Try increasing `sigma_E` (spatiotemporal SD) to be larger than `sigma_O` (spatial SD). How do the observations change?
 
 # Correlated spatiotemporal fields
