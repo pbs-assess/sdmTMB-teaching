@@ -72,7 +72,7 @@ The basic function for simulating random fields in sdmTMB is `sdmTMB_simulate()`
 
 -   We are plotting `observed` (observed values: the expected value plus observation error).
 
-```{r eval=FALSE}
+```{r}
 sim_dat <- sdmTMB_simulate(
   formula = ~ 1,
   data = predictor_dat,
@@ -176,5 +176,5 @@ ggplot(sim_dat3, aes(X, Y, fill = epsilon_st)) +
 
 ### Exercise:
 
-1.  In the previous chunk try setting the AR(1) random field correlation to values ranging from 0 to a value near 1 (e.g., 0.99). What do you observe?
+1.  In the previous chunk, try setting the AR(1) random field correlation (`rho`) to values ranging from 0 to near 1 (e.g., 0.99). What do you observe?
 2.  When might you observe a process that resembles the above?
