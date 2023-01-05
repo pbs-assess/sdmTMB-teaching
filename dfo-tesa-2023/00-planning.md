@@ -19,14 +19,15 @@
 
 -   Recap
 -   Spatiotemporal example
--   Time-varying examples
+-   Calculating an index with that model
+-   Try that index with different model structures
 
 ### Exercises:
 
 -   Plotting output from a spatial model from Day 1
 -   Fitting a spatiotemporal model
 -   Inspecting output that model in many ways
-   -   residuals(), simulate() [e.g., proportion zeros]
+    -   sanity(), residuals(), simulate() [e.g., proportion zeros]
 
 # Day 3
 
@@ -46,11 +47,11 @@
 -   Recap
 -   Extrapolation and forecasting
 -   Barrier models
--   Priors
+-   Priors (especially PC prior)
 
 ### Exercises:
 
--   Forecasting 3 years?
+-   Forecasting 3 years with `extra_time`?
 -   Add a PC prior?
 -   A series of models with problems: find those problems (e.g., with sanity(), print(), tidy(), and/or residuals()), suggest how they might be solved.
 
