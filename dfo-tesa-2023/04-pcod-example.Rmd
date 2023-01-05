@@ -1,9 +1,9 @@
 ---
 title: "Example: Spatial modeling of Pacific cod"
-subtitle: "NOAA PSAW Seminar Series"
+subtitle: "DFO TESA sdmTMB workshop"
 author: ""
 institute: ""
-date: "March 2, 2022"
+date: "January 16--19 2023"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
@@ -122,7 +122,7 @@ fit
 # Inspecting the model output
 
 .small[
-```{r, echo=TRUE, highlight.output=6:9}
+```{r, echo=TRUE, highlight.output=7:10}
 fit
 ```
 ]
@@ -131,7 +131,7 @@ fit
 # Inspecting the model output
 
 .small[
-```{r, echo=TRUE, highlight.output=11:13}
+```{r, echo=TRUE, highlight.output=12:14}
 fit
 ```
 ]
@@ -154,8 +154,7 @@ tidy(fit, effects = "ran_pars")
 
 .small[
 ```{r, echo=TRUE}
-tidy(fit, "ran_pars", conf.int = TRUE) %>% 
-  as_tibble()
+tidy(fit, "ran_pars", conf.int = TRUE)
 ```
 ]
 
@@ -166,8 +165,7 @@ tidy(fit, "ran_pars", conf.int = TRUE) %>%
 .small[
 ```{r, echo=TRUE}
 p <- predict(fit) #<<
-select(p, X, Y, est:omega_s) %>% 
-  as_tibble()
+select(p, X, Y, est:omega_s)
 ```
 ]
 
@@ -270,6 +268,28 @@ ggplot(p, aes(log(nd$depth), plogis(est), ymin = lwr, ymax = upr)) +
   coord_cartesian(ylim = c(0, 1), expand = FALSE)
 ```
 ]
+
+---
+
+# Plotting depth effect with visreg
+
+.small[
+```{r pcod-sp-depth-visreg, echo=TRUE}
+visreg::visreg(fit, xvar = "depth", gg = TRUE)
+```
+]
+
+---
+
+# Plotting depth effect with visreg
+
+.small[
+```{r pcod-sp-depth-visreg-resp, echo=TRUE}
+visreg::visreg(fit, xvar = "depth", scale = "response")
+```
+]
+
+<!-- TODO: add ggeffects -->
 
 ---
 

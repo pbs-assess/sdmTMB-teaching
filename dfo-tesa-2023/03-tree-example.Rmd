@@ -1,9 +1,9 @@
 ---
 title: "Example: Spatial modeling of trees in a rainforest"
-subtitle: "NOAA PSAW Seminar Series"
+subtitle: "DFO TESA sdmTMB workshop"
 author: ""
 institute: ""
-date: "March 2, 2022"
+date: "January 16--19 2023"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]

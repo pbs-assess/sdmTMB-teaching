@@ -1,9 +1,9 @@
 ---
 title: "Random fields with physical barriers"
-subtitle: "NOAA PSAW Seminar Series"
+subtitle: "DFO TESA sdmTMB workshop"
 author: ""
 institute: ""
-date: "March 9, 2022"
+date: "January 16--19 2023"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
