@@ -225,7 +225,7 @@ ggplot(p_rw, aes(X, Y, fill = epsilon_st)) +
 (Here AR(1) fields; random walk similar.)
 
 ```{r eps-se}
-eps_est <- predict(fit_ar1, newdata = grid, nsim = 100, sims_var = "proj_re_st_vector")
+eps_est <- predict(fit_ar1, newdata = grid, nsim = 100, sims_var = "proj_epsilon_st_A_vec")
 grid$se <- apply(eps_est, 1, sd)
 ggplot(grid, aes(X, Y, fill = se)) +
   geom_raster() +
