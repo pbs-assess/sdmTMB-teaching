@@ -26,7 +26,7 @@
 
 -   Plotting output from a spatial model from Day 1
 -   Fitting a spatiotemporal model
--   Inspecting output that model in many ways
+-   Inspecting output from that model in many ways
     -   sanity(), residuals(), simulate() [e.g., proportion zeros]
 
 # Day 3
@@ -39,7 +39,7 @@
 
 ### Exercises:
 
--   Fitting a spatial-varying model
+-   Fitting a spatial-varying model?
 -   Comparing 2 models with AIC and cross validation
 
 # Day 4
@@ -48,6 +48,7 @@
 -   Extrapolation and forecasting
 -   Barrier models
 -   Priors (especially PC prior)
+-   Touch on other functionality like Bayesian?
 
 ### Exercises:
 
