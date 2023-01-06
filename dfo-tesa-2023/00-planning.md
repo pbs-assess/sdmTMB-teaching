@@ -61,3 +61,6 @@
 -   Add sanity() in lectures and lessons
 -   Do we cover residuals() well?
 -   Turn 05-extra (words of wisdom) into trouble shooting, diagnostics for day 4
+-   Installation instructions before
+-   Divide people into groups and decide on group leaders
+
