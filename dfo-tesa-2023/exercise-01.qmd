@@ -4,7 +4,7 @@ format: html
 editor: visual
 execute: 
   echo: true
-  eval: false
+  eval: true
 ---
 
 # Goals:
@@ -102,7 +102,7 @@ ggplot(sim_dat, aes(X, Y, fill = observed)) +
 predictor_dat2 <- expand.grid(
   X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100), year = 1:6
 )
-mesh2 <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.1)
+mesh2 <- make_mesh(predictor_dat2, c("X", "Y"), cutoff = 0.1)
 ```
 
 ```{r}
@@ -113,7 +113,7 @@ sim_dat2 <- sdmTMB_simulate(
   mesh = mesh2,
   family = gaussian(),
   range = 0.5, #< spatial/spatiotemporal range
-  sigma_O = 0, #< spatial SD
+  sigma_O = 0.2, #< spatial SD
   sigma_E = 0.1, #< spatiotemporal SD
   phi = 0.001,
   B = 0 # intercept
