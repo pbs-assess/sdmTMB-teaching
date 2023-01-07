@@ -47,8 +47,19 @@ already[!already %in% d$email]
 
 nrow(d)
 
+# 80
+# 8-9
+# 6
+# 4-5?
+# designate someone to count and declare how many groups and leaders
+# I'll click the magic button
+
 # helpers:
-# - me, philina, eric, lewis, lindsay, cam, semra, paul, jillian(?), mackenzie(?), patrick(?), jessica(?),
+# - me,
+# - philina, eric, lewis, lindsay, cam, semra, paul
+#
+# - patrick(?), jessica(?), ...
+# - extras: Jillian, Dan, Catarina, Mackenzie, Noel, Elise, ...
 # 8-10
 
 #
