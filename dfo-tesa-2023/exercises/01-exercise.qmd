@@ -98,7 +98,6 @@ ggplot(sim_dat, aes(X, Y, fill = observed)) +
 # Spatiotemporal simulation
 
 ```{r}
-# make fake predictor(s) (a1) and sampling locations:
 predictor_dat2 <- expand.grid(
   X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100), year = 1:6
 )
@@ -218,8 +217,8 @@ ggplot(sim_dat4, aes(X, Y, fill = observed)) +
 
 ### Exercise:
 
-1. What did we just simulate above? What is the one addition from the first spatial simulation?
-2. What do the last 3 plots represent? Why do they get increasingly noisy?
+1.  What did we just simulate above? What is the one addition from the first spatial simulation?
+2.  What do the last 3 plots represent? Why do they get increasingly noisy?
 
 Now we'll down-sample to simulate sampling/observing only 300 locations:
 
@@ -260,10 +259,10 @@ cowplot::plot_grid(g1, g2, nrow = 2)
 
 ### Exercise:
 
-1. Do you see spatial correlation in the residuals?
-2. What are at least 2 problems this creates?
-3. How good do those predictions look compare to the known truth?
-4. In the context of this workshop, what is a solution to this?
+1.  Do you see spatial correlation in the residuals?
+2.  What are at least 2 problems this creates?
+3.  How good do those predictions look compare to the known truth?
+4.  In the context of this workshop, what is a solution to this?
 
 First, let's convince ourselves that we can fit the exact same model with sdmTMB. All we have to do is turn off the spatial random fields:
 
@@ -275,7 +274,7 @@ summary(fit_glm2)
 
 ### Exercise:
 
-1. Check if `fit_glm` and `fit_glm2` match and represent the same model.
+1.  Check if `fit_glm` and `fit_glm2` match and represent the same model.
 
 Now, try fitting a GLM with Gaussian random fields:
 
