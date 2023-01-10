@@ -79,6 +79,47 @@ ggplot(df, aes(y)) +
 
 ---
 
+# Delta models  
+
+* Delta/hurdle model has 2 sub-models:
+- presence/absence (binomial, logit link)  
+- positive model (link varies by family)  
+
+* `family` argument to sdmTMB can be a list()  
+- for convenience, many delta- families implemented: `delta_gamma`, `delta_lognormal`, `delta_truncated_nbinom2` etc  
+
+---
+
+# Delta models
+
+* Some arguments can be a list, e.g.
+```{r argdemo, eval=FALSE, echo=TRUE}
+fit(..., 
+formula = list(pres ~ 1, 
+  pos ~ depth + s(temp)),
+spatial = list('on', 'off'),  
+spatiotemporal = list('off', 'ar1'), 
+share_range = list(TRUE, FALSE),...)  
+```
+
+* rest of arguments must be shared  
+
+---
+
+# Formulas as lists for multivariate responses
+
+* e.g. model size-at-age and weight-at-age-simultaneously 
+```{r argdemo2, eval=FALSE, echo=TRUE}
+fit(..., 
+formula = list(length ~ depth, 
+    weight ~ depth + s(temp)),
+family = list('lognormal', 'lognormal'),...)  
+```
+
+* currently little benefit, as sdmTMB shares no information between these models (e.g. no shared spatial / spatiotemporal fields)
+
+---
+
 # An aside on mixture models
 
 Positive components may be modeled as a mixture of 2 distributions
