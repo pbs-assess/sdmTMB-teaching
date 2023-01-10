@@ -101,7 +101,7 @@ spatial = list('on', 'off'),
 spatiotemporal = list('off', 'ar1'), 
 share_range = list(TRUE, FALSE),...)  
 ```
-
+* by default, all arguments shared  
 * rest of arguments must be shared  
 
 ---
