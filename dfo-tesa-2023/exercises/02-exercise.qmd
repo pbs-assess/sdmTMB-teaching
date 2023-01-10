@@ -47,7 +47,13 @@ ggplot(dat, aes(longitude, latitude, size = density)) + geom_point()
 We can add UTM columns using `add_utm_columns()`:
 
 ```{r}
-dat <- add_utm_columns(dat, ll_names = c("longitude", "latitude"))
+add_utm_columns(dat, ll_names = c("longitude", "latitude"))
+```
+
+Note that this function selects an appropriate UTM projection for you. To ensure future compatibility with  prediction grids or other data, it is best to hard code the choice using the `utm_crs` argument. We will use `CRS = 3156` here to match our prediction grid:
+
+```{r}
+dat <- add_utm_columns(dat, utm_crs = 3156, ll_names = c("longitude", "latitude"))
 ```
 
 And check to make sure that looks right:
@@ -66,10 +72,10 @@ ggplot(dat, aes(X, Y, size = density, colour = log(density + 1))) +
 
 # Constructing a mesh
 
-We start by constructing an SPDE mesh with INLA. This creates some matrices that are used internally when fitting the model. We will use the shortcut function `make_mesh()` and use a cutoff (minimum triangle length of 8 km). A full analysis could explore sensitivity to this decision or other more complex meshes created with INLA.
+We start by constructing an SPDE mesh with INLA. This creates some matrices that are used internally when fitting the model. We will use the shortcut function `make_mesh()` and use a cutoff (minimum triangle length of 12 km). A full analysis could explore sensitivity to this decision or other more complex meshes created with INLA.
 
 ```{r}
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 12)
 plot(mesh)
 mesh$mesh$n # number of vertices or knots
 
@@ -79,20 +85,21 @@ ggplot() + inlabru::gg(mesh$mesh)
 
 ### Exercise:
 
-1.  Try adjusting the size of the cutoff distance to explore the effects of decreasing the mesh resolution. Make sure to reset the `cutoff` value to `8` in the end so the rest of the exercise behaves as intended.
+1.  Try adjusting the size of the cutoff distance to explore the effects of decreasing the mesh resolution. Make sure to reset the `cutoff` value to `12` in the end so the rest of the exercise behaves as intended, because model convergence issues can be caused by meshes that are either too fine or too coarse. 
 
 # Fitting a spatial model
 
 The most basic model we could fit would be a model with only spatial random fields. This is similar to what we were fitting yesterday.
+Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in chunks so we will comment it out in most cases here. But it is a good idea to use it if models are running too slowly or not converging.
 
 ```{r, results='hide'}
 fit_spatial <- sdmTMB(
   density ~ 1, # intercept only
-  data = dat,
+  data = dat,  
   family = tweedie(link = "log"),
   mesh = mesh,
   spatial = "on",
-  silent = FALSE
+  silent = FALSE 
 )
 ```
 
@@ -113,24 +120,27 @@ A refresher from yesterday:
 
 # Fitting a model with spatial + spatiotemporal fields
 
-This first model includes a penalized smoother `s()` on log depth, a factor effect for each year, and models total density using a Tweedie distribution and a log link. The spatial field and spatiotemporal fields are estimated.
+This first model includes a quadratic effect of log depth (`poly(log_depth, 2)`), a factor effect for each year, and models total density using a Tweedie distribution and a log link. The spatial field and spatiotemporal fields are estimated.
 
 The year factors give each year its own mean. The `0 +` omits the intercept such that each year's estimate represents a mean as opposed to a difference from the intercept. This part is arbitrary and chosen for the sake of this exercise.
 
+The choice to use log depth helps the model fit because we have fewer samples from the deeper depths.
+
 ```{r}
 dat$log_depth <- log(dat$depth)
+dat$year_factor <- as.factor(dat$year)
 ```
 
 ```{r, results='hide'}
 fit <- sdmTMB(
-  density ~ 0 + as.factor(year) + s(log_depth),
+  density ~ 0 + year_factor + poly(log_depth, 2),
   data = dat,
   family = tweedie(link = "log"),
   mesh = mesh,
   spatial = "on",
   spatiotemporal = "iid", #< new
   time = "year", #< new
-  silent = FALSE
+  # silent = FALSE
 )
 ```
 
@@ -171,6 +181,8 @@ There are multiple ways we can plot the depth effect on density. First, we can c
 ```{r}
 nd <- data.frame(log_depth = seq(log(50), log(700), length.out = 100), year = 2004)
 # (picking any one year)
+nd$year_factor <- as.factor(nd$year)
+
 p <- predict(
   fit,
   newdata = nd,
@@ -190,7 +202,15 @@ visreg::visreg(fit, xvar = "log_depth")
 visreg::visreg(fit, xvar = "log_depth", scale = "response")
 ```
 
-Third, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *However, that won't yet work with smoother terms and so we skip it here*.
+Third, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *Note that won't yet work with smoother terms*.
+
+```{r}
+library(ggeffects)
+g <- ggeffect(fit, "log_depth [3.5:6.7 by=0.1]")
+plot(g)
+```
+
+
 
 #### Prediction
 
@@ -206,6 +226,7 @@ We can use this fancy line of purrr code to expand our grid to every year we wan
 
 ```{r}
 grid <- purrr::map_dfr(unique(dat$year), ~ tibble(wcvi_grid, year = .x))
+grid$year_factor <- as.factor(grid$year)
 head(grid)
 ```
 
@@ -385,8 +406,8 @@ fit_ar1 <- update(fit_reml, spatial = "off", spatiotemporal = "ar1", anisotropy 
 ```
 
 ```{r}
-fit_ar1
 sanity(fit_ar1)
+fit_ar1
 ```
 
 ```{r}
@@ -413,11 +434,11 @@ p_ar1 <- predict(fit_ar1, newdata = grid)
 We'll write a little helper function to make some plots:
 
 ```{r}
-plot_field <- function(data, column_name) {
+plot_field <- function(data, column_name, lims = NULL) {
   ggplot(data, aes(X, Y, fill = {{ column_name }})) +
     facet_wrap(~year, nrow = 1) +
     geom_raster() +
-    scale_fill_gradient2() +
+    scale_fill_gradient2(limits = lims) +
     coord_fixed()
 }
 ```
@@ -426,11 +447,14 @@ And plot the spatiotemporal field estimates (`epsilon_st`) for 3 example years:
 
 ```{r}
 yrs <- c(2012, 2014, 2016)
+scale_limits <- c(min(p_iid$epsilon_st, p_ar1$epsilon_st), 
+                  max(p_iid$epsilon_st, p_ar1$epsilon_st))
+
 g1 <- filter(p_iid, year %in% yrs) |> 
-  plot_field(epsilon_st) + 
+  plot_field(epsilon_st, lims = scale_limits) + 
   ggtitle("IID spatiotemporal fields")
 g2 <- filter(p_ar1, year %in% yrs) |> 
-  plot_field(epsilon_st) + 
+  plot_field(epsilon_st, lims = scale_limits) + 
   ggtitle("AR1 spatiotemporal fields")
 
 cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
@@ -443,11 +467,14 @@ cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 What if we combine the spatial and spatiotemporal fields from the IID model?
 
 ```{r}
+scale_limits <- c(min((p_iid$omega_s + p_iid$epsilon_st), p_ar1$epsilon_st), 
+                  max((p_iid$omega_s + p_iid$epsilon_st), p_ar1$epsilon_st))
+
 g1 <- filter(p_iid, year %in% yrs) |> 
-  plot_field(epsilon_st + omega_s) + 
-  ggtitle("IID spatial + spatiotemporal fields")
+  plot_field(epsilon_st + omega_s, lims = scale_limits) + 
+  ggtitle("Spatial + IID spatiotemporal fields")
 g2 <- filter(p_ar1, year %in% yrs) |> 
-  plot_field(epsilon_st) + 
+  plot_field(epsilon_st, lims = scale_limits) + 
   ggtitle("AR1 spatiotemporal fields")
 
 cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
@@ -460,10 +487,11 @@ cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 We'll make another little helper function to plot predictions:
 
 ```{r}
-plot_map <- function(data, column_name) {
+plot_map <- function(data, column_name, lims = NULL) {
   ggplot(data, aes(X, Y, fill = {{ column_name }})) +
     facet_wrap(~year) +
     geom_raster() +
+    scale_fill_viridis_c(limits = lims) +
     coord_fixed()
 }
 ```
@@ -471,11 +499,14 @@ plot_map <- function(data, column_name) {
 And plot predictions from our 2 models:
 
 ```{r}
+scale_limits <- c(min(p_iid$est, p_ar1$est), 
+                  max(p_iid$est, p_ar1$est))
+
 g1 <- filter(p_iid, year %in% yrs) |>
-  plot_map(est) + 
+  plot_map(est, lims = scale_limits) + 
   ggtitle("IID predictions")
 g2 <- filter(p_ar1, year %in% yrs) |> 
-  plot_map(epsilon_st) + 
+  plot_map(est, lims = scale_limits) + 
   ggtitle("AR1 predictions")
 
 cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
@@ -500,35 +531,37 @@ cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 1. We assumed the spatial/spatiotemporal range was shared between the 2 sets of fields. Try a version with `share_range = FALSE` (use `sdmTMB()` or `update()`).
 2. If working with the anisotropic version, try `plot_anisotropy()`. Otherwise, look at the range estimates in the model output.
 3. Is the range different between the spatial and spatiotemporal fields? Is that what you expected?
+4. Are either of the ranges smaller than the cutoff distance of your mesh? If so, why might you want to try a different mesh?
 
 ```{r, results='hide'}
 fit2 <- sdmTMB(
-  density ~ 0 + as.factor(year) + s(log_depth),
+  density ~ 0 + year_factor + poly(log_depth, 2),
   data = dat,
   family = tweedie(link = "log"),
   mesh = mesh,
   spatial = "on",
   spatiotemporal = "iid",
   time = "year",
-  silent = FALSE,
+  # silent = FALSE,
   share_range = FALSE # exercise
 )
 ```
 
 ```{r}
 fit2
+tidy(fit2, effects = "ran_pars", conf.int = TRUE)
 ```
 
 ```{r, results='hide'}
 fit3 <- sdmTMB(
-  density ~ 0 + as.factor(year) + s(log_depth),
+  density ~ 0 + year_factor + poly(log_depth, 2),
   data = dat,
   family = tweedie(link = "log"),
   mesh = mesh,
   spatial = "on",
   spatiotemporal = "iid",
   time = "year",
-  silent = FALSE,
+  # silent = FALSE,
   share_range = FALSE, # exercise
   anisotropy = TRUE #<
 )
@@ -536,5 +569,6 @@ fit3 <- sdmTMB(
 
 ```{r}
 fit3
+tidy(fit3, effects = "ran_pars", conf.int = TRUE)
 plot_anisotropy(fit3)
 ```
