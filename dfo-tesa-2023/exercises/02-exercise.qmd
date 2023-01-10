@@ -72,10 +72,10 @@ ggplot(dat, aes(X, Y, size = density, colour = log(density + 1))) +
 
 # Constructing a mesh
 
-We start by constructing an SPDE mesh with INLA. This creates some matrices that are used internally when fitting the model. We will use the shortcut function `make_mesh()` and use a cutoff (minimum triangle length of 12 km). A full analysis could explore sensitivity to this decision or other more complex meshes created with INLA.
+We start by constructing an SPDE mesh with INLA. This creates some matrices that are used internally when fitting the model. We will use the shortcut function `make_mesh()` and use a cutoff (minimum triangle length of 10 km). A full analysis could explore sensitivity to this decision or other more complex meshes created with INLA.
 
 ```{r}
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 12)
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
 plot(mesh)
 mesh$mesh$n # number of vertices or knots
 
@@ -85,7 +85,7 @@ ggplot() + inlabru::gg(mesh$mesh)
 
 ### Exercise:
 
-1.  Try adjusting the size of the cutoff distance to explore the effects of decreasing the mesh resolution. Make sure to reset the `cutoff` value to `12` in the end so the rest of the exercise behaves as intended, because model convergence issues can be caused by meshes that are either too fine or too coarse. 
+1.  Try adjusting the size of the cutoff distance to explore the effects of decreasing the mesh resolution. Make sure to reset the `cutoff` value to `10` in the end so the rest of the exercise behaves as intended, because model convergence issues can be caused by meshes that are either too fine or too coarse. 
 
 # Fitting a spatial model
 
@@ -548,6 +548,7 @@ fit2 <- sdmTMB(
 ```
 
 ```{r}
+sanity(fit2)
 fit2
 tidy(fit2, effects = "ran_pars", conf.int = TRUE)
 ```
@@ -568,6 +569,7 @@ fit3 <- sdmTMB(
 ```
 
 ```{r}
+sanity(fit3)
 fit3
 tidy(fit3, effects = "ran_pars", conf.int = TRUE)
 plot_anisotropy(fit3)
