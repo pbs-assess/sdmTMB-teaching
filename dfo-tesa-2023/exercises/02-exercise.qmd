@@ -337,7 +337,7 @@ hist(dat$density, xlim = c(0, 30), breaks = 200, freq = FALSE)
 2. Why might you want to allow for it?
 3. What is the default setting for `anisotropy` in `sdmTMB`?
 
-We will re-fit out model with REML so we can use AIC to compare models with different random effect structures. We will then fit a model with anisotropy enabled. We will use the handy method `update()` here, but we could also re-write the whole `sdmTMB()` function call each time.
+We will re-fit our model with REML so we can use AIC to compare models with different random effect structures. We will then fit a model with anisotropy enabled. We will use the handy method `update()` here, but we could also re-write the whole `sdmTMB()` function call each time.
 
 ```{r, results='hide'}
 fit_reml <- update(fit, reml = TRUE)
