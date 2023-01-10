@@ -1,0 +1,382 @@
+---
+title: "Fitting a spatiotemporal model"
+format: html
+editor: visual
+execute: 
+  echo: true
+  eval: true
+---
+
+# Goals:
+
+-   Practice fitting a basic spatiotemporal model
+-   Understand how to inspect the model output
+-   Practice predicting from the model on new data and making visualizations of those predictions.
+-   Gain familiarity with fitting different random field correlation structures
+
+```{r}
+#| echo=FALSE
+library(sdmTMB)
+library(dplyr)
+library(ggplot2)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+theme_set(theme_light())
+```
+
+# The data
+
+It's worth first exploring the data, which represents survey data on Pacific cod collected from Queen Charlotte Sound (British Columbia).
+
+```{r}
+dat <- readRDS("~/Downloads/wcvi-dogfish.rds") |>
+  select(longitude, latitude, year, depth, density)
+```
+
+
+```{r}
+head(dat)
+```
+
+The data contains sampling locations (`longitude` and `latitude`) and year (`year`). It also contains sampling `depth` in meters and sample density `density` (CPUE) in units of kg/km\^2.
+
+```{r}
+dat <- add_utm_columns(dat, ll_names = c("longitude", "latitude"))
+```
+
+Look at the data spatially:
+  
+```{r}
+ggplot(dat, aes(X, Y, size = density)) + geom_point()
+```
+
+And by year
+
+```{r}
+ggplot(dat, aes(X, Y, size = density, colour = log(density + 1))) +
+  geom_point() +
+  facet_wrap(~year)
+```
+
+#### Constructing a mesh
+
+```{r}
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
+plot(mesh)
+mesh$mesh$n
+```
+
+1.  Try to adjust the size of the cutoff distance to explore the effects of decreasing the mesh resolution
+
+#### Fitting a model with a spatial field
+
+This first model includes a smoother (P-spline) on depth, and models total density using a Tweedie distribution. The spatial field is estimated, but spatiotemporal fields are not.
+
+```{r}
+dat$log_depth <- log(dat$depth)
+```
+
+```{r}
+fit <- sdmTMB(
+  density ~ 0 + as.factor(year) + s(log_depth),
+  data = dat,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  spatiotemporal = "iid",
+  time = "year",
+  silent = FALSE
+)
+```
+
+```{r}
+fit
+```
+
+```{r}
+sanity(fit)
+```
+
+We can use the tidy function to get the coefficients for the fixed effects,
+
+```{r}
+tidy(fit, conf.int = TRUE)
+```
+
+and by setting `effects = "ran_pars"`, can extract random components
+
+```{r}
+tidy(fit, effects = "ran_pars", conf.int = TRUE)
+```
+
+There are 3 ways we can plot the marginal depth effects on density. If we had other predictors in the model, we could set them. First, we can create new data frame of all potential values,
+
+```{r}
+nd <- data.frame(log_depth = seq(log(50), log(700), length.out = 100), year = 2004)
+# (picking any one year)
+p <- predict(
+  fit,
+  newdata = nd,
+  re_form = ~ 0, # means only include the fixed effects
+  se_fit = TRUE # means calculate standard errors
+)
+
+ggplot(p, aes(log_depth, exp(est),
+  ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se))) +
+  geom_line() + geom_ribbon(alpha = 0.4)
+```
+
+The second approach is to pass the `sdmTMB` object to the `visreg` package. This shows the conditional effects, where all values other than depth are held at a particular value. Note the default visreg plot is in link (here, log) space.
+
+```{r}
+visreg::visreg(fit, xvar = "log_depth")
+```
+
+<!-- Third, we can use the `ggeffects` package which can be used to show the marginal effects of the smoothed variables (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html) -->
+
+```{r}
+# ggeffects::ggeffect(fit)
+```
+
+#### Prediction
+
+Let's now predict on a grid that covers the entire survey (`wcvi_grid`).
+
+```{r}
+wcvi_grid <- readRDS("~/Downloads/wcvi-grid.rds") |>
+  select(X, Y, depth, cell_area) |> 
+  distinct()
+wcvi_grid$log_depth <- log(wcvi_grid$depth)
+```
+
+```{r}
+grid <- purrr::map_dfr(unique(dat$year), ~ tibble(wcvi_grid, year = .x))
+```
+
+To predict on a new data frame, we can specify `newdata`,
+
+```{r}
+p <- predict(fit, newdata = grid)
+```
+
+We can also plot each of the components of the predict object spatially
+
+```{r}
+# Depth effect contribution:
+# (Everything not a random field)
+ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
+  facet_wrap(~year) +
+  geom_raster() +
+  coord_fixed()
+
+# Spatial random field:
+ggplot(p, aes(X, Y, fill = omega_s)) +
+  facet_wrap(~year) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+
+# Spatial-temporal random field:
+ggplot(p, aes(X, Y, fill = epsilon_st)) +
+  facet_wrap(~year) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+
+# Overall estimate of density in link (log) space:
+ggplot(p, aes(X, Y, fill = est)) +
+  facet_wrap(~year) +
+  geom_raster() +
+  coord_fixed()
+
+# Overall estimate of density: (with log-distributed colour)
+ggplot(p, aes(X, Y, fill = exp(est))) +
+  facet_wrap(~year) +
+  geom_raster() +
+  coord_fixed() +
+  scale_fill_viridis_c(trans = "log10")
+```
+
+```{r}
+dat$resid <- residuals(fit)
+ggplot(dat, aes(X, Y, colour = resid)) +
+  facet_wrap(~year) +
+  geom_point() +
+  coord_fixed() +
+  scale_colour_gradient2()
+```
+
+```{r}
+qqnorm(dat$resid)
+qqline(dat$resid)
+```
+
+```{r}
+
+```
+
+
+```{r, eval=FALSE}
+# see ?residuals.sdmTMB
+set.seed(1)
+dat$resid_mcmc <- residuals(
+  fit, 
+  type = "mle-mcmc", 
+  mcmc_iter = 201, 
+  mcmc_warmup = 200
+)
+qqnorm(dat$resid_mcmc)
+qqline(dat$resid_mcmc)
+```
+
+```{r}
+# see ?residuals.sdmTMB
+set.seed(1)
+simulate(fit, nsim = 200) |> dharma_residuals(fit)
+# dharma_residuals()
+```
+
+```{r}
+s <- simulate(fit, nsim = 100)
+```
+
+```{r}
+mean(s == 0)
+mean(dat$density == 0)
+```
+
+```{r}
+hist(s, xlim = c(0, 30), breaks = 200, freq = FALSE)
+hist(dat$density, xlim = c(0, 30), breaks = 200, freq = FALSE)
+```
+
+
+```{r}
+fit_reml <-  update(fit, reml = TRUE)
+fit_range <- update(fit_reml, share_range = FALSE)
+fit_aniso <- update(fit_split_range, anisotropy = TRUE)
+
+fit_poly <- update(fit_reml, density ~ 0 + as.factor(year) + poly(log_depth, 2), share_range = FALSE)
+fit_nodepth <- update(fit_reml, density ~ 0 + as.factor(year), share_range = FALSE)
+```
+
+```{r}
+sanity(fit_reml)
+sanity(fit_range)
+sanity(fit_aniso)
+```
+
+```{r}
+fit_reml
+fit_range
+```
+
+Range is best examined graphically for anisotropy:
+
+```{r}
+plot_anisotropy(fit_aniso)
+```
+
+What does AIC tell us?
+
+```{r}
+AIC(fit_reml, fit_range, fit_aniso)
+```
+
+```{r}
+visreg::visreg(fit_reml, xvar = "log_depth")
+visreg::visreg(fit_range, xvar = "log_depth")
+```
+
+### Exercise:
+
+1. What has happened to the depth effect when we let the range be estimated independently for the spatial and spatiotemporal fields?
+
+
+```{r}
+p_range <- predict(fit_range, newdata = grid)
+p_aniso <- predict(fit_aniso, newdata = grid)
+```
+
+```{r}
+plot_field <- function(data, column_name) {
+  ggplot(data, aes(X, Y, fill = {{ column_name }})) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+}
+```
+
+```{r}
+g1 <- filter(p_range, year == 2004) |> plot_field(omega_s) + ggtitle("Isotropic")
+g2 <- filter(p_aniso, year == 2004) |> plot_field(omega_s) + ggtitle("Anisotropic")
+cowplot::plot_grid(g1, g2, ncol = 2)
+```
+
+```{r}
+g1 <- filter(p_range, year == 2004) |> plot_field(epsilon_st) + ggtitle("Isotropic")
+g2 <- filter(p_aniso, year == 2004) |> plot_field(epsilon_st) + ggtitle("Anisotropic")
+cowplot::plot_grid(g1, g2, ncol = 2)
+```
+
+```{r}
+plot_map <- function(data, column_name) {
+  ggplot(data, aes(X, Y, fill = {{ column_name }})) +
+    facet_wrap(~year) +
+    geom_raster() +
+    coord_fixed()
+}
+```
+
+```{r}
+g1 <- filter(p_range, year == 2004) |> plot_map(est) + ggtitle("Isotropic")
+g2 <- filter(p_aniso, year == 2004) |> plot_map(est) + ggtitle("Anisotropic")
+cowplot::plot_grid(g1, g2, ncol = 2)
+```
+
+```{r}
+fit_reml_ar1 <- update(fit_reml, spatiotemporal = "ar1")
+sanity(fit_reml_ar1)
+
+tidy(fit_reml, conf.int = TRUE)
+tidy(fit_reml_ar1, conf.int = TRUE)
+
+
+tidy(fit_reml, "ran_pars", conf.int = TRUE)
+tidy(fit_reml_ar1, "ran_pars", conf.int = TRUE)
+
+AIC(fit_reml_ar1, fit_reml)
+
+fit_ar1_nospatial <- update(fit_reml, spatiotemporal = "ar1", spatial = "off")
+
+AIC(fit_reml_ar1, fit_reml, fit_ar1_nospatial)
+
+
+```
+
+```{r}
+p_iid <- predict(fit_reml, newdata = grid)
+p_ar1 <- predict(fit_reml_ar1, newdata = grid)
+p_ar1_nospatial <- predict(fit_ar1_nospatial, newdata = grid)
+
+ggplot(p_iid, aes(X, Y, fill = epsilon_st)) +
+  facet_wrap(~year) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+
+ggplot(p_ar1, aes(X, Y, fill = epsilon_st)) +
+  facet_wrap(~year) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+
+ggplot(p_ar1_nospatial, aes(X, Y, fill = epsilon_st)) +
+  facet_wrap(~year) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+
+
+```
+
