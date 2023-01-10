@@ -1,0 +1,8 @@
+---
+title: "Delta models and index standardization"
+format: html
+editor: visual
+execute: 
+  echo: true
+  eval: true
+---
