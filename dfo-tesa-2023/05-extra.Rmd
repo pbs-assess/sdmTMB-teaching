@@ -134,6 +134,17 @@ fit
 
 ---
 
+# Sanity
+
+* `NaN` checks alone can't diagnose all problems
+
+```{r checksanity, eval=FALSE}
+sanity(fit)
+```
+
+
+---
+
 # Inspecting output
 
 We could also look directly at the TMB `sdreport`:
