@@ -36,7 +36,7 @@ dat <- readRDS(here::here("dfo-tesa-2023/data/wcvi-dogfish.rds"))
 head(dat)
 ```
 
-The dataset contains sampling locations (`longitude` and `latitude`) and year (`year`). It also contains sampling `depth` in meters and sample density `density` (CPUE) in units of tonnes/km^2^.
+The dataset contains sampling locations (`longitude` and `latitude`) and `year`. It also contains sampling `depth` in meters and sample density `density` (CPUE) in units of tonnes/km^2^.
 
 ```{r}
 ggplot(dat, aes(longitude, latitude, size = density)) + geom_point()
@@ -50,14 +50,14 @@ We can add UTM columns using `add_utm_columns()`:
 add_utm_columns(dat, ll_names = c("longitude", "latitude"))
 ```
 
-Note that this function selects an appropriate UTM projection for you. To ensure future compatibility with  prediction grids or other data, it is best to hard code the choice using the `utm_crs` argument. We will use `CRS = 3156` here to match our prediction grid:
+Note that this function selects an appropriate UTM projection for you. To ensure future compatibility with prediction grids or other data, it is best to hard code the choice using the `utm_crs` argument. We will use `CRS = 3156` here to match our prediction grid:
 
 ```{r}
 dat <- add_utm_columns(dat, utm_crs = 3156, ll_names = c("longitude", "latitude"))
 ```
 
 And check to make sure that looks right:
-  
+
 ```{r}
 ggplot(dat, aes(X, Y, size = density)) + geom_point()
 ```
@@ -80,17 +80,17 @@ plot(mesh)
 mesh$mesh$n # number of vertices or knots
 
 # alternative:
-ggplot() + inlabru::gg(mesh$mesh)
+ggplot() + inlabru::gg(mesh$mesh) + coord_fixed() +
+  geom_point(aes(X, Y), data = dat, alpha = 0.2, size = 0.5)
 ```
 
 ### Exercise:
 
-1.  Try adjusting the size of the cutoff distance to explore the effects of decreasing the mesh resolution. Make sure to reset the `cutoff` value to `10` in the end so the rest of the exercise behaves as intended, because model convergence issues can be caused by meshes that are either too fine or too coarse. 
+1.  Try adjusting the size of the cutoff distance to explore the effects of decreasing the mesh resolution. Make sure to reset the `cutoff` value to `10` in the end so the rest of the exercise behaves as intended, because model convergence issues can be caused by meshes that are either too fine or too coarse.
 
 # Fitting a spatial model
 
-The most basic model we could fit would be a model with only spatial random fields. This is similar to what we were fitting yesterday.
-Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in chunks so we will comment it out in most cases here. But it is a good idea to use it if models are running too slowly or not converging.
+The most basic model we could fit would be a model with only spatial random fields. This is similar to what we were fitting yesterday. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging.
 
 ```{r, results='hide'}
 fit_spatial <- sdmTMB(
@@ -99,7 +99,7 @@ fit_spatial <- sdmTMB(
   family = tweedie(link = "log"),
   mesh = mesh,
   spatial = "on",
-  silent = FALSE 
+  # silent = FALSE
 )
 ```
 
@@ -114,9 +114,9 @@ We won't dwell on this model here for the sake of time, but in practice we would
 
 A refresher from yesterday:
 
-1. What is the 'Matern range' in the output?
-2. What is the 'Spatial SD' in the output?
-3. What is the 'Dispersion parameter' in the output?
+1.  What is the 'Matern range' in the output?
+2.  What is the 'Spatial SD' in the output?
+3.  What is the 'Dispersion parameter' in the output?
 
 # Fitting a model with spatial + spatiotemporal fields
 
@@ -146,7 +146,7 @@ fit <- sdmTMB(
 
 ### Exercise:
 
-1. Skim the help file (`?sdmTMB`) for each line above. Stop and discuss what each line of the above function call does.
+1.  Skim the help file (`?sdmTMB`) for each line above. Stop and discuss what each line of the above function call does.
 
 Print the model:
 
@@ -156,7 +156,7 @@ fit
 
 ### Exercise:
 
-1. What is new in the output of `fit` compared to `fit_spatial`?
+1.  What is new in the output of `fit` compared to `fit_spatial`?
 
 Run a basic sanity check on the model:
 
@@ -202,15 +202,13 @@ visreg::visreg(fit, xvar = "log_depth")
 visreg::visreg(fit, xvar = "log_depth", scale = "response")
 ```
 
-Third, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *Note that won't yet work with smoother terms*.
+Third, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *Note that won't yet work with smoother `s()` terms*, but will soon work with the similar `ggeffects::ggpredict()` .
 
 ```{r}
 library(ggeffects)
-g <- ggeffect(fit, "log_depth [3.5:6.7 by=0.1]")
+g <- ggeffect(fit, "log_depth [3.5:6.7 by=0.05]")
 plot(g)
 ```
-
-
 
 #### Prediction
 
@@ -282,7 +280,7 @@ ggplot(p, aes(X, Y, fill = exp(est))) +
 
 ## Exercise:
 
-1. Step through each of these plots and discuss what each represents.
+1.  Step through each of these plots and discuss what each represents.
 
 # Residual checking
 
@@ -297,15 +295,15 @@ We can plot those residuals spatially:
 ```{r}
 ggplot(dat, aes(X, Y, colour = resid)) +
   facet_wrap(~year) +
-  geom_point() +
+  geom_point(size = 0.5) +
   coord_fixed() +
   scale_colour_gradient2()
 ```
 
 ## Exercise:
 
-1. What are you looking for in the above? Does it look OK?
-2. Usually visual inspection is fine but what kind of formal test could you use for spatial correlation?
+1.  What are you looking for in the above? Does it look OK?
+2.  Usually visual inspection is fine but what kind of formal test could you use for spatial correlation?
 
 We can check the distribution of the residuals with a QQ plot:
 
@@ -314,7 +312,7 @@ qqnorm(dat$resid)
 qqline(dat$resid)
 ```
 
-These don't look great, *but*, this is largely a function of the Laplace approximation on the random effects. MCMC-based residuals look better. The following line of code will take a while to run and will require rstan and tmbstan. You may not want to run it. There's a whole vignette on residual checking with sdmTMB here: <https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html> It's an active area of research.
+These don't look great, *but*, this is largely a function of error from the Laplace approximation on the random effects (see [Thygesen et al. 2017](https://doi.org/10.1007/s10651-017-0372-4)). MCMC-based are a better approach, but are slower. The following line of code will take a while to run and will require rstan and tmbstan. You may *not* want to run it. There's a whole vignette on residual checking with sdmTMB here: <https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html> It's an active area of research.
 
 ```{r, eval=FALSE}
 # warning: will take a couple minutes and requires rstan!
@@ -348,15 +346,15 @@ hist(dat$density, xlim = c(0, 30), breaks = 200, freq = FALSE)
 
 ## Exercise:
 
-1. What is the difference between `sdmTMB_simulate()` and `simulate.sdmTMB()`?
+1.  What is the difference between `sdmTMB_simulate()` and `simulate.sdmTMB()`?
 
 # Fitting an anisotropic model
 
 ## Exercise:
 
-1. What is anisotropy?
-2. Why might you want to allow for it?
-3. What is the default setting for `anisotropy` in `sdmTMB`?
+1.  What is anisotropy?
+2.  Why might you want to allow for it?
+3.  What is the default setting for `anisotropy` in `sdmTMB`?
 
 We will re-fit our model with REML so we can use AIC to compare models with different random effect structures. We will then fit a model with anisotropy enabled. We will use the handy method `update()` here, but we could also re-write the whole `sdmTMB()` function call each time.
 
@@ -383,8 +381,8 @@ plot_anisotropy(fit_aniso)
 
 ## Exercise:
 
-1. What is this plot showing? See `?plot_anisotropy`
-2. Does this make sense here? Think about the geography of West Coast Vancouver Island.
+1.  What is this plot showing? See `?plot_anisotropy`
+2.  Does this make sense here? Think about the geography of West Coast Vancouver Island.
 
 We can check the AIC of the 2 models:
 
@@ -394,8 +392,8 @@ AIC(fit_reml, fit_aniso)
 
 ## Exercise:
 
-1. What does AIC suggest? (Keep in mind AIC is a bit suspect for these kinds of models with correlated random effects, often selects more complicated models, and shouldn't be taken *too* seriously.)
-1. What are some other ways we could compare the models?
+1.  What does AIC suggest? (Keep in mind AIC is a bit suspect for these kinds of models with correlated random effects, often selects more complicated models, and shouldn't be taken *too* seriously.)
+2.  What are some other ways we could compare the models?
 
 # Fitting an AR(1) fields model
 
@@ -420,9 +418,9 @@ tidy(fit_ar1, "ran_pars", conf.int = TRUE)
 
 ## Exercise:
 
-1. What is the AR(1) correlation estimated at? (Hint: see `print(fit_ar1)` and the `tidy()` line above.)
-2. What does this mean? Does this make sense ecologically?
-3. What is a subtle reason why you might want to include spatial fields if you're using AR(1) fields?
+1.  What is the estimated random field AR(1) correlation value (`rho`)? (Hint: see `print(fit_ar1)` and the `tidy()` line above.)
+2.  What does this mean? Does this make sense ecologically?
+3.  What is a subtle reason why you might want to include spatial fields if you're using AR(1) fields?
 
 Let's plot the predictions from our two anisotropic models:
 
@@ -462,13 +460,12 @@ cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 
 ## Exercise:
 
-1. How do these differ given the assumptions of the models? Why don't they look the same?
+1.  How do these differ given the assumptions of the models? Why don't they look the same?
 
 What if we combine the spatial and spatiotemporal fields from the IID model?
 
 ```{r}
-scale_limits <- c(min((p_iid$omega_s + p_iid$epsilon_st), p_ar1$epsilon_st), 
-                  max((p_iid$omega_s + p_iid$epsilon_st), p_ar1$epsilon_st))
+scale_limits <- range(c(p_iid$omega_s + p_iid$epsilon_st, p_ar1$epsilon_st))
 
 g1 <- filter(p_iid, year %in% yrs) |> 
   plot_field(epsilon_st + omega_s, lims = scale_limits) + 
@@ -482,7 +479,7 @@ cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 
 ## Exercise:
 
-1. Do these look more similar than the previous plot? Why?
+1.  Do these look more similar than the previous plot? Why?
 
 We'll make another little helper function to plot predictions:
 
@@ -514,24 +511,24 @@ cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 
 ## Exercise:
 
-1. How similar do the predictions look? Is there a big difference in the end?
+1.  How similar do the predictions look? Is there a big difference in the end?
 
-2. How could we pick between these models?
+2.  How could we pick between these models?
 
-- cross validation <!-- exercise -->
-- residual checking <!-- exercise -->
-- what creates more useful inference? <!-- exercise -->
-- which is most assumption free or ecologically realistic? <!-- exercise -->
-- sometimes it doesn't matter! <!-- exercise -->
+-   cross validation <!-- exercise -->
+-   residual checking <!-- exercise -->
+-   what creates more useful inference? <!-- exercise -->
+-   which is most assumption free or ecologically realistic? <!-- exercise -->
+-   sometimes it doesn't matter! <!-- exercise -->
 
 # Bonus
 
 ## Exercise:
 
-1. We assumed the spatial/spatiotemporal range was shared between the 2 sets of fields. Try a version with `share_range = FALSE` (use `sdmTMB()` or `update()`).
-2. If working with the anisotropic version, try `plot_anisotropy()`. Otherwise, look at the range estimates in the model output.
-3. Is the range different between the spatial and spatiotemporal fields? Is that what you expected?
-4. Are either of the ranges smaller than the cutoff distance of your mesh? If so, why might you want to try a different mesh?
+1.  We assumed the spatial/spatiotemporal range was shared between the 2 sets of fields. Try a version with `share_range = FALSE` (use `sdmTMB()` or `update()`).
+2.  If working with the anisotropic version, try `plot_anisotropy()`. Otherwise, look at the range estimates in the model output.
+3.  Is the range different between the spatial and spatiotemporal fields? Is that what you expected?
+4.  Are either of the ranges smaller than the cutoff distance of your mesh? If so, why might you want to try a different mesh?
 
 ```{r, results='hide'}
 fit2 <- sdmTMB(
