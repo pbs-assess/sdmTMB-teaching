@@ -495,8 +495,7 @@ plot_map <- function(data, column_name, lims = NULL) {
 And plot predictions from our 2 models:
 
 ```{r}
-scale_limits <- c(min(p_iid$est, p_ar1$est), 
-                  max(p_iid$est, p_ar1$est))
+scale_limits <- range(c(p_iid$est, p_ar1$est))
 
 g1 <- filter(p_iid, year %in% yrs) |>
   plot_map(est, lims = scale_limits) + 
