@@ -67,6 +67,17 @@ fit <- sdmTMB(
 ```
 
 ---
+# Check convergence  
+
+* Learning curve of TMB can be steep  
+* Models can be very complex (hard to diagnose issues)  
+
+```{r checksanity, eval=FALSE}
+s <- sanity(fit)
+s
+```
+
+---
 
 # Should we include depth?
 
@@ -135,6 +146,15 @@ fit
 fit
 ```
 ]
+
+---
+# Sanity arguments  
+
+```{r sanityargs, eval=FALSE}
+sanity(fit, big_sd_log10 = 3, gradient_thresh = 0.001)
+```
+`big_sd_log10` SEs greater than this are flagged  
+`gradient_thresh` gradients greater than this are flagged
 
 ---
 
