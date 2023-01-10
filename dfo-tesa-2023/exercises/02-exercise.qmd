@@ -174,8 +174,8 @@ nd <- data.frame(log_depth = seq(log(50), log(700), length.out = 100), year = 20
 p <- predict(
   fit,
   newdata = nd,
-  re_form = ~ 0, # means only include the fixed effects
-  se_fit = TRUE # means calculate standard errors
+  re_form = ~ 0, # means only include the fixed effects (not the default)
+  se_fit = TRUE # means calculate standard errors (not the default)
 )
 
 ggplot(p, aes(log_depth, exp(est),
@@ -183,7 +183,7 @@ ggplot(p, aes(log_depth, exp(est),
   geom_line() + geom_ribbon(alpha = 0.4)
 ```
 
-The second approach is to pass the sdmTMB object to the visreg package. This shows the conditional effect, where all values other than depth are held at a particular value. Note the default visreg plot is in link (here, log) space.
+The second approach is to pass the sdmTMB object to the visreg package. This shows the conditional effect, where all values other than depth are held at a particular value. Note the default visreg plot is in link (here, log) space and the dots are randomized quantile residuals.
 
 ```{r}
 visreg::visreg(fit, xvar = "log_depth")
