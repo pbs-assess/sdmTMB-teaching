@@ -1,0 +1,93 @@
+# sdmTMB setup on DFO computers
+
+1. Install the following programs (on DFO Windows laptops, using the 'Software Centre'):
+
+- R 4.2.2
+- Rtools 4.2
+- RStudio latest version (for DFO computers you need to search "R Studio" with a space)
+
+2. In R, install the stable version of INLA (can take 10-15 minutes especially if you're on a fresh setup)
+
+- Install using information here: https://www.r-inla.org/download-install
+- Sometimes DFO IT blocks the INLA website on VPN (!). So, if that website won't load, turn off your DFO VPN first.
+
+Essentially you'll be running this:
+
+```{r}
+install.packages("INLA", repos = c(getOption("repos"), INLA = "https://inla.r-inla-download.org/R/stable"), dependencies = TRUE)
+```
+
+If you run into problems, see the section at the end.
+
+3. In R, install sdmTMB from CRAN
+
+```{r}
+install.packages("sdmTMB", dependencies = TRUE)
+```
+
+- If asked if you'd like to update any packages, say yes.
+- If CRAN asks if you'd like to build a newer package from source, feel free to say no.
+- If any packages fail (e.g. 'non-zero exist status), try installing them separately and then trying to install sdmTMB again.
+
+E.g. if 'RcppParallel' and 'gap' failed to install:
+
+```{r}
+install.packages("RcppParallel")
+install.packages("gap")
+```
+
+Sometimes on DFO computers you may try restarting RStudio and/or restarting Windows to deal with folder permissions issues.
+
+4. Test to make sure everything is working:
+
+```{r}
+library(sdmTMB)
+fit <- sdmTMB(
+  density ~ s(depth),
+  data = pcod_2011, 
+  mesh = pcod_mesh_2011,
+  family = tweedie(link = "log")
+)
+sanity(fit)
+fit
+```
+
+If successful, you should see a bunch of check marks and no errors followed by a model summary print out.
+
+If you get the warning like this:
+
+```
+TMB was built with Matrix version 1.5.3
+Current Matrix version is 1.5.1
+Please re-install 'TMB' from source using install.packages('TMB', type = 'source') or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
+```
+
+You can safely ignore it (if you really want to squash the warning, you can install TMB from source as described).
+
+## INLA install problems
+
+We are very sorry if installing INLA gives you grief! Long term we'd like to remove this dependency.
+
+First, make sure you are on the latest R (4.2.2) and Rtools (4.2).
+
+If the install fails because the download times out, grab the URL to the .zip file and install it locally. E.g., as of today, this is the latest Windows version:
+
+https://inla.r-inla-download.org/R/stable/bin/windows/contrib/4.2/INLA_22.12.16.zip 
+
+Download that to your Downloads folder, and install it with the following:
+
+```{r}
+user_folder <- Sys.getenv("USERPROFILE")
+# adjust folder if needed:
+zip_file <- file.path(user_folder, "Downloads/INLA_22.12.16.zip")
+
+install.packages(zip_file, dependencies = TRUE, repos = NULL)
+```
+
+## Installing the development version of sdmTMB
+
+You can install development version of sdmTMB from GitHub. This requires a C++ compiler or the Rtools application on Windows.
+
+```{r}
+remotes::install_github("pbs-assess/sdmTMB", dependencies = TRUE)
+```
