@@ -36,7 +36,7 @@ dat <- readRDS(here::here("dfo-tesa-2023/data/wcvi-dogfish.rds"))
 head(dat)
 ```
 
-The data contains sampling locations (`longitude` and `latitude`) and year (`year`). It also contains sampling `depth` in meters and sample density `density` (CPUE) in units of kg/km^2^.
+The dataset contains sampling locations (`longitude` and `latitude`) and year (`year`). It also contains sampling `depth` in meters and sample density `density` (CPUE) in units of tonnes/km^2^.
 
 ```{r}
 ggplot(dat, aes(longitude, latitude, size = density)) + geom_point()
@@ -44,7 +44,7 @@ ggplot(dat, aes(longitude, latitude, size = density)) + geom_point()
 
 # Adding UTMs
 
-We can add UTM columns using the `add_utm_columns()`:
+We can add UTM columns using `add_utm_columns()`:
 
 ```{r}
 dat <- add_utm_columns(dat, ll_names = c("longitude", "latitude"))
@@ -224,7 +224,7 @@ p <- predict(fit, newdata = grid)
 We can plot each of the components of the prediction data frame spatially:
 
 ```{r}
-# Depth effect contribution:
+# Depth and year effect contribution:
 # (Everything not a random field)
 ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
   facet_wrap(~year) +
