@@ -12,9 +12,9 @@ execute:
 -   Practice fitting a basic spatiotemporal model
 -   Understand how to inspect the model output
 -   Practice predicting from the model on new data and making visualizations of those predictions.
--   Gain familiarity with fitting different random field correlation structures
+-   Gain familiarity with fitting and interpreting different random field structures.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 #| echo=FALSE
 library(sdmTMB)
 library(dplyr)
@@ -26,31 +26,37 @@ theme_set(theme_light())
 
 # The data
 
-It's worth first exploring the data, which represents survey data on Pacific cod collected from Queen Charlotte Sound (British Columbia).
+We will work with data representing North Pacific Spiny Dogfish in the West Coast Vancouver Island synoptic trawl survey.
 
 ```{r}
-dat <- readRDS("~/Downloads/wcvi-dogfish.rds") |>
-  select(longitude, latitude, year, depth, density)
+dat <- readRDS(here::here("dfo-tesa-2023/data/wcvi-dogfish.rds"))
 ```
-
 
 ```{r}
 head(dat)
 ```
 
-The data contains sampling locations (`longitude` and `latitude`) and year (`year`). It also contains sampling `depth` in meters and sample density `density` (CPUE) in units of kg/km\^2.
+The data contains sampling locations (`longitude` and `latitude`) and year (`year`). It also contains sampling `depth` in meters and sample density `density` (CPUE) in units of kg/km^2^.
+
+```{r}
+ggplot(dat, aes(longitude, latitude, size = density)) + geom_point()
+```
+
+# Adding UTMs
+
+We can add UTM columns using the `add_utm_columns()`:
 
 ```{r}
 dat <- add_utm_columns(dat, ll_names = c("longitude", "latitude"))
 ```
 
-Look at the data spatially:
+And check to make sure that looks right:
   
 ```{r}
 ggplot(dat, aes(X, Y, size = density)) + geom_point()
 ```
 
-And by year
+We can also plot the data by year:
 
 ```{r}
 ggplot(dat, aes(X, Y, size = density, colour = log(density + 1))) +
@@ -58,58 +64,109 @@ ggplot(dat, aes(X, Y, size = density, colour = log(density + 1))) +
   facet_wrap(~year)
 ```
 
-#### Constructing a mesh
+# Constructing a mesh
+
+We start by constructing an SPDE mesh with INLA. This creates some matrices that are used internally when fitting the model. We will use the shortcut function `make_mesh()` and use a cutoff (minimum triangle length of 8 km). A full analysis could explore sensitivity to this decision or other more complex meshes created with INLA.
 
 ```{r}
 mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 8)
 plot(mesh)
-mesh$mesh$n
+mesh$mesh$n # number of vertices or knots
+
+# alternative:
+ggplot() + inlabru::gg(mesh$mesh)
 ```
 
-1.  Try to adjust the size of the cutoff distance to explore the effects of decreasing the mesh resolution
+### Exercise:
 
-#### Fitting a model with a spatial field
+1.  Try adjusting the size of the cutoff distance to explore the effects of decreasing the mesh resolution. Make sure to reset the `cutoff` value to `8` in the end so the rest of the exercise behaves as intended.
 
-This first model includes a smoother (P-spline) on depth, and models total density using a Tweedie distribution. The spatial field is estimated, but spatiotemporal fields are not.
+# Fitting a spatial model
+
+The most basic model we could fit would be a model with only spatial random fields. This is similar to what we were fitting yesterday.
+
+```{r, results='hide'}
+fit_spatial <- sdmTMB(
+  density ~ 1, # intercept only
+  data = dat,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  silent = FALSE
+)
+```
+
+```{r}
+sanity(fit_spatial)
+fit_spatial
+```
+
+We won't dwell on this model here for the sake of time, but in practice we would stop, inspect, and understand this model before progressing to a spatiotemporal model.
+
+### Exercise:
+
+A refresher from yesterday:
+
+1. What is the 'Matern range' in the output?
+2. What is the 'Spatial SD' in the output?
+3. What is the 'Dispersion parameter' in the output?
+
+# Fitting a model with spatial + spatiotemporal fields
+
+This first model includes a penalized smoother `s()` on log depth, a factor effect for each year, and models total density using a Tweedie distribution and a log link. The spatial field and spatiotemporal fields are estimated.
+
+The year factors give each year its own mean. The `0 +` omits the intercept such that each year's estimate represents a mean as opposed to a difference from the intercept. This part is arbitrary and chosen for the sake of this exercise.
 
 ```{r}
 dat$log_depth <- log(dat$depth)
 ```
 
-```{r}
+```{r, results='hide'}
 fit <- sdmTMB(
   density ~ 0 + as.factor(year) + s(log_depth),
   data = dat,
   family = tweedie(link = "log"),
   mesh = mesh,
   spatial = "on",
-  spatiotemporal = "iid",
-  time = "year",
+  spatiotemporal = "iid", #< new
+  time = "year", #< new
   silent = FALSE
 )
 ```
+
+### Exercise:
+
+1. Skim the help file (`?sdmTMB`) for each line above. Stop and discuss what each line of the above function call does.
+
+Print the model:
 
 ```{r}
 fit
 ```
 
+### Exercise:
+
+1. What is new in the output of `fit` compared to `fit_spatial`?
+
+Run a basic sanity check on the model:
+
 ```{r}
 sanity(fit)
 ```
 
-We can use the tidy function to get the coefficients for the fixed effects,
+We can use the tidy function to get the coefficients for the fixed effects:
 
 ```{r}
 tidy(fit, conf.int = TRUE)
 ```
 
-and by setting `effects = "ran_pars"`, can extract random components
+and by setting `effects = "ran_pars"`, we can extract the variance and random effect components:
 
 ```{r}
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
 ```
 
-There are 3 ways we can plot the marginal depth effects on density. If we had other predictors in the model, we could set them. First, we can create new data frame of all potential values,
+There are multiple ways we can plot the depth effect on density. First, we can create new data frame of all potential values, setting the other predictors (here year) to a fixed value.
 
 ```{r}
 nd <- data.frame(log_depth = seq(log(50), log(700), length.out = 100), year = 2004)
@@ -126,40 +183,45 @@ ggplot(p, aes(log_depth, exp(est),
   geom_line() + geom_ribbon(alpha = 0.4)
 ```
 
-The second approach is to pass the `sdmTMB` object to the `visreg` package. This shows the conditional effects, where all values other than depth are held at a particular value. Note the default visreg plot is in link (here, log) space.
+The second approach is to pass the sdmTMB object to the visreg package. This shows the conditional effect, where all values other than depth are held at a particular value. Note the default visreg plot is in link (here, log) space.
 
 ```{r}
 visreg::visreg(fit, xvar = "log_depth")
+visreg::visreg(fit, xvar = "log_depth", scale = "response")
 ```
 
-<!-- Third, we can use the `ggeffects` package which can be used to show the marginal effects of the smoothed variables (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html) -->
-
-```{r}
-# ggeffects::ggeffect(fit)
-```
+Third, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *However, that won't yet work with smoother terms and so we skip it here*.
 
 #### Prediction
 
 Let's now predict on a grid that covers the entire survey (`wcvi_grid`).
 
 ```{r}
-wcvi_grid <- readRDS("~/Downloads/wcvi-grid.rds") |>
-  select(X, Y, depth, cell_area) |> 
-  distinct()
+wcvi_grid <- readRDS(here::here("dfo-tesa-2023/data/wcvi-grid.rds"))
+head(wcvi_grid)
 wcvi_grid$log_depth <- log(wcvi_grid$depth)
 ```
 
+We can use this fancy line of purrr code to expand our grid to every year we want to predict on:
+
 ```{r}
 grid <- purrr::map_dfr(unique(dat$year), ~ tibble(wcvi_grid, year = .x))
+head(grid)
 ```
 
-To predict on a new data frame, we can specify `newdata`,
+We can predict on the original data:
+
+```{r}
+p0 <- predict(fit)
+```
+
+To predict on a new data frame, we can specify `newdata`. Here, we will predict on the survey grid. (1) This makes it easy to make visualizations. (2) This will be useful if we wanted to generate an area-weighted standardized population index later.
 
 ```{r}
 p <- predict(fit, newdata = grid)
 ```
 
-We can also plot each of the components of the predict object spatially
+We can plot each of the components of the prediction data frame spatially:
 
 ```{r}
 # Depth effect contribution:
@@ -197,8 +259,21 @@ ggplot(p, aes(X, Y, fill = exp(est))) +
   scale_fill_viridis_c(trans = "log10")
 ```
 
+## Exercise:
+
+1. Step through each of these plots and discuss what each represents.
+
+# Residual checking
+
+We can calculate randomized quantile residuals with the `residuals.sdmTMB()` function.
+
 ```{r}
 dat$resid <- residuals(fit)
+```
+
+We can plot those residuals spatially:
+
+```{r}
 ggplot(dat, aes(X, Y, colour = resid)) +
   facet_wrap(~year) +
   geom_point() +
@@ -206,17 +281,22 @@ ggplot(dat, aes(X, Y, colour = resid)) +
   scale_colour_gradient2()
 ```
 
+## Exercise:
+
+1. What are you looking for in the above? Does it look OK?
+2. Usually visual inspection is fine but what kind of formal test could you use for spatial correlation?
+
+We can check the distribution of the residuals with a QQ plot:
+
 ```{r}
 qqnorm(dat$resid)
 qqline(dat$resid)
 ```
 
-```{r}
-
-```
-
+These don't look great, *but*, this is largely a function of the Laplace approximation on the random effects. MCMC-based residuals look better. The following line of code will take a while to run and will require rstan and tmbstan. You may not want to run it. There's a whole vignette on residual checking with sdmTMB here: <https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html> It's an active area of research.
 
 ```{r, eval=FALSE}
+# warning: will take a couple minutes and requires rstan!
 # see ?residuals.sdmTMB
 set.seed(1)
 dat$resid_mcmc <- residuals(
@@ -229,12 +309,7 @@ qqnorm(dat$resid_mcmc)
 qqline(dat$resid_mcmc)
 ```
 
-```{r}
-# see ?residuals.sdmTMB
-set.seed(1)
-simulate(fit, nsim = 200) |> dharma_residuals(fit)
-# dharma_residuals()
-```
+We can simulate new observations from the model and check properties of the simulation compared to the observed data:
 
 ```{r}
 s <- simulate(fit, nsim = 100)
@@ -250,74 +325,139 @@ hist(s, xlim = c(0, 30), breaks = 200, freq = FALSE)
 hist(dat$density, xlim = c(0, 30), breaks = 200, freq = FALSE)
 ```
 
+## Exercise:
 
-```{r}
-fit_reml <-  update(fit, reml = TRUE)
-fit_range <- update(fit_reml, share_range = FALSE)
-fit_aniso <- update(fit_split_range, anisotropy = TRUE)
+1. What is the difference between `sdmTMB_simulate()` and `simulate.sdmTMB()`?
 
-fit_poly <- update(fit_reml, density ~ 0 + as.factor(year) + poly(log_depth, 2), share_range = FALSE)
-fit_nodepth <- update(fit_reml, density ~ 0 + as.factor(year), share_range = FALSE)
+# Fitting an anisotropic model
+
+## Exercise:
+
+1. What is anisotropy?
+2. Why might you want to allow for it?
+3. What is the default setting for `anisotropy` in `sdmTMB`?
+
+We will re-fit out model with REML so we can use AIC to compare models with different random effect structures. We will then fit a model with anisotropy enabled. We will use the handy method `update()` here, but we could also re-write the whole `sdmTMB()` function call each time.
+
+```{r, results='hide'}
+fit_reml <- update(fit, reml = TRUE)
+fit_aniso <- update(fit, reml = TRUE, anisotropy = TRUE)
 ```
 
 ```{r}
 sanity(fit_reml)
-sanity(fit_range)
 sanity(fit_aniso)
 ```
 
 ```{r}
 fit_reml
-fit_range
+fit_aniso
 ```
 
-Range is best examined graphically for anisotropy:
+Anisotropic range is best examined graphically:
 
 ```{r}
 plot_anisotropy(fit_aniso)
 ```
 
-What does AIC tell us?
+## Exercise:
+
+1. What is this plot showing? See `?plot_anisotropy`
+2. Does this make sense here? Think about the geography of West Coast Vancouver Island.
+
+We can check the AIC of the 2 models:
 
 ```{r}
-AIC(fit_reml, fit_range, fit_aniso)
+AIC(fit_reml, fit_aniso)
+```
+
+## Exercise:
+
+1. What does AIC suggest? (Keep in mind AIC is a bit suspect for these kinds of models with correlated random effects, often selects more complicated models, and shouldn't be taken *too* seriously.)
+1. What are some other ways we could compare the models?
+
+# Fitting an AR(1) fields model
+
+An alternative model would use AR(1) (first order autoregressive) correlated fields with or without spatial fields. We'll fit a version without spatial fields.
+
+```{r, results='hide', warning=FALSE, message=FALSE}
+fit_ar1 <- update(fit_reml, spatial = "off", spatiotemporal = "ar1", anisotropy = TRUE)
 ```
 
 ```{r}
-visreg::visreg(fit_reml, xvar = "log_depth")
-visreg::visreg(fit_range, xvar = "log_depth")
+fit_ar1
+sanity(fit_ar1)
 ```
-
-### Exercise:
-
-1. What has happened to the depth effect when we let the range be estimated independently for the spatial and spatiotemporal fields?
-
 
 ```{r}
-p_range <- predict(fit_range, newdata = grid)
-p_aniso <- predict(fit_aniso, newdata = grid)
+AIC(fit_aniso, fit_ar1)
 ```
+
+```{r}
+tidy(fit_ar1, "ran_pars", conf.int = TRUE)
+```
+
+## Exercise:
+
+1. What is the AR(1) correlation estimated at? (Hint: see `print(fit_ar1)` and the `tidy()` line above.)
+2. What does this mean? Does this make sense ecologically?
+3. What is a subtle reason why you might want to include spatial fields if you're using AR(1) fields?
+
+Let's plot the predictions from our two anisotropic models:
+
+```{r}
+p_iid <- predict(fit_aniso, newdata = grid)
+p_ar1 <- predict(fit_ar1, newdata = grid)
+```
+
+We'll write a little helper function to make some plots:
 
 ```{r}
 plot_field <- function(data, column_name) {
   ggplot(data, aes(X, Y, fill = {{ column_name }})) +
-  geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed()
+    facet_wrap(~year, nrow = 1) +
+    geom_raster() +
+    scale_fill_gradient2() +
+    coord_fixed()
 }
 ```
 
-```{r}
-g1 <- filter(p_range, year == 2004) |> plot_field(omega_s) + ggtitle("Isotropic")
-g2 <- filter(p_aniso, year == 2004) |> plot_field(omega_s) + ggtitle("Anisotropic")
-cowplot::plot_grid(g1, g2, ncol = 2)
-```
+And plot the spatiotemporal field estimates (`epsilon_st`) for 3 example years:
 
 ```{r}
-g1 <- filter(p_range, year == 2004) |> plot_field(epsilon_st) + ggtitle("Isotropic")
-g2 <- filter(p_aniso, year == 2004) |> plot_field(epsilon_st) + ggtitle("Anisotropic")
-cowplot::plot_grid(g1, g2, ncol = 2)
+yrs <- c(2012, 2014, 2016)
+g1 <- filter(p_iid, year %in% yrs) |> 
+  plot_field(epsilon_st) + 
+  ggtitle("IID spatiotemporal fields")
+g2 <- filter(p_ar1, year %in% yrs) |> 
+  plot_field(epsilon_st) + 
+  ggtitle("AR1 spatiotemporal fields")
+
+cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 ```
+
+## Exercise:
+
+1. How do these differ given the assumptions of the models? Why don't they look the same?
+
+What if we combine the spatial and spatiotemporal fields from the IID model?
+
+```{r}
+g1 <- filter(p_iid, year %in% yrs) |> 
+  plot_field(epsilon_st + omega_s) + 
+  ggtitle("IID spatial + spatiotemporal fields")
+g2 <- filter(p_ar1, year %in% yrs) |> 
+  plot_field(epsilon_st) + 
+  ggtitle("AR1 spatiotemporal fields")
+
+cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
+```
+
+## Exercise:
+
+1. Do these look more similar than the previous plot? Why?
+
+We'll make another little helper function to plot predictions:
 
 ```{r}
 plot_map <- function(data, column_name) {
@@ -328,55 +468,73 @@ plot_map <- function(data, column_name) {
 }
 ```
 
+And plot predictions from our 2 models:
+
 ```{r}
-g1 <- filter(p_range, year == 2004) |> plot_map(est) + ggtitle("Isotropic")
-g2 <- filter(p_aniso, year == 2004) |> plot_map(est) + ggtitle("Anisotropic")
-cowplot::plot_grid(g1, g2, ncol = 2)
+g1 <- filter(p_iid, year %in% yrs) |>
+  plot_map(est) + 
+  ggtitle("IID predictions")
+g2 <- filter(p_ar1, year %in% yrs) |> 
+  plot_map(epsilon_st) + 
+  ggtitle("AR1 predictions")
+
+cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
+```
+
+## Exercise:
+
+1. How similar do the predictions look? Is there a big difference in the end?
+
+2. How could we pick between these models?
+
+- cross validation <!-- exercise -->
+- residual checking <!-- exercise -->
+- what creates more useful inference? <!-- exercise -->
+- which is most assumption free or ecologically realistic? <!-- exercise -->
+- sometimes it doesn't matter! <!-- exercise -->
+
+# Bonus
+
+## Exercise:
+
+1. We assumed the spatial/spatiotemporal range was shared between the 2 sets of fields. Try a version with `share_range = FALSE` (use `sdmTMB()` or `update()`).
+2. If working with the anisotropic version, try `plot_anisotropy()`. Otherwise, look at the range estimates in the model output.
+3. Is the range different between the spatial and spatiotemporal fields? Is that what you expected?
+
+```{r, results='hide'}
+fit2 <- sdmTMB(
+  density ~ 0 + as.factor(year) + s(log_depth),
+  data = dat,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  spatiotemporal = "iid",
+  time = "year",
+  silent = FALSE,
+  share_range = FALSE # exercise
+)
 ```
 
 ```{r}
-fit_reml_ar1 <- update(fit_reml, spatiotemporal = "ar1")
-sanity(fit_reml_ar1)
+fit2
+```
 
-tidy(fit_reml, conf.int = TRUE)
-tidy(fit_reml_ar1, conf.int = TRUE)
-
-
-tidy(fit_reml, "ran_pars", conf.int = TRUE)
-tidy(fit_reml_ar1, "ran_pars", conf.int = TRUE)
-
-AIC(fit_reml_ar1, fit_reml)
-
-fit_ar1_nospatial <- update(fit_reml, spatiotemporal = "ar1", spatial = "off")
-
-AIC(fit_reml_ar1, fit_reml, fit_ar1_nospatial)
-
-
+```{r, results='hide'}
+fit3 <- sdmTMB(
+  density ~ 0 + as.factor(year) + s(log_depth),
+  data = dat,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on",
+  spatiotemporal = "iid",
+  time = "year",
+  silent = FALSE,
+  share_range = FALSE, # exercise
+  anisotropy = TRUE #<
+)
 ```
 
 ```{r}
-p_iid <- predict(fit_reml, newdata = grid)
-p_ar1 <- predict(fit_reml_ar1, newdata = grid)
-p_ar1_nospatial <- predict(fit_ar1_nospatial, newdata = grid)
-
-ggplot(p_iid, aes(X, Y, fill = epsilon_st)) +
-  facet_wrap(~year) +
-  geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed()
-
-ggplot(p_ar1, aes(X, Y, fill = epsilon_st)) +
-  facet_wrap(~year) +
-  geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed()
-
-ggplot(p_ar1_nospatial, aes(X, Y, fill = epsilon_st)) +
-  facet_wrap(~year) +
-  geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed()
-
-
+fit3
+plot_anisotropy(fit3)
 ```
-
