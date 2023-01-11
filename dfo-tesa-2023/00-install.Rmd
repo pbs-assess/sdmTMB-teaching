@@ -42,6 +42,16 @@ install.packages("gap")
 
 Sometimes on DFO computers you may try restarting RStudio and/or restarting Windows to deal with folder permissions issues.
 
+If you get the warning like this:
+
+```
+TMB was built with Matrix version 1.5.3
+Current Matrix version is 1.5.1
+Please re-install 'TMB' from source using install.packages('TMB', type = 'source') or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
+```
+
+You can safely ignore it (if you really want to squash the warning, you can install TMB from source as described).
+
 4. Test to make sure everything is working:
 
 ```{r, eval=FALSE}
@@ -81,15 +91,7 @@ ML criterion at convergence: 2937.789
 See ?tidy.sdmTMB to extract these values as a data frame.
 ```
 
-If you get the warning like this:
-
-```
-TMB was built with Matrix version 1.5.3
-Current Matrix version is 1.5.1
-Please re-install 'TMB' from source using install.packages('TMB', type = 'source') or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
-```
-
-You can safely ignore it (if you really want to squash the warning, you can install TMB from source as described).
+Again, you can ignore any warnings about Matrix/TMB versions if you want.
 
 ## INLA install problems
 
