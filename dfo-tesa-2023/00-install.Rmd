@@ -99,6 +99,8 @@ We are very sorry if installing INLA gives you grief! Long term we'd like to rem
 
 First, make sure you are on the latest R (4.2.2) and Rtools (4.2).
 
+Second, are you off the DFO VPN? Sometimes DFO IT blocks the INLA website.
+
 If the install fails because the download times out, grab the URL to the .zip file and install it locally. E.g., as of today, this is the latest Windows version:
 
 https://inla.r-inla-download.org/R/stable/bin/windows/contrib/4.2/INLA_22.12.16.zip 
