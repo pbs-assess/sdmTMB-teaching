@@ -23,13 +23,10 @@ If you run into problems see the section ('INLA install problems') below.
 
 3. In R, install sdmTMB from CRAN
 
-**As of January 11, only the macOS binary version is ready. If on Windows, wait another day or two or go the slower route of installing from source.**
+**As of January 11, only the macOS binary version is ready. If on Windows, wait another day or two or go the slower route of clicking 'yes' to the button that pops up asking if you want to install from source. This should work assuming you installed Rtools 4.2 above.**
 
 ```{r, eval=FALSE}
 install.packages("sdmTMB", dependencies = TRUE)
-# if you don't want to wait a day or two for the Windows binary version to be
-# ready, you can try:
-# install.packages("sdmTMB", dependencies = TRUE, type = "source")
 ```
 
 - If asked if you'd like to update any packages, say yes.
