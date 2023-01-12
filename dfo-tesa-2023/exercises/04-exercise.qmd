@@ -16,15 +16,24 @@ options(ggplot2.continuous.fill = "viridis")
 theme_set(theme_light())
 ```
 
+We will work with lingcod data from the Queen Charlotte Sound synoptic survey:
+
 ```{r}
 d <- readRDS(here::here("dfo-tesa-2023/data/lingcod-qcs.rds"))
-d <- add_utm_columns(d, units = "km", utm_crs = 32609)
+```
+
+Add UTM columns to the dataset. Use `utm_crs = 32609` to match the UTM zone 9 used in the grid.
+
+```{r}
+d <- add_utm_columns(d, units = "km", utm_crs = 32609) # excercise
 ```
 
 ```{r}
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 10)
 plot(mesh)
 ```
+
+We will run the following code to turn the `qcs_grid` grid built into the package into a grid with values for every year in the lingcod dataset.
 
 ```{r}
 grid <- filter(qcs_grid, year == min(qcs_grid$year)) |>
@@ -33,6 +42,30 @@ grid <- filter(qcs_grid, year == min(qcs_grid$year)) |>
   rename(depth_m = depth)
 grid <- purrr::map_dfr(unique(d$year), ~ tibble(grid, year = .x))
 ```
+
+Fit a spatial model:
+
+```{r}
+fit_spatial <- sdmTMB(
+  catch_weight ~ 0 + as.factor(year),
+  spatial = "on", # exercise
+  offset = log(d$area_swept),
+  family = delta_gamma(), # exercise
+  mesh = mesh, # exercise
+  data = d,
+  # silent = FALSE,
+  control = sdmTMBcontrol(newton_loops = 1) # helps with convergence here
+)
+```
+
+```{r}
+sanity(fit_spatial)
+fit_spatial
+```
+
+Did that fit reasonably well such that we can try adding the complexity of spatiotemporal fields?
+
+Add IID spatiotemporal fields:
 
 ```{r}
 fit <- sdmTMB(
@@ -45,7 +78,7 @@ fit <- sdmTMB(
   mesh = mesh, # exercise
   data = d,
   # silent = FALSE,
-  control = sdmTMBcontrol(newton_loops = 1)
+  control = sdmTMBcontrol(newton_loops = 1) # helps with convergence here
 )
 ```
 
