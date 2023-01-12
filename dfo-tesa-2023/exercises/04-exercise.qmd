@@ -27,8 +27,9 @@ plot(mesh)
 ```
 
 ```{r}
-grid <- filter(qcs_grid, year == min(qcs_grid$year)) |> select(-year) |> 
-  select(-depth_scaled, -depth_scaled2) |> 
+grid <- filter(qcs_grid, year == min(qcs_grid$year)) |>
+  select(-year) |>
+  select(-depth_scaled, -depth_scaled2) |>
   rename(depth_m = depth)
 grid <- purrr::map_dfr(unique(d$year), ~ tibble(grid, year = .x))
 ```
@@ -75,56 +76,90 @@ pred <- predict(fit, newdata = grid, return_tmb_object = TRUE) # exercise
 ```
 
 ```{r}
-ggplot(pred$data, aes(X, Y, fill = omega_s1)) + 
+ggplot(pred$data, aes(X, Y, fill = omega_s1)) +
   geom_raster() +
   scale_fill_gradient2() +
   coord_fixed()
 ```
 
+## Plotting the model components spatially
+
+Because we set `return_tmb_object = TRUE`, the prediction data frame is in the list element `data`.
+
 ```{r}
-ggplot(pred$data, aes(X, Y, fill = omega_s2)) + 
+glimpse(pred$data)
+```
+
+### Exercise:
+
+1.  What do the `1` and `2` columns represent?
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = plogis(est_non_rf1))) +
   geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed()
+  facet_wrap(~year) +
+  coord_fixed() +
+  ggtitle("Fixed effect components 1")
 ```
 
 ```{r}
-ggplot(pred$data, aes(X, Y, fill = epsilon_st1)) + 
+ggplot(pred$data, aes(X, Y, fill = exp(est_non_rf2))) +
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  ggtitle("Fixed effect components 2")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = omega_s2)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed() +
+  ggtitle("Spatial random field 1")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = epsilon_st1)) +
   geom_raster() +
   scale_fill_gradient2() +
   facet_wrap(~year) +
-  coord_fixed()
+  coord_fixed() +
+  ggtitle("Spatiotemporal random fields 2")
 ```
 
 ```{r}
-ggplot(pred$data, aes(X, Y, fill = epsilon_st2)) + 
+ggplot(pred$data, aes(X, Y, fill = epsilon_st2)) +
   geom_raster() +
   scale_fill_gradient2() +
   facet_wrap(~year) +
-  coord_fixed()
+  coord_fixed() +
+  ggtitle("Spatiotemporal random fields 2")
 ```
 
 ```{r}
-ggplot(pred$data, aes(X, Y, fill = plogis(est1))) + 
+ggplot(pred$data, aes(X, Y, fill = plogis(est1))) +
   geom_raster() +
   facet_wrap(~year) +
-  coord_fixed()
+  coord_fixed() +
+  ggtitle("Prediction 1")
 ```
 
 ```{r}
-ggplot(pred$data, aes(X, Y, fill = exp(est2))) + 
+ggplot(pred$data, aes(X, Y, fill = exp(est2))) +
   geom_raster() +
   facet_wrap(~year) +
   scale_fill_viridis_c(trans = "log10") +
-  coord_fixed()
+  coord_fixed() +
+  ggtitle("Prediction 1")
 ```
 
 ```{r}
-ggplot(pred$data, aes(X, Y, fill = plogis(est1) * exp(est2))) + 
+ggplot(pred$data, aes(X, Y, fill = plogis(est1) * exp(est2))) +
   geom_raster() +
   facet_wrap(~year) +
   scale_fill_viridis_c(trans = "log10", option = "C") +
-  coord_fixed()
+  coord_fixed() +
+  ggtitle("Combined prediction")
 ```
 
 ```{r}
@@ -172,27 +207,25 @@ fit_pcod
 
 ### Exercise:
 
-1. What is the problem with the above?
+1.  What is the problem with the above?
 
-Hint: look at `sanity(fit_pcod)`
-Hint: look at the range estimate with `print(fit_pcod)`
-Hint: look at the mesh `cutoff` value
+Hint: look at `sanity(fit_pcod)` Hint: look at the range estimate with `print(fit_pcod)` Hint: look at the mesh `cutoff` value
 
-2. Try fixing it below:
+2.  Try fixing it below:
 
 ```{r}
 mesh10 <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10) # exercise
-plot(mesh10)  # exercise
+plot(mesh10) # exercise
 ```
 
 ```{r}
-fit_pcod10 <- sdmTMB(  # exercise
-  density ~ poly(depth, 2),  # exercise
-  spatial = "on",  # exercise
-  family = tweedie(link = "log"),  # exercise
-  mesh = mesh10,  # exercise
-  data = pcod  # exercise
-)  # exercise
+fit_pcod10 <- sdmTMB( # exercise
+  density ~ poly(depth, 2), # exercise
+  spatial = "on", # exercise
+  family = tweedie(link = "log"), # exercise
+  mesh = mesh10, # exercise
+  data = pcod # exercise
+) # exercise
 ```
 
 ```{r}
@@ -209,8 +242,8 @@ d_north <- add_utm_columns(d_north)
 ```
 
 ```{r}
-ggplot(d_north, aes(X, Y, size = catch_count)) + 
-  facet_wrap(~year) + 
+ggplot(d_north, aes(X, Y, size = catch_count)) +
+  facet_wrap(~year) +
   geom_point(shape = 21)
 ```
 
@@ -236,12 +269,12 @@ sanity(fit_ye)
 
 ### Exercise:
 
-1. What is the problem with the above?
-2. What are some ways you could attempt to fix this?
-3. What is the simplest way you can fix this by changing the model structure? Try that below.
+1.  What is the problem with the above?
+2.  What are some ways you could attempt to fix this?
+3.  What is the simplest way you can fix this by changing the model structure? Try that below.
 
 ```{r}
-fit_ye1 <- update(fit_ye, spatiotemporal = "off")  # exercise
+fit_ye1 <- update(fit_ye, spatiotemporal = "off") # exercise
 sanity(fit_ye1)
 fit_ye1
 ```
@@ -273,13 +306,13 @@ fit_pcod <- sdmTMB(
 
 ### Exercise:
 
-1. What is causing the error message?
-2. Try to fix it below.
+1.  What is causing the error message?
+2.  Try to fix it below.
 
 Hint: When was the mesh created relative to any filtering of the data? Why is this a problem?
 
 ```{r}
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)  # exercise
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10) # exercise
 fit_pcod <- sdmTMB(
   present ~ poly(depth, 2),
   spatial = "on",
@@ -293,5 +326,5 @@ fit_pcod
 Bonus: try plotting the depth effect using the `ggeffect::ggeffect()` function.
 
 ```{r}
-ggeffects::ggeffect(fit_pcod, "depth [0:600 by=2]") |> plot()  # exercise
+ggeffects::ggeffect(fit_pcod, "depth [0:600 by=2]") |> plot() # exercise
 ```
