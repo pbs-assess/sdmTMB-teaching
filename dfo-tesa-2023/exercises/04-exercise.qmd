@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Fitting spatial/spatiotemporal models and problem solving"
 format: html
 editor: visual
 execute: 
@@ -7,7 +7,7 @@ execute:
   eval: true
 ---
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(sdmTMB)
 library(dplyr)
 library(ggplot2)
@@ -43,39 +43,14 @@ fit <- sdmTMB(
   family = delta_gamma(), # exercise
   mesh = mesh, # exercise
   data = d,
-  silent = FALSE
+  silent = FALSE,
+  control = sdmTMBcontrol(newton_loops = 1)
 )
 ```
 
 ```{r}
 sanity(fit)
 ```
-
-Is there a problem with the above?
-
-```{r}
-fit$gradients[fit$gradients > 0.001]
-```
-
-```{r}
-fit <- run_extra_optimization(fit, newton_loops = 1) # exercise
-```
-
-You could also have used in the first place, this does the same thing but is a bit faster to do it all at once. See `?sdmTMBcontrol` and the `newton_loops` argument.
-
-```{r, eval=FALSE}
-fit <- sdmTMB(
-  ...,
-  control = sdmTMBcontrol(newton_loops = 1), #<
-  ...
-)
-```
-
-```{r}
-sanity(fit)
-```
-
-Did that fix it?
 
 ```{r}
 fit
@@ -87,6 +62,8 @@ Is the range bigger or smaller for the binomial component than the Gamma compone
 set.seed(1)
 resid <- residuals(fit) # exercise
 ```
+
+How do the basic randomized quantile residuals look for the overall model?
 
 ```{r}
 qqnorm(resid)
@@ -100,45 +77,58 @@ pred <- predict(fit, newdata = grid, return_tmb_object = TRUE) # exercise
 ```{r}
 ggplot(pred$data, aes(X, Y, fill = omega_s1)) + 
   geom_raster() +
-  scale_fill_gradient2()
+  scale_fill_gradient2() +
+  coord_fixed()
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = omega_s2)) + 
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
 ```
 
 ```{r}
 ggplot(pred$data, aes(X, Y, fill = epsilon_st1)) + 
   geom_raster() +
   scale_fill_gradient2() +
-  facet_wrap(~year)
+  facet_wrap(~year) +
+  coord_fixed()
 ```
 
 ```{r}
 ggplot(pred$data, aes(X, Y, fill = epsilon_st2)) + 
   geom_raster() +
   scale_fill_gradient2() +
-  facet_wrap(~year)
+  facet_wrap(~year) +
+  coord_fixed()
 ```
 
 ```{r}
 ggplot(pred$data, aes(X, Y, fill = plogis(est1))) + 
   geom_raster() +
-  facet_wrap(~year)
+  facet_wrap(~year) +
+  coord_fixed()
 ```
 
 ```{r}
 ggplot(pred$data, aes(X, Y, fill = exp(est2))) + 
   geom_raster() +
   facet_wrap(~year) +
-  scale_fill_viridis_c(trans = "log10")
+  scale_fill_viridis_c(trans = "log10") +
+  coord_fixed()
 ```
 
 ```{r}
 ggplot(pred$data, aes(X, Y, fill = plogis(est1) * exp(est2))) + 
   geom_raster() +
   facet_wrap(~year) +
-  scale_fill_viridis_c(trans = "log10", option = "C")
+  scale_fill_viridis_c(trans = "log10", option = "C") +
+  coord_fixed()
 ```
 
 ```{r}
-ind <- get_index(pred, area = 4, bias_correct = TRUE) # exercise
+ind <- get_index(pred, area = 4, bias_correct = FALSE) # exercise
 ```
 
 ```{r}
@@ -180,19 +170,29 @@ sanity(fit_pcod)
 fit_pcod
 ```
 
+### Exercise:
+
+1. What is the problem with the above?
+
+Hint: look at `sanity(fit_pcod)`
+Hint: look at the range estimate with `print(fit_pcod)`
+Hint: look at the mesh `cutoff` value
+
+2. Try fixing it below:
+
 ```{r}
-mesh10 <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
-plot(mesh10)
+mesh10 <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10) # exercise
+plot(mesh10)  # exercise
 ```
 
 ```{r}
-fit_pcod10 <- sdmTMB(
-  density ~ poly(depth, 2),
-  spatial = "on",
-  family = tweedie(link = "log"),
-  mesh = mesh10,
-  data = pcod
-)
+fit_pcod10 <- sdmTMB(  # exercise
+  density ~ poly(depth, 2),  # exercise
+  spatial = "on",  # exercise
+  family = tweedie(link = "log"),  # exercise
+  mesh = mesh10,  # exercise
+  data = pcod  # exercise
+)  # exercise
 ```
 
 ```{r}
@@ -224,7 +224,7 @@ fit_ye <- sdmTMB(
   spatial = "on",
   spatiotemporal = "iid",
   family = nbinom2(link = "log"),
-  silent = FALSE,
+  # silent = FALSE,
   mesh = mesh_north,
   data = d_north
 )
@@ -234,14 +234,14 @@ fit_ye <- sdmTMB(
 sanity(fit_ye)
 ```
 
-```{r}
-fit_ye1 <- update(fit_ye, spatiotemporal = "off")
-sanity(fit_ye1)
-fit_ye1
-```
+### Exercise:
+
+1. What is the problem with the above?
+2. What are some ways you could attempt to fix this?
+3. What is the simplest way you can fix this by changing the model structure? Try that below.
 
 ```{r}
-fit_ye1 <- update(fit_ye, spatiotemporal = "off")
+fit_ye1 <- update(fit_ye, spatiotemporal = "off")  # exercise
 sanity(fit_ye1)
 fit_ye1
 ```
@@ -261,7 +261,7 @@ mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 dat <- filter(pcod, year == 2017)
 ```
 
-```{r}
+```{r, eval=FALSE}
 fit_pcod <- sdmTMB(
   present ~ poly(depth, 2),
   spatial = "on",
@@ -271,5 +271,27 @@ fit_pcod <- sdmTMB(
 )
 ```
 
-What is wrong with the above? How can you fix it?
+### Exercise:
 
+1. What is causing the error message?
+2. Try to fix it below.
+
+Hint: When was the mesh created relative to any filtering of the data? Why is this a problem?
+
+```{r}
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)  # exercise
+fit_pcod <- sdmTMB(
+  present ~ poly(depth, 2),
+  spatial = "on",
+  family = binomial(),
+  mesh = mesh,
+  data = dat
+)
+fit_pcod
+```
+
+Bonus: try plotting the depth effect using the `ggeffect::ggeffect()` function.
+
+```{r}
+ggeffects::ggeffect(fit_pcod, "depth [0:600 by=2]") |> plot()  # exercise
+```
