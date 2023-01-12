@@ -44,7 +44,7 @@ fit <- sdmTMB(
   family = delta_gamma(), # exercise
   mesh = mesh, # exercise
   data = d,
-  silent = FALSE,
+  # silent = FALSE,
   control = sdmTMBcontrol(newton_loops = 1)
 )
 ```
@@ -57,7 +57,18 @@ sanity(fit)
 fit
 ```
 
-Is the range bigger or smaller for the binomial component than the Gamma component?
+```{r}
+tidy(fit, model = 1, conf.int = TRUE)
+tidy(fit, model = 2, conf.int = TRUE)
+
+tidy(fit, "ran_pars", model = 1, conf.int = TRUE)
+tidy(fit, "ran_pars", model = 2, conf.int = TRUE)
+```
+
+### Exercise:
+
+1.  Is the range bigger or smaller for the binomial component than the Gamma component?
+2.  Is the spatial or spatiotemporal variance larger? Does that make sense?
 
 ```{r}
 set.seed(1)
