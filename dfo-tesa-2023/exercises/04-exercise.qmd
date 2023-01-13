@@ -2,7 +2,7 @@
 title: "Fitting spatial/spatiotemporal models and problem solving"
 format: html
 editor: visual
-execute: 
+execute:
   echo: true
   eval: true
 ---
@@ -20,6 +20,7 @@ We will work with lingcod data from the Queen Charlotte Sound synoptic survey:
 
 ```{r}
 d <- readRDS(here::here("dfo-tesa-2023/data/lingcod-qcs.rds"))
+d$area_swept <- d$area_swept / 10000
 ```
 
 Add UTM columns to the dataset. Use `utm_crs = 32609` to match the UTM zone 9 used in the grid.
