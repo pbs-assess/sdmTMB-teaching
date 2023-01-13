@@ -252,10 +252,15 @@ And plot predictions spatially on the full grid:
 
 ```{r}
 sim_dat4$pred_glm <- predict(fit_glm, newdata = sim_dat4)
+
+lims <- range(c(sim_dat4$mu, sim_dat4$pred_glm))
+
 g1 <- ggplot(sim_dat4, aes(X, Y, fill = mu)) +
-  geom_raster() + ggtitle("Truth")
+  geom_raster() + ggtitle("Truth") +
+  scale_fill_viridis_c(limits = lims)
 g2 <- ggplot(sim_dat4, aes(X, Y, fill = pred_glm)) +
-  geom_raster() + ggtitle("Estimated")
+  geom_raster() + ggtitle("Estimated") +
+  scale_fill_viridis_c(limits = lims)
 cowplot::plot_grid(g1, g2, nrow = 2)
 ```
 
