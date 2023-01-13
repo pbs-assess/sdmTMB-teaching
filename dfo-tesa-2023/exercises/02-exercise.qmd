@@ -411,7 +411,7 @@ hist(dat$density, xlim = c(0, 30), breaks = 200, freq = FALSE)
 2.  Why might you want to allow for it?
 3.  What is the default setting for `anisotropy` in `sdmTMB`?
 
-We will re-fit our model with REML so we can use AIC to compare models with different random effect structures. We will then fit a model with anisotropy enabled. We will use the handy method `update()` here, but we could also re-write the whole `sdmTMB()` function call each time.
+We will re-fit our model with REML so we can use AIC to compare models with different random effect structures (although not strictly necessary). We will then fit a model with anisotropy enabled. We will use the handy method `update()` here, but we could also re-write the whole `sdmTMB()` function call each time.
 
 ```{r, results='hide'}
 fit_reml <- update(fit, reml = TRUE)
@@ -475,7 +475,7 @@ tidy(fit_ar1, "ran_pars", conf.int = TRUE)
 
 1.  What is the estimated random field AR(1) correlation value (`rho`)? (Hint: see `print(fit_ar1)` and the `tidy()` line above.)
 2.  What does this mean? Does this make sense ecologically?
-3.  What is a subtle reason why you might want to include spatial fields if you're using AR(1) fields?
+3.  What is a subtle reason why you might want to include spatial fields if you're using AR(1) fields? (Hint: think about the first time step and what the random field SD represents in the AR(1) process.)
 
 Let's plot the predictions from our two anisotropic models:
 
