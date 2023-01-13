@@ -9,8 +9,9 @@ execute:
 
 # Goals:
 
--   Practice fitting a basic spatiotemporal model
--   Understand how to inspect the model output
+-   Practice fitting a basic spatiotemporal model.
+-   Gain experience using cross validation for model selection.
+-   Understand how to inspect the model output.
 -   Practice predicting from the model on new data and making visualizations of those predictions.
 -   Gain familiarity with fitting and interpreting different random field structures.
 
@@ -50,7 +51,7 @@ We can add UTM columns using `add_utm_columns()`:
 add_utm_columns(dat, ll_names = c("longitude", "latitude"))
 ```
 
-Note that this function selects an appropriate UTM projection for you. To ensure future compatibility with prediction grids or other data, it is best to hard code the choice using the `utm_crs` argument. We will use `CRS = 3156` here to match our prediction grid:
+Note that this function guesses at an appropriate UTM projection for you and provides a URL to verify. To ensure future compatibility with prediction grids or other data, it is best to hard code the choice using the `utm_crs` argument. We will use `CRS = 3156` here to match our prediction grid:
 
 ```{r}
 dat <- add_utm_columns(dat, utm_crs = 3156, ll_names = c("longitude", "latitude"))
@@ -59,15 +60,22 @@ dat <- add_utm_columns(dat, utm_crs = 3156, ll_names = c("longitude", "latitude"
 And check to make sure that looks right:
 
 ```{r}
-ggplot(dat, aes(X, Y, size = density)) + geom_point()
+ggplot(dat, aes(X, Y, size = density)) + geom_point(shape = 21) + coord_fixed()
 ```
 
 We can also plot the data by year:
 
 ```{r}
 ggplot(dat, aes(X, Y, size = density, colour = log(density + 1))) +
-  geom_point() +
-  facet_wrap(~year)
+  geom_point(alpha = 0.3) +
+  facet_wrap(~year) + coord_fixed()
+```
+
+We will create these new columns to use later:
+
+```{r}
+dat$log_depth <- log(dat$depth)
+dat$year_factor <- as.factor(dat$year)
 ```
 
 # Constructing a mesh
@@ -79,7 +87,7 @@ mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
 plot(mesh)
 mesh$mesh$n # number of vertices or knots
 
-# alternative:
+# ggplot alternative:
 ggplot() + inlabru::gg(mesh$mesh) + coord_fixed() +
   geom_point(aes(X, Y), data = dat, alpha = 0.2, size = 0.5)
 ```
@@ -90,7 +98,7 @@ ggplot() + inlabru::gg(mesh$mesh) + coord_fixed() +
 
 # Fitting a spatial model
 
-The most basic model we could fit would be a model with only spatial random fields. This is similar to what we were fitting yesterday. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging.
+The most basic model we could fit would be a model with only spatial random fields. This is similar to what we were fitting yesterday. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging to monitor progress.
 
 ```{r, results='hide'}
 fit_spatial <- sdmTMB(
@@ -107,9 +115,6 @@ fit_spatial <- sdmTMB(
 sanity(fit_spatial)
 fit_spatial
 ```
-
-We won't dwell on this model here for the sake of time, but in practice we would stop, inspect, and understand this model before progressing to a spatiotemporal model.
-
 ### Exercise:
 
 A refresher from yesterday:
@@ -118,6 +123,62 @@ A refresher from yesterday:
 2.  What is the 'Spatial SD' in the output?
 3.  What is the 'Dispersion parameter' in the output?
 
+# Cross validation
+
+We can consider whether including a quadratic effect of depth improves model predictions. AIC would be one way to compare models but is not ideal when we're dealing with mixed effects models---particularly when the random effects are contributing substantially to our predictions.
+
+Instead we will demonstrate cross validation using the built-in `sdmTMB_cv()` function.
+
+```{r}
+# optional for parallel processing (just FYI)
+# library(future)
+# plan(multisession)
+
+set.seed(1) # for consistent cross validation folds
+cv_intercept <- sdmTMB_cv(
+  density ~ 1, # intercept only
+  data = dat,  
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  k_folds = 8
+)
+
+set.seed(1) # for consistent cross validation folds
+cv_depth <- sdmTMB_cv(
+  density ~ poly(log_depth, 2), # quadratic effect of log depth
+  data = dat,  
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  k_folds = 8
+)
+```
+
+These are the expected log predictive densities (ELPD) for each fold. Larger (more positive) values are better. This gives us an idea of the variance of these values across folds.
+
+```{r}
+cv_intercept$fold_elpd
+cv_depth$fold_elpd
+
+# check each fold between the two models:
+cv_depth$fold_elpd - cv_intercept$fold_elpd
+```
+
+These are the expected log predictive densities for all left out data combined. Larger (more positive) values are better.
+
+```{r}
+cv_intercept$elpd
+cv_depth$elpd
+```
+
+### Exercise:
+
+1.  Which model does ELPD suggest has better out-of-sample predictive performance?
+2.  How consistent is that result across folds?
+3.  Try changing the 'seed' value above (same value for both). Is the same model selected?
+4.  This cross validation created the folds randomly. Which argument in `?sdmTMB_cv` would let you assign IDs to the folds to create spatially blocked cross validation?
+
+We won't dwell on this model here for the sake of time, but in practice we would stop, inspect, and understand this model before progressing to a spatiotemporal model.
+
 # Fitting a model with spatial + spatiotemporal fields
 
 This first model includes a quadratic effect of log depth (`poly(log_depth, 2)`), a factor effect for each year, and models total density using a Tweedie distribution and a log link. The spatial field and spatiotemporal fields are estimated.
@@ -125,11 +186,6 @@ This first model includes a quadratic effect of log depth (`poly(log_depth, 2)`)
 The year factors give each year its own mean. The `0 +` omits the intercept such that each year's estimate represents a mean as opposed to a difference from the intercept. This part is arbitrary and chosen for the sake of this exercise.
 
 The choice to use log depth helps the model fit because we have fewer samples from the deeper depths.
-
-```{r}
-dat$log_depth <- log(dat$depth)
-dat$year_factor <- as.factor(dat$year)
-```
 
 ```{r, results='hide'}
 fit <- sdmTMB(
@@ -146,7 +202,7 @@ fit <- sdmTMB(
 
 ### Exercise:
 
-1.  Skim the help file (`?sdmTMB`) for each line above. Stop and discuss what each line of the above function call does.
+1.  Skim the help file (`?sdmTMB`). What are the other options for `spatiotemporal`?
 
 Print the model:
 
