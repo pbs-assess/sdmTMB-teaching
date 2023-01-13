@@ -7,6 +7,14 @@ execute:
   eval: true
 ---
 
+# Goals:
+
+-   Practice fitting spatial and spatiotemporal models with less guidance.
+-   See an example of using an 'offset'.
+-   Practice calculating an area-weighted biomass index with less guidance.
+-   Gain some problem solving skills by fixing 3 models with estimation problems or other errors you may encounter.
+
+
 ```{r, message=FALSE, warning=FALSE}
 library(sdmTMB)
 library(dplyr)
@@ -18,23 +26,32 @@ theme_set(theme_light())
 
 We will work with lingcod data from the Queen Charlotte Sound synoptic survey:
 
+# Data
+
 ```{r}
 d <- readRDS(here::here("dfo-tesa-2023/data/lingcod-qcs.rds"))
 d$area_swept <- d$area_swept / 10000
+glimpse(d)
 ```
 
-Add UTM columns to the dataset. Use `utm_crs = 32609` to match the UTM zone 9 used in the grid.
+Add UTM columns to the dataset. Use `utm_crs = 3156` to match the UTM zone 9 used in the grid.
 
 ```{r}
-d <- add_utm_columns(d, units = "km", utm_crs = 32609) # excercise
+d <- add_utm_columns(d, units = "km", utm_crs = 3156) # excercise
 ```
 
+Create a mesh with a `cutoff` values of `10` km.
+
+# Mesh
+
 ```{r}
-mesh <- make_mesh(d, c("X", "Y"), cutoff = 10)
+mesh <- make_mesh(d, c("X", "Y"), cutoff = 10) # excercise
 plot(mesh)
 ```
 
 We will run the following code to turn the `qcs_grid` grid built into the package into a grid with values for every year in the lingcod dataset.
+
+# Grid
 
 ```{r}
 grid <- filter(qcs_grid, year == min(qcs_grid$year)) |>
@@ -44,16 +61,29 @@ grid <- filter(qcs_grid, year == min(qcs_grid$year)) |>
 grid <- purrr::map_dfr(unique(d$year), ~ tibble(grid, year = .x))
 ```
 
-Fit a spatial model:
+# Spatial model
+
+This is how an 'offset' works:
+
+- log(weight/area_swept) = b0 + b1 * x
+- log(weight) - log(area_swept) = b0 + b1 * x
+- log(weight) = b0 + b1 * x + log(area_swept) 
+- log(weight) = b0 + b1 * x + offset
+
+Note the offset if the **log** of the effort variable.
+
+Here, we could fit our model to catch weight with an area swept offset or to density. In other cases (e.g., count data), an offset lets us use a count distribution with an effort value.
+
+Fit a spatial model with a delta-Gamma family:
 
 ```{r}
 fit_spatial <- sdmTMB(
   catch_weight ~ 0 + as.factor(year),
-  spatial = "on", # exercise
+  spatial = "on",
   offset = log(d$area_swept),
   family = delta_gamma(), # exercise
   mesh = mesh, # exercise
-  data = d,
+  data = d, # exercise
   # silent = FALSE,
   control = sdmTMBcontrol(newton_loops = 1) # helps with convergence here
 )
@@ -64,7 +94,22 @@ sanity(fit_spatial)
 fit_spatial
 ```
 
-Did that fit reasonably well such that we can try adding the complexity of spatiotemporal fields? In addition to the fits, do the spatial residuals in any year show evidence of persistent spatial autocorrelation?  
+Calculate residuals and assign them to a new column `resid_sp` in `d`:
+
+```{r}
+d$resid_sp <- residuals(fit_spatial) # exercise
+ggplot(d, aes(X, Y, colour = resid_sp)) +
+  geom_point() +
+  facet_wrap(~year) +
+  scale_colour_gradient2()
+```
+
+### Exercise:
+
+1.  Did that fit reasonably well such that we can try adding the complexity of spatiotemporal fields?
+2.  In addition to the fits, do the spatial residuals in any year show evidence of persistent spatial autocorrelation?
+
+# Spatiotemporal model
 
 Add IID spatiotemporal fields:
 
@@ -102,7 +147,8 @@ tidy(fit, "ran_pars", model = 2, conf.int = TRUE)
 ### Exercise:
 
 1.  Is the range bigger or smaller for the binomial component than the Gamma component?
-2.  Is the spatial or spatiotemporal variance larger? Does that make sense? What does this mean biologically?  
+2.  Is the spatial or spatiotemporal variance larger?
+3.  Does that make sense? What does this mean biologically?
 
 ```{r}
 set.seed(1)
@@ -120,15 +166,6 @@ qqline(resid)
 pred <- predict(fit, newdata = grid, return_tmb_object = TRUE) # exercise
 ```
 
-```{r}
-ggplot(pred$data, aes(X, Y, fill = omega_s1)) +
-  geom_raster() +
-  scale_fill_gradient2() +
-  coord_fixed()
-```
-
-## Plotting the model components spatially
-
 Because we set `return_tmb_object = TRUE`, the prediction data frame is in the list element `data`.
 
 ```{r}
@@ -138,6 +175,9 @@ glimpse(pred$data)
 ### Exercise:
 
 1.  What do the `1` and `2` columns represent?
+2.  How do we turn these into response space?
+
+## Plotting the model components spatially
 
 ```{r}
 ggplot(pred$data, aes(X, Y, fill = plogis(est_non_rf1))) +
@@ -207,6 +247,10 @@ ggplot(pred$data, aes(X, Y, fill = plogis(est1) * exp(est2))) +
   ggtitle("Combined prediction")
 ```
 
+# Calculating an area-weighted biomass index
+
+Use `get_index()` to calculate an area-weighted biomass index. Feel free to set `bias_correct = FALSE` to be a bit faster.
+
 ```{r}
 ind <- get_index(pred, area = 4, bias_correct = FALSE) # exercise
 ```
@@ -219,10 +263,12 @@ ggplot(ind, aes(year, y = est, ymin = lwr, ymax = upr)) +
 
 # Problem solving
 
+The following are 3 models where each has some estimation problem or creates an error. Try to fix the problems.
+
 ## Problem 1
 
 ```{r}
-head(pcod)
+glimpse(pcod) # built in
 ```
 
 ```{r}
@@ -254,7 +300,9 @@ fit_pcod
 
 1.  What is the problem with the above?
 
-Hint: look at `sanity(fit_pcod)` Hint: look at the range estimate with `print(fit_pcod)` Hint: look at the mesh `cutoff` value
+-   Hint: look at `sanity(fit_pcod)`
+-   Hint: look at the range estimate with `print(fit_pcod)`
+-   Hint: look at the mesh `cutoff` value
 
 2.  Try fixing it below:
 
@@ -279,6 +327,8 @@ fit_pcod10
 ```
 
 ## Problem 2
+
+The following is some yelloweye rockfish data from the hard bottom longline survey on the inside waters of Vancouver Island.
 
 ```{r}
 d <- readRDS(here::here("dfo-tesa-2023/data/hbll-inside-yelloweye.rds"))

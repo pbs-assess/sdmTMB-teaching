@@ -90,10 +90,7 @@ fit_tweedie
 
 Delta (or hurdle) models have one model for zero vs. non-zero data and another component for the positive component. These models can be implemented by fitting the two components separately and combining the predictions or they can be fit at once in sdmTMB.
 
-Advantages of fitting them at once:
-- easier to code
-- some parameters can be shared
-- derived quantities (e.g., an index of abundance) can be calculated on the combined prediction
+Advantages of fitting them at once: - easier to code - some parameters can be shared - derived quantities (e.g., an index of abundance) can be calculated on the combined prediction
 
 ### Exercise:
 
