@@ -205,12 +205,11 @@ visreg::visreg(fit, xvar = "log_depth", scale = "response")
 Third, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *Note that won't yet work with smoother `s()` terms*, but will soon work with the similar `ggeffects::ggpredict()` .
 
 ```{r}
-library(ggeffects)
-g <- ggeffect(fit, "log_depth [3.5:6.7 by=0.05]")
+g <- ggeffects::ggeffect(fit, "log_depth [3.5:6.7 by=0.05]")
 plot(g)
 ```
 
-#### Prediction
+# Prediction
 
 Let's now predict on a grid that covers the entire survey (`wcvi_grid`).
 
@@ -280,7 +279,7 @@ ggplot(p, aes(X, Y, fill = exp(est))) +
 
 ## Exercise:
 
-1.  Step through each of these plots and discuss what each represents.
+1.  Step through each of the plots above and discuss what each represents.
 
 # Residual checking
 
