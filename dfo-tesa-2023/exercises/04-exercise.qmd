@@ -65,14 +65,14 @@ grid <- purrr::map_dfr(unique(d$year), ~ tibble(grid, year = .x))
 
 This is how an 'offset' works:
 
-- log(weight/area_swept) = b0 + b1 * x
-- log(weight) - log(area_swept) = b0 + b1 * x
-- log(weight) = b0 + b1 * x + log(area_swept) 
-- log(weight) = b0 + b1 * x + offset
+- log(catch_weight/area_swept) = b0 + b1 * x
+- log(catch_weight) - log(area_swept) = b0 + b1 * x
+- log(catch_weight) = b0 + b1 * x + log(area_swept) 
+- log(catch_weight) = b0 + b1 * x + offset
 
-Note the offset if the **log** of the effort variable.
+Note the offset is the **log** of the effort variable.
 
-Here, we could fit our model to catch weight with an area swept offset or to density. In other cases (e.g., count data), an offset lets us use a count distribution with an effort value.
+Here, we could fit our model to catch weight with an area swept offset or to density. In other cases (e.g., count data), an offset lets us use a count distribution with an effort measure.
 
 Fit a spatial model with a delta-Gamma family:
 
@@ -150,6 +150,8 @@ tidy(fit, "ran_pars", model = 2, conf.int = TRUE)
 2.  Is the spatial or spatiotemporal variance larger?
 3.  Does that make sense? What does this mean biologically?
 
+Calculate randomized quantile residuals into an object `resid`:
+
 ```{r}
 set.seed(1)
 resid <- residuals(fit) # exercise
@@ -161,6 +163,8 @@ How do the basic randomized quantile residuals look for the overall model?
 qqnorm(resid)
 qqline(resid)
 ```
+
+Predict on the newdata `grid` and set `return_tmb_object = TRUE`. Save the output to `pred`:
 
 ```{r}
 pred <- predict(fit, newdata = grid, return_tmb_object = TRUE) # exercise
@@ -249,7 +253,7 @@ ggplot(pred$data, aes(X, Y, fill = plogis(est1) * exp(est2))) +
 
 # Calculating an area-weighted biomass index
 
-Use `get_index()` to calculate an area-weighted biomass index. Feel free to set `bias_correct = FALSE` to be a bit faster.
+Use `get_index()` to calculate an area-weighted biomass index. Feel free to set `bias_correct = FALSE` to be a bit faster. Save the output to `ind`.
 
 ```{r}
 ind <- get_index(pred, area = 4, bias_correct = FALSE) # exercise
