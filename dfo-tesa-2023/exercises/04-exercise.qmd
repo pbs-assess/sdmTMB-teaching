@@ -67,7 +67,7 @@ This is how an 'offset' works:
 
 - log(catch_weight/area_swept) = b0 + b1 * x
 - log(catch_weight) - log(area_swept) = b0 + b1 * x
-- log(catch_weight) = b0 + b1 * x + log(area_swept) 
+- log(catch_weight) = b0 + b1 * x + log(area_swept)
 - log(catch_weight) = b0 + b1 * x + offset
 
 Note the offset is the **log** of the effort variable.
@@ -79,11 +79,14 @@ Fit a spatial model with a delta-Gamma family:
 ```{r}
 fit_spatial <- sdmTMB(
   catch_weight ~ 0 + as.factor(year),
-  spatial = "on",
+  spatial = "on", # answer
+#  spatial = "on", # exercise
   offset = log(d$area_swept),
-  family = delta_gamma(), # exercise
-  mesh = mesh, # exercise
-  data = d, # exercise
+  family = delta_gamma(), # answer
+#  family =  # exercise
+  mesh = mesh, # answer
+# mesh =  # exercise
+  data = d, # answer
   # silent = FALSE,
   control = sdmTMBcontrol(newton_loops = 1) # helps with convergence here
 )
@@ -97,7 +100,7 @@ fit_spatial
 Calculate residuals and assign them to a new column `resid_sp` in `d`:
 
 ```{r}
-d$resid_sp <- residuals(fit_spatial) # exercise
+d$resid_sp <- residuals(fit_spatial) # answer
 ggplot(d, aes(X, Y, colour = resid_sp)) +
   geom_point() +
   facet_wrap(~year) +
@@ -116,12 +119,17 @@ Add IID spatiotemporal fields:
 ```{r}
 fit <- sdmTMB(
   catch_weight ~ 0 + as.factor(year),
-  time = "year", # exercise
-  spatial = "on", # exercise
-  spatiotemporal = "iid", # exercise
+  time = "year", # answer
+#  time = , # exercise
+  spatial = "on", # answer
+#  spatial = , # exercise
+  spatiotemporal = "iid", # answer
+#  spatiotemporal = , # exercise
   offset = log(d$area_swept),
-  family = delta_gamma(), # exercise
-  mesh = mesh, # exercise
+  family = delta_gamma(), # answer
+#  family = , # exercise
+  mesh = mesh, # answer
+#  mesh = , # exercise
   data = d,
   # silent = FALSE,
   control = sdmTMBcontrol(newton_loops = 1) # helps with convergence here
@@ -154,7 +162,8 @@ Calculate randomized quantile residuals into an object `resid`:
 
 ```{r}
 set.seed(1)
-resid <- residuals(fit) # exercise
+resid <- residuals(fit) # answer
+# resid <-  # exercise
 ```
 
 How do the basic randomized quantile residuals look for the overall model?
@@ -167,7 +176,8 @@ qqline(resid)
 Predict on the newdata `grid` and set `return_tmb_object = TRUE`. Save the output to `pred`:
 
 ```{r}
-pred <- predict(fit, newdata = grid, return_tmb_object = TRUE) # exercise
+pred <- predict(fit, newdata = grid, return_tmb_object = TRUE) # answer
+# pred <-  # exercise
 ```
 
 Because we set `return_tmb_object = TRUE`, the prediction data frame is in the list element `data`.
@@ -256,7 +266,8 @@ ggplot(pred$data, aes(X, Y, fill = plogis(est1) * exp(est2))) +
 Use `get_index()` to calculate an area-weighted biomass index. Feel free to set `bias_correct = FALSE` to be a bit faster. Save the output to `ind`.
 
 ```{r}
-ind <- get_index(pred, area = 4, bias_correct = FALSE) # exercise
+ind <- get_index(pred, area = 4, bias_correct = FALSE) # answer
+# ind <-  # exercise
 ```
 
 ```{r}
@@ -311,18 +322,19 @@ fit_pcod
 2.  Try fixing it below:
 
 ```{r}
-mesh10 <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10) # exercise
-plot(mesh10) # exercise
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10) # answer
+# mesh <- # exercise
+plot(mesh10) # answer
 ```
 
 ```{r}
-fit_pcod10 <- sdmTMB( # exercise
-  density ~ poly(depth, 2), # exercise
-  spatial = "on", # exercise
-  family = tweedie(link = "log"), # exercise
-  mesh = mesh10, # exercise
-  data = pcod # exercise
-) # exercise
+fit_pcod10 <- sdmTMB(
+  density ~ poly(depth, 2),
+  spatial = "on",
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  data = pcod
+)
 ```
 
 ```{r}
@@ -373,7 +385,8 @@ sanity(fit_ye)
 3.  What is the simplest way you can fix this by changing the model structure? Try that below.
 
 ```{r}
-fit_ye1 <- update(fit_ye, spatiotemporal = "off") # exercise
+fit_ye1 <- update(fit_ye, spatiotemporal = "off") # answer
+# fit_ye1 <- update(fit_ye, spatiotemporal = )  # exercise
 sanity(fit_ye1)
 fit_ye1
 ```
@@ -411,7 +424,8 @@ fit_pcod <- sdmTMB(
 Hint: When was the mesh created relative to any filtering of the data? Why is this a problem?
 
 ```{r}
-mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10) # exercise
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10) # answer
+# exercise
 fit_pcod <- sdmTMB(
   present ~ poly(depth, 2),
   spatial = "on",
@@ -425,5 +439,5 @@ fit_pcod
 Bonus: try plotting the depth effect using the `ggeffect::ggeffect()` function.
 
 ```{r}
-ggeffects::ggeffect(fit_pcod, "depth [0:600 by=2]") |> plot() # exercise
+ggeffects::ggeffect(fit_pcod, "depth [0:600 by=2]") |> plot() # answer
 ```
