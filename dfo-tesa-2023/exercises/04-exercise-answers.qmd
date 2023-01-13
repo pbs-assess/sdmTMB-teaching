@@ -279,7 +279,7 @@ ggplot(ind, aes(year, y = est, ymin = lwr, ymax = upr)) +
 
 The following are 3 models where each has some estimation problem or creates an error. Try to fix the problems.
 
-## Problem 1
+## Problem 1:
 
 ```{r}
 glimpse(pcod) # built in
