@@ -228,7 +228,7 @@ visreg_delta(fit, xvar = "year_factor", model = 1, type = "conditional")
 visreg_delta(fit, xvar = "year_factor", model = 2)
 ```
 
-## Exercise:
+### Exercise:
 
 1.  Which link space are each of the above plots in? Can you remember how to put them in natural/response space?
 2.  Can you produce similar plots in response space for the depth effect from both component models?
