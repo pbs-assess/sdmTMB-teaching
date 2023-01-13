@@ -531,7 +531,7 @@ fit2 <- sdmTMB(
   spatiotemporal = "iid",
   time = "year",
   # silent = FALSE,
-  share_range = FALSE # exercise
+  # share_range =  # exercise
 )
 ```
 
@@ -551,8 +551,8 @@ fit3 <- sdmTMB(
   spatiotemporal = "iid",
   time = "year",
   # silent = FALSE,
-  share_range = FALSE, # exercise
-  anisotropy = TRUE #<
+  # share_range = , # exercise
+  # anisotropy =  # exercise
 )
 ```
 
