@@ -63,7 +63,7 @@ sanity(fit_spatial)
 fit_spatial
 ```
 
-Did that fit reasonably well such that we can try adding the complexity of spatiotemporal fields?
+Did that fit reasonably well such that we can try adding the complexity of spatiotemporal fields? In addition to the fits, do the spatial residuals in any year show evidence of persistent spatial autocorrelation?  
 
 Add IID spatiotemporal fields:
 
@@ -101,7 +101,7 @@ tidy(fit, "ran_pars", model = 2, conf.int = TRUE)
 ### Exercise:
 
 1.  Is the range bigger or smaller for the binomial component than the Gamma component?
-2.  Is the spatial or spatiotemporal variance larger? Does that make sense?
+2.  Is the spatial or spatiotemporal variance larger? Does that make sense? What does this mean biologically?  
 
 ```{r}
 set.seed(1)
