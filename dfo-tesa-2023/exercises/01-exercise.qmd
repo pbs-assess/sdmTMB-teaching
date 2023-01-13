@@ -69,7 +69,7 @@ The basic function for simulating random fields in sdmTMB is `sdmTMB_simulate()`
 
 -   The range (see above) is 0.6.
 
--   The two important standard deviation parameters are `sigma_O` (controlling the variance of `omega`, the spatial random field) and `phi` (controlling the observation error variance).
+-   The two important standard deviation parameters are `sigma_O` (controlling the marginal standard deviation of `omega`, the spatial random field) and `phi` (controlling the observation error standard deviation).
 
 -   We are plotting `observed` (observed values: the expected value plus observation error).
 
@@ -94,6 +94,8 @@ ggplot(sim_dat, aes(X, Y, fill = observed)) +
 
 1.  Try running the previous chunk over and over. Try changing the `range` and `sigma_O` values. What do you observe?
 2.  Try increasing the observation error standard deviation `phi` and re-running it many times. Try making it equal to `sigma_O` and twice its size. What happens when observation error is much larger than `sigma_O`?
+
+Note that the colour scale may be changing between runs!
 
 # Spatiotemporal simulation
 
