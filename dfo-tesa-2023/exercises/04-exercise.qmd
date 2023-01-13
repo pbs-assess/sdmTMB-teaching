@@ -324,11 +324,11 @@ fit_pcod
 ```{r}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10) # answer
 # mesh <- # exercise
-plot(mesh10) # answer
+plot(mesh)
 ```
 
 ```{r}
-fit_pcod10 <- sdmTMB(
+fit_pcod2 <- sdmTMB(
   density ~ poly(depth, 2),
   spatial = "on",
   family = tweedie(link = "log"),
@@ -338,8 +338,8 @@ fit_pcod10 <- sdmTMB(
 ```
 
 ```{r}
-sanity(fit_pcod10)
-fit_pcod10
+sanity(fit_pcod2)
+fit_pcod2
 ```
 
 ## Problem 2
