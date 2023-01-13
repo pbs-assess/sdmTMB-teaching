@@ -39,7 +39,7 @@ Add UTM columns to the dataset. Use `utm_crs = 3156` to match the UTM zone 9 use
 d <- add_utm_columns(d, units = "km", utm_crs = 3156) # excercise
 ```
 
-Create a mesh with a `cutoff` values of `10` km.
+Create a mesh with a `cutoff` value of `10` km.
 
 # Mesh
 
