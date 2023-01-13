@@ -381,13 +381,21 @@ sanity(fit_ye)
 
 1.  What is the problem with the above?
 2.  What are some ways you could attempt to fix this?
-3.  What is the simplest way you can fix this? Try that below.
+4.  What is a simpler random field structure you could try? Try that below with `fit_ye1`.
+3.  What is a simpler family you could try? Try that below with `fit_ye2`.
 
 ```{r}
-fit_ye1 <- update(fit_ye, family = poisson(link = "log")) # answer
-#fit_ye1 <- update(fit_ye, ... )  # exercise
+fit_ye1 <- update(fit_ye, spatiotemporal = "off") # answer
+#fit_ye1 <- update(fit_ye, spatiotemporal = ) # exercise
 sanity(fit_ye1)
 fit_ye1
+```
+
+```{r}
+fit_ye2 <- update(fit_ye, family = poisson(link = "log")) # answer
+#fit_ye2 <- update(fit_ye, family = ) # exercise
+sanity(fit_ye2)
+fit_ye2
 ```
 
 ## Problem 3
