@@ -232,7 +232,7 @@ and by setting `effects = "ran_pars"`, we can extract the variance and random ef
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
 ```
 
-There are multiple ways we can plot the depth effect on density. First, we can create new data frame of all potential values, setting the other predictors (here year) to a fixed value.
+There are multiple ways we can plot the depth effect on density. First, we can create a new data frame of all potential values, setting the other predictors (here year) to a fixed value.
 
 ```{r}
 nd <- data.frame(log_depth = seq(log(50), log(700), length.out = 100), year = 2004)
