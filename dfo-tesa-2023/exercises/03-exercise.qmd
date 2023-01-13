@@ -9,10 +9,10 @@ execute:
 
 # Goals:
 
--   Practice fitting delta models
+-   Practice fitting delta (hurdle) models
 -   Understand how to inspect their more complicated model output
 -   Learn how to plot aspects of component models and their combined predictions
--   Calculate an index and compare how model structure can impact an index
+-   Calculate an area-weighted biomass index and compare how model structure can impact an index
 
 ```{r, message=FALSE, warning=FALSE}
 #| echo=FALSE
@@ -41,7 +41,6 @@ Remember that the dataset contains sampling `depth` in meters and sample density
 ```{r}
 dat$log_depth <- log(dat$depth)
 dat$year_factor <- as.factor(dat$year)
-
 dat <- add_utm_columns(dat, utm_crs = 3156, ll_names = c("longitude", "latitude"))
 ```
 
@@ -50,8 +49,8 @@ mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
 
 ggplot() +
   inlabru::gg(mesh$mesh) +
-  coord_fixed() +
-  geom_point(aes(X, Y), data = dat, alpha = 0.2, size = 0.5)
+  geom_point(aes(X, Y), data = dat, alpha = 0.2, size = 0.5) +
+  coord_fixed()
 ```
 
 # Review fitting a tweedie model
@@ -89,13 +88,18 @@ fit_tweedie
 
 # Fitting a delta model
 
-sdmTMB has the capability for built-in hurdle models (also called delta models). These are models with one model for zero vs. non-zero data and another component for the positive component. These models can also be implemented by fitting the two components separately and combining the predictions.
+Delta (or hurdle) models have one model for zero vs. non-zero data and another component for the positive component. These models can be implemented by fitting the two components separately and combining the predictions or they can be fit at once in sdmTMB.
+
+Advantages of fitting them at once:
+- easier to code
+- some parameters can be shared
+- derived quantities (e.g., an index of abundance) can be calculated on the combined prediction
 
 ### Exercise:
 
 1.  Why might one want to use a hurdle model instead of a Tweedie?
 
-To fit a built-in hurdle model in sdmTMB, you simply need to specify a `family` that starts with `delta_`. For this exercise with will focus on the `delta_gamma(link1 = "logit", link2 = "log")`. This fits a binomial presence-absence model (i.e., `binomial(link = "logit")`) and then a model for the positive catches only with a Gamma observation distribution and a log link (i.e., `Gamma(link = "log")`). Here and with other delta models, the `link1` and `link2` can be omitted and left at their default values (`delta_gamma()`).
+To fit a built-in hurdle model in sdmTMB, you simply need to specify a family that starts with `delta_`. For this exercise with will focus on the `delta_gamma(link1 = "logit", link2 = "log")`. This fits a binomial presence-absence model (i.e., `binomial(link = "logit")`) and then a model for the positive catches only with a Gamma observation distribution and a log link (i.e., `Gamma(link = "log")`). Here and with other delta models, the `link1` and `link2` can be omitted and left at their default values (`delta_gamma()`).
 
 We will run this without anisotropy for now, because this more complex model has difficulty estimating this more flexible spatial field.
 
@@ -104,11 +108,11 @@ fit_dg <- sdmTMB(
   density ~ 0 + year_factor + poly(log_depth, 2),
   data = dat,
   mesh = mesh,
-  family = delta_gamma(link1 = "logit", link2 = "log"), #< new
+  family = delta_gamma(), #< new
   spatial = "on",
   spatiotemporal = "iid",
   time = "year",
-  anisotropy = FALSE #< new
+  anisotropy = FALSE #<
   # silent = FALSE
 )
 ```
@@ -120,7 +124,7 @@ fit_dg
 
 ### Exercise:
 
-1.  How does this model output differ from that of the tweedie?
+1.  How does this model output differ from that of the Tweedie?
 2.  What differences do you notice between parameter estimates in the two component models of the delta model?
 3.  Are any parameters missing from one model or the other? If so, why?
 4.  What other delta families are there in sdmTMB? See `?sdmTMB::Families`. Which other ones could be appropriate here?
@@ -139,17 +143,13 @@ tidy(fit_dg, "ran_pars", conf.int = TRUE, model = 2)
 
 ### Exercise:
 
-1.  Which parameters have estimated well in each component model and which have not?
-2.  Can you think of reasons why some values are difficult to estimate?
-3.  What could we do to improve them?
+1.  Which model has tighter standard errors on the fixed effects? Is that what you expected?
 
 # Delta models with different model structures between the component models
 
 For delta models, by default, the formula, spatial, and spatiotemporal structure, and anisotropy are shared between the two model components. However, some elements (`formula`, `spatial`, `spatiotemporal`, and `share_range`) can also be specified independently for each model using a `list()` format within the function argument (see examples below). The first element of the list is for the binomial component and the second element is for the positive component (e.g., Gamma). Some formula elements must be shared for now (e.g., smoothers, random intercepts, spatially varying coefficients, and time-varying coefficients).
 
-Anisotropy cannot be separately specified for each component model; so when anisotropy is included, it is by default shared across the two model components. However, it can be made unique in each model component by using `control = sdmTMBcontrol(map = list(ln_H_input = factor(c(1, 2, 3, 4))))` when fitting. This 'maps' the anisotropy parameters be unique across model components. Similarly, `map = list(ln_H_input = factor(c(NA, NA, 1, 2)))` will allow only model 2 to include anisotropy. The default is `map = list(ln_H_input = factor(c(1, 2, 1, 2)))`.
-
-Given that we know anisotropy was important for the Tweedie models from yesterday, maybe we can find a configuration of the delta model that can estimate it. One option is to turn off the spatiotemporal fields in the binomial component. It turns out that is sufficient to allow this model to converge, and that adding any additional flexibility caused the model to have difficulty estimating the anisotropy parameters.
+Given that we know anisotropy was important for the Tweedie models from yesterday, maybe we can find a configuration of the delta model that can estimate it. One option is to turn off the spatiotemporal fields in the binomial component. It turns out that is sufficient to allow this model to converge, and that adding any additional flexibility caused the model to have difficulty estimating the anisotropy parameters. (Remember, these models are complex and it's easy to create models that cannot be estimated well!)
 
 ```{r}
 fit_dg_aniso <- update(
@@ -169,22 +169,27 @@ plot_anisotropy(fit_tweedie)
 plot_anisotropy(fit_dg_aniso)
 ```
 
+The delta model is slightly preferred over the Tweedie with AIC:
+
 ```{r}
-AIC(fit_tweedie, fit_dg)
+AIC(fit_tweedie, fit_dg_aniso)
 ```
 
-We can compare our models 
+But the anisotropy is poorly estimated. See `ln_H_input` here:
 
 ```{r}
-fit_dg_reml <- update(fit_dg, reml = TRUE)
-fit_dg_aniso_reml <- update(fit_dg_aniso, reml = TRUE)
+fit_dg_aniso$sd_report
+```
 
-AIC(fit_dg_reml, fit_dg_aniso_reml)
+And it appears that including the spatiotemporal field in both components is more important than the anisotropy:
+
+```{r}
+AIC(fit_dg, fit_dg_aniso)
 ```
 
 # Visualizing delta models
 
-For easy exploration of different models, we can rename any of our models `fit`, but in this case I will choose the one with the lowest AIC.
+For easy exploration of different models, we can rename any of our models `fit`, but in this case we will choose the one with the lowest AIC. A more thorough exploration would consider the residuals and possible cross validation.
 
 ```{r}
 fit <- fit_dg
@@ -229,8 +234,8 @@ visreg_delta(fit, xvar = "year_factor", model = 2)
 2.  Can you produce similar plots in response space for the depth effect from both component models?
 
 ```{r, echo=FALSE}
-visreg_delta(fit, xvar = "log_depth", model = 1) # exercise
-visreg_delta(fit, xvar = "log_depth", model = 2) # exercise
+visreg_delta(fit, xvar = "log_depth", model = 1, scale = "response") # exercise
+visreg_delta(fit, xvar = "log_depth", model = 2, scale = "response") # exercise
 ```
 
 ## Mapping delta model predictions
@@ -305,9 +310,11 @@ plot_map(p, epsilon_st2) +
   scale_fill_gradient2()
 ```
 
+To get our combined prediction, we can multiply the 2 models in response space. I.e. probability of observing a fish times the biomass density observed if observed.
+
 ```{r}
-plot_map(p, est) +
-  scale_fill_viridis_c(trans = "log")
+plot_map(p, plogis(est1) * exp(est2)) +
+  scale_fill_viridis_c(trans = "log10")
 ```
 
 # Index standardization
@@ -356,28 +363,4 @@ bind_rows(index_tw, index_twc) %>%
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   xlab("Year") +
   ylab("Biomass estimate (tonnes)")
-```
-
-# Bonus:
-
-1.  If a measure of uncertainty for the spatial predictions was required, we could use simulations draws the same way we did for our combined depth prediction to calculate a coefficient of variation (`sd(x)/mean(x)`). See if you can modify the code from before to get a map of the CV.
-
-```{r, echo=FALSE}
-## the code for the depth prediction
-# p_bin_sim <- predict(fit, newdata = nd, re_form = ~ 0, model = 1, nsim = 100)
-# p_pos_sim <- predict(fit, newdata = nd, re_form = ~ 0, model = 2, nsim = 100)
-#
-# p_bin_prob_sim <- fit$family[[1]]$linkinv(p_bin_sim)
-# p_pos_exp_sim <- fit$family[[2]]$linkinv(p_pos_sim)
-# p_combined_sim <- p_bin_prob_sim * p_pos_exp_sim
-#
-# nd$pred <- apply(p_combined_sim, 1, median)
-# nd$lwr <- apply(p_combined_sim, 1, function(x) quantile(x, 0.025))
-# nd$upr <- apply(p_combined_sim, 1, function(x) quantile(x, 0.975))
-#
-# ggplot(nd, aes(log_depth, pred,
-#   ymin = lwr,
-#   ymax = upr)) +
-#   geom_ribbon(alpha = 0.4) +
-#   geom_line()
 ```
