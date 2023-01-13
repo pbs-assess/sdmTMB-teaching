@@ -272,11 +272,12 @@ plot_map <- function(data, column_name) {
 ```
 
 ```{r}
+# Estimates in link space
 plot_map(p, est1) +
   scale_fill_viridis_c()
 
 plot_map(p, est2) +
-  scale_fill_viridis_c(trans = "log")
+  scale_fill_viridis_c()
 ```
 
 ```{r}
