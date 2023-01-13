@@ -247,7 +247,7 @@ grid <- purrr::map_dfr(unique(dat$year), ~ tibble(wcvi_grid, year = .x))
 grid$year_factor <- as.factor(grid$year)
 ```
 
-If we predict from out delta model, we get all the model components with `1` or `2` after them for the two parts. Everything is in link space.
+If we predict from our delta model, we get all the model components with `1` or `2` after them for the two parts. Everything is in link space.
 
 ```{r}
 p <- predict(fit, newdata = grid)
