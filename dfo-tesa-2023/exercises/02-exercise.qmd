@@ -512,12 +512,6 @@ cowplot::plot_grid(g1, g2, nrow = 2, align = "v")
 
 2.  How could we pick between these models?
 
--   cross validation <!-- exercise -->
--   residual checking <!-- exercise -->
--   what creates more useful inference? <!-- exercise -->
--   which is most assumption free or ecologically realistic? <!-- exercise -->
--   sometimes it doesn't matter! <!-- exercise -->
-
 # Bonus
 
 ## Exercise:
