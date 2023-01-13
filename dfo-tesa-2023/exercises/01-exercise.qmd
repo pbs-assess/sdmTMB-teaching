@@ -205,7 +205,7 @@ sim_dat4 <- sdmTMB_simulate(
   B = c(0.4, 0.2), # intercept and covariate coefficient
   seed = 98259 # for consistency
 )
-glimpse(sim_dat4)
+head(sim_dat4)
 
 ggplot(sim_dat4, aes(X, Y, fill = omega_s)) +
   geom_raster()
