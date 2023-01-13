@@ -560,5 +560,5 @@ fit3 <- sdmTMB(
 sanity(fit3)
 fit3
 tidy(fit3, effects = "ran_pars", conf.int = TRUE)
-plot_anisotropy(fit3)
+# plot_anisotropy(fit3) # uncomment this
 ```
