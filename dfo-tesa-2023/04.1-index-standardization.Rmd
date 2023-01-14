@@ -1,0 +1,89 @@
+---
+title: "Area-weighted index standardization"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+---
+
+# Calculating an area-weighted population index
+
+1. Fit a sensible model: .blue[`sdmTMB()`]
+
+2. Predict on a grid covering the survey domain: [.blue[`predict(..., newdata = ...)`]
+
+3. Sum up the density multiplied by cell area to calculate total abundance or biomass: .blue[`get_index()`]
+
+---
+
+# Fit a sensible model
+
+```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit <- sdmTMB(
+  density ~ s(depth, k = 5) + 0 + as.factor(year),
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",
+  time = "year", #<<
+  spatiotemporal = "iid", #<<
+  silent = FALSE # show progress!
+)
+```
+
+---
+
+# Predict over the survey domain
+
+.small[
+```{r pcod-st-index1, echo=TRUE}
+pred <- predict(fit, newdata = qcs_grid, return_tmb_object = TRUE)
+head(pred$data)
+```
+]
+
+---
+
+# Sum up the density multiplied by cell area
+
+(*and calculate standard errors)
+
+```{r pcod-index, echo=TRUE}
+index <- get_index(pred, area = 4, bias_correct = TRUE)
+head(index)
+```
+
+---
+
+# The resulting standardized index
+
+.xsmall[
+```{r pcod-st-index-plot, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
+ggplot(index, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+]
