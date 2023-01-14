@@ -9,10 +9,10 @@ execute:
 
 # Goals:
 
--   Practice fitting delta (hurdle) models
--   Understand how to inspect their more complicated model output
--   Learn how to plot aspects of component models and their combined predictions
--   Calculate an area-weighted biomass index and compare how model structure can impact an index
+-   Practice fitting delta (hurdle) models.
+-   Understand how to inspect their more complicated model output.
+-   Learn how to plot aspects of component models and their combined predictions.
+-   Calculate an area-weighted biomass index and compare how model structure can impact an index.
 
 ```{r, message=FALSE, warning=FALSE}
 #| echo=FALSE
@@ -53,7 +53,7 @@ ggplot() +
   coord_fixed()
 ```
 
-# Review fitting a tweedie model
+# Review fitting a Tweedie model
 
 We will start by refreshing our memory as to what the spatiotemporal models that we were fitting yesterday looked like. Remember that there was strong anisotropy? We also explored a couple different random field configurations but did not find a big difference between them. So, let's start here with a spatial random field and independent spatiotemporal (IID) random fields. Let's review what that model looked like.
 
@@ -75,10 +75,10 @@ fit_tweedie <- sdmTMB(
 sanity(fit_tweedie)
 ```
 
-Did it have trouble? There are many reasons a model can suddenly have difficulty converging. What has changed this time? We only tried anisotropy with the AR1 model yesterday, and we may have used a different cutoff for our mesh. If there was a problem, try an extra optimization run and see if that's sufficient:
+Did it have trouble? There are many reasons a model can suddenly have difficulty converging. What has changed this time? We only tried anisotropy with the AR1 model yesterday, and we may have used a different cutoff for our mesh. Given the only problem we have is a gradient issue (indicating the model hasn't quite converged), try an extra optimization run (with a different optimizer) and see if that's sufficient:
 
 ```{r}
-fit_tweedie <- run_extra_optimization(fit_tweedie)
+fit_tweedie <- run_extra_optimization(fit_tweedie, newton_loops = 1)
 sanity(fit_tweedie)
 ```
 
@@ -90,7 +90,15 @@ fit_tweedie
 
 Delta (or hurdle) models have one model for zero vs. non-zero data and another component for the positive component. These models can be implemented by fitting the two components separately and combining the predictions or they can be fit at once in sdmTMB.
 
-Advantages of fitting them at once: - easier to code - some parameters can be shared - derived quantities (e.g., an index of abundance) can be calculated on the combined prediction
+Advantages of fitting them at once:
+
+-   easier to code
+-   some parameters can be shared
+-   derived quantities (e.g., an index of abundance) can be calculated on the combined prediction
+
+Disadvantages to fitting them all at once:
+
+-   some parts of the model structure must be shared if fit all at once whereas fitting them separately gives you complete flexibility
 
 ### Exercise:
 
@@ -109,7 +117,6 @@ fit_dg <- sdmTMB(
   spatial = "on",
   spatiotemporal = "iid",
   time = "year",
-  anisotropy = FALSE #<
   # silent = FALSE
 )
 ```
@@ -123,8 +130,7 @@ fit_dg
 
 1.  How does this model output differ from that of the Tweedie?
 2.  What differences do you notice between parameter estimates in the two component models of the delta model?
-3.  Are any parameters missing from one model or the other? If so, why?
-4.  What other delta families are there in sdmTMB? See `?sdmTMB::Families`. Which other ones could be appropriate here?
+3.  What other delta families are there in sdmTMB? See `?sdmTMB::Families`. Which other ones could be appropriate here?
 
 Let's take a closer look at parameter estimates. We can specify which model we want with the `model` argument.
 
@@ -178,7 +184,7 @@ But the anisotropy is poorly estimated. See `ln_H_input` here:
 fit_dg_aniso$sd_report
 ```
 
-And it appears that including the spatiotemporal field in both components is more important than the anisotropy:
+And it appears that including the spatiotemporal field in both components (`fit_dg`) is more important than the anisotropy (`fit_dg_aniso`). These models are close enough, however, that we would probably chose a model for reasons other than AIC.
 
 ```{r}
 AIC(fit_dg, fit_dg_aniso)
@@ -186,7 +192,7 @@ AIC(fit_dg, fit_dg_aniso)
 
 # Visualizing delta models
 
-For easy exploration of different models, we can rename any of our models `fit`, but in this case we will choose the one with the lowest AIC. A more thorough exploration would consider the residuals and possible cross validation.
+For easy exploration of different models, we can rename any of our models `fit`, but in this case we will choose the one with the lowest AIC. A more thorough exploration would consider the residuals and possibly cross validation.
 
 ```{r}
 fit <- fit_dg
