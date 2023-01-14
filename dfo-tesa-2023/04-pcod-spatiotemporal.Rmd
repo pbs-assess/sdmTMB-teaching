@@ -72,11 +72,25 @@ fit <- sdmTMB(
 
 ---
 
+# Switching to a smoother + annual mean
+
+```{r pcod-spatial-rf-smoother, echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  density ~ s(depth) + 0 + as.factor(year), #<<
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on"
+)
+```
+
+---
+
 # Adding spatiotemporal fields
 
 ```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
 fit <- sdmTMB(
-  density ~ s(depth, k = 5) + 0 + as.factor(year), #<<
+  density ~ s(depth, k = 5) + 0 + as.factor(year),
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
@@ -89,20 +103,11 @@ fit <- sdmTMB(
 
 ---
 
-# Inspecting the model convergence
+# Inspecting model convergence
 
 .small[
-```{r sanity1, eval=FALSE, echo=TRUE}
+```{r sanity1, eval=TRUE, echo=TRUE, message=TRUE, warning=TRUE}
 sanity(fit)
-#> ✔ Non-linear minimizer suggests successful convergence
-#> ✔ Hessian matrix is positive definite
-#> ✔ No extreme or very small eigenvalues detected
-#> ✔ No gradients with respect to fixed effects are >= 0.001
-#> ✔ No fixed-effect standard errors are NA
-#> ✔ No standard errors look unreasonably large
-#> ✔ No sigma parameters are < 0.01
-#> ✔ No sigma parameters are > 100
-#> ✔ Range parameter doesn't look unreasonably large
 ```
 ]
 
@@ -141,7 +146,7 @@ fit
 # Model residuals
 
 .xsmall[
-Warning: these residuals might look off even if the model is fine. Also see `dharma_residuals()` or MCMC residuals. See the ['Residual checking' vignette](https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html).
+Warning: these residuals are fast but might look off even if the model is fine. Also see MCMC residuals. See the ['Residual checking' vignette](https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html) and the example in the exercises.
 ]
 
 ```{r resid1, echo=TRUE, out.width='500px', fig.width=5}
@@ -203,8 +208,7 @@ ggplot(p, aes(X, Y, fill = exp(est))) +
 .xsmall[
 ```{r pcod-st-plot-est2, echo=TRUE}
 max_est <- quantile(p$est, 0.999)
-p <- p %>% mutate(est_trim = ifelse(est > max_est, max_est, est))
-
+p <- mutate(p, est_trim = if_else(est > max_est, max_est, est))
 ```
 
 ```{r pcod-st-plot-est3, echo=FALSE, fig.width=7}
@@ -288,34 +292,3 @@ filter(p, year %in% c(2013, 2015, 2017)) %>%
   coord_fixed()
 ```
 ]
-
----
-
-
-
-
-<!-- # Calculating an area-weighted population index -->
-
-<!-- .xsmall[ -->
-<!-- ```{r pcod-st-index1, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"} -->
-<!-- p2 <- predict(fit, newdata = qcs_grid, return_tmb_object = TRUE) #<< -->
-<!-- index <- get_index(p2, area = 4, bias_correct = TRUE) #<< -->
-<!-- ggplot(index, aes(year, est)) + geom_line() + -->
-<!--   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) + -->
-<!--   xlab('Year') + ylab('Biomass estimate (kg)') -->
-<!-- ``` -->
-<!-- ] -->
-
-<!-- --- -->
-
-<!-- # Calculating the center of gravity -->
-
-<!-- .small[ -->
-<!-- ```{r pcod-st-cog, echo=TRUE, fig.width=6, out.width="600px"} -->
-<!-- cog <- get_cog(p2, format = "wide") #<< -->
-<!-- ggplot(cog, aes(est_x, est_y, colour = year)) +  -->
-<!--   geom_linerange(aes(xmin = lwr_x, xmax = upr_x)) + -->
-<!--   geom_linerange(aes(ymin = lwr_y, ymax = upr_y)) + -->
-<!--   coord_equal() -->
-<!-- ``` -->
-<!-- ] -->
