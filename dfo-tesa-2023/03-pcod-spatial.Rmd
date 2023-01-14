@@ -67,17 +67,6 @@ fit <- sdmTMB(
 ```
 
 ---
-# Check convergence  
-
-* Learning curve of TMB can be steep  
-* Models can be very complex (hard to diagnose issues)  
-
-```{r checksanity, eval=FALSE}
-s <- sanity(fit)
-s
-```
-
----
 
 # Should we include depth?
 
@@ -107,6 +96,20 @@ fit <- sdmTMB(
   spatial = "on"   #<<
 )
 ```
+
+---
+
+# Checking convergence  
+
+* Learning curve of TMB can be steep  
+* Models can be very complex (hard to diagnose issues)
+* `sanity()` function tries to help
+
+.small[
+```{r checksanity, eval=TRUE, message=TRUE, warning=TRUE, echo=TRUE}
+sanity(fit)
+```
+]
 
 ---
 
@@ -148,26 +151,6 @@ fit
 ]
 
 ---
-# Sanity arguments  
-
-.small[
-```{r sanityargs, echo=TRUE, eval=FALSE}
-sanity(fit, big_sd_log10 = 3, gradient_thresh = 0.001)
-#> ✔ Non-linear minimizer suggests successful convergence
-#> ✔ Hessian matrix is positive definite
-#> ✔ No extreme or very small eigenvalues detected
-#> ✔ No gradients with respect to fixed effects are >= 0.001
-#> ✔ No fixed-effect standard errors are NA
-#> ✔ No standard errors look unreasonably large
-#> ✔ No sigma parameters are < 0.01
-#> ✔ No sigma parameters are > 100
-#> ✔ Range parameter doesn't look unreasonably large
-```
-`big_sd_log10` SEs greater than this are flagged  
-`gradient_thresh` gradients greater than this are flagged
-]
-
----
 
 # Extracting parameters in a data frame
 
@@ -176,18 +159,8 @@ sanity(fit, big_sd_log10 = 3, gradient_thresh = 0.001)
 tidy(fit)
 
 # Variance-related terms:
-tidy(fit, effects = "ran_pars")
-```
-
----
-
-# Extracting parameters in a data frame
-
-.small[
-```{r, echo=TRUE}
 tidy(fit, "ran_pars", conf.int = TRUE)
 ```
-]
 
 ---
 
@@ -330,5 +303,3 @@ g <- ggeffects::ggeffect(fit, "depth [10:500 by=2]")
 plot(g)
 ```
 ]
----
-

@@ -37,21 +37,30 @@ library(mgcv)
 
 ---
 
-# Plan for the 2-session course
+# Plan for the 4-day course
 
-* Session 1 (March 2): describe models and walk through code with us
+* Day 1: Intro to random fields, intro to sdmTMB, spatial models
 
-* Session 2 (March 9): review optional exercise; introduce advanced features
+* Day 2: Spatiotemporal models
 
-* Each day, we have ~1.5–2 hours of content, and will plan to take a 10–15 minute break halfway through.
+* Day 3: Time-varying effects, spatially varying effects, index standardization
 
-* Have questions? Use the [Google Doc](https://docs.google.com/document/d/1MxjLJ4Kz5ASIT15RQWApuf5xI1k-IHFTfd__rHAyuOM/edit?usp=sharing), ask during our break, or at the end. Thanks!
+* Day 4: Extrapolation and forecasting, touch on other advanced topics (e.g., correlation barriers, presence-only data, priors)
+
+
+---
+
+# Plan for the 4-day course
+
+* Each day: about 1-1:15 hours of lectures, 5 minute break, ~50 minutes of exercises, ~15 minute regroup
+
+* Have questions? Use the [Google Doc](https://docs.google.com/document/d/1JScvWtNWrJUfMrUvDZMzWhTUXqsLZSyiN2ULZdaihZk/edit?usp=sharing), ask during any pause, or at the end of each day. Thanks!
 
 ---
 
 # Motivating questions
 
-* Data often has spatial attributes
+* Data often have spatial attributes
 
 * Ideal world:
   * Plug spatial covariates into a GLM / GLMM
@@ -123,18 +132,17 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
   scale_color_gradient2()
 ```
 
-
 ---
 
 # Modeling spatial autocorrelation
 
 * Need 'wiggly'/smooth surface for approximating all spatial variables missing from model ('latent' variables)
 
-* Several equivalent approaches exist
-  * Smooths in `mgcv()`  
+* Several approaches exist
+  * 2D smooths in mgcv
   * Random fields and the Stochastic Partial Differential Equation (SPDE)
 
-* SPDE differs in that it explicitly estimates parameters for spatial covariance function
+* SPDE differs in that it explicitly estimates meaningful parameters for spatial covariance function
 
 .xsmall[
 Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020)
@@ -144,7 +152,7 @@ Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial Di
 
 # Matérn covariance
 
-Flexible, can be exponential or Gaussian
+Flexible, can be exponential or Gaussian shape
 
 ```{r matern-plot}
 x <- seq(from = 0, to = 1, length.out = 100)

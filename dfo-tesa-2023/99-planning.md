@@ -1,4 +1,4 @@
-9-11:30 - 1 hour lecture - 10 minute break - 50 minute break - 30 minutes
+9-11:30 - 1 hour lecture - 5 minute break - 50 minute exercises - 30 minutes
 
 40 minute exercises? 20 minutes after
 
