@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Time-varying coefficients with sdmTMB</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.19/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Time-varying coefficients with sdmTMB
+]
+.subtitle[
+## DFO TESA sdmTMB workshop
+]
+.author[
+### 
+]
+.date[
+### January 16–19 2023
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+.small[
+# Why might we want time-varying effects?
+
+* Time-varying slopes: 
+  * To allow for evolving responses to covariates (e.g., species moving deeper over time)
+  
+  * Example use: [English et al. (2021) Fish and Fisheries](https://doi.org/10.1111/faf.12613)  
+    Modelled groundfish density with depth; didn't want to constrain fish if they were moving deeper when water was warmer
+  
+* Time-varying intercepts:
+  * To allow variable means across time with constraints
+  * To have a model to interpolate or forecast over time
+]
+
+---
+
+# Time-varying intercepts
+
+Several ways in sdmTMB:
+
+* factors: `as.factor(year)` (independent)
+* random effects: ` + (1 | year)` (drawn from normal distribution)
+* smooth: ` + s(year)`
+* as random walk (shown next)
+
+---
+
+#  Random walk covariates in sdmTMB
+
+Random walk:
+
+$$
+`\begin{aligned}
+x_t &amp;= x_{t-1} + \epsilon_t\\
+\epsilon &amp;\sim \mathrm{Normal(0, \sigma^2)}
+\end{aligned}`
+$$
+
+Defined by `time_varying` argument
+
+Takes a *one-sided* formula, e.g. `~ 1` or `~ 0 + depth`
+
+Note: initial coefficient is unconstrained, i.e. **do not place the same covariate in 
+the `formula` argument** (this includes the intercept)
+
+---
+
+# Time-varying intercept
+
+Note: a `0` or `-1` in formula for suppressing global intercept
+
+Otherwise, both the main effects and time-varying effects would have the same parameter and this can't be estimated.
+
+.small[
+
+```r
+mesh &lt;- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit &lt;- sdmTMB(
+  density ~ 0 + s(depth, k = 5), 
+* time_varying = ~ 1,
+  data = pcod, mesh = mesh,
+  time = "year",  
+  family = tweedie(link = "log")
+)
+```
+]
+
+---
+
+# Getting coefficients 
+
+Return with 
+
+.small[
+
+```r
+print(fit)
+```
+]
+
+.small[
+
+```r
+#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Formula: density ~ 0 + s(depth, k = 5)
+#&gt; Time column: "year"
+#&gt; ...
+*#&gt; Time-varying parameters:
+*#&gt;                  coef.est coef.se
+*#&gt; (Intercept)-2003     1.96    0.29
+*#&gt; (Intercept)-2004     2.31    0.27
+*#&gt; (Intercept)-2005     2.06    0.27
+*#&gt; ...
+*#&gt; (Intercept)-2015     2.07    0.27
+*#&gt; (Intercept)-2017     1.55    0.29
+#&gt; ...
+```
+]
+
+---
+
+# Getting coefficients 
+
+Or by digging into `fit$sd_report`
+
+(Not yet in `tidy.sdmTMB()`.)
+
+
+```r
+library(TMB)
+est &lt;- as.list(fit$sd_report, "Est")
+est_se &lt;- as.list(fit$sd_report, "Std. Error")
+cbind(est$b_rw_t, est_se$b_rw_t)
+#&gt;           [,1]      [,2]
+#&gt;  [1,] 1.958251 0.2889057
+#&gt;  [2,] 2.313664 0.2724793
+#&gt;  [3,] 2.064983 0.2707960
+#&gt;  [4,] 1.232808 0.3014059
+#&gt;  [5,] 1.511154 0.2758021
+#&gt;  [6,] 1.932893 0.2710203
+#&gt;  [7,] 2.159133 0.2672042
+#&gt;  [8,] 2.073629 0.2725238
+#&gt;  [9,] 1.549745 0.2933550
+```
+
+---
+
+# Other approaches to modeling time-varying intercepts
+
+.small[
+
+```r
+density ~ s(depth) + 0 + as.factor(year)
+```
+]
+.small[
+
+```r
+density ~ s(depth) + (1 | year)
+```
+]
+.small[
+
+```r
+density ~ s(depth) + s(year)
+```
+]
+---
+
+# These approaches are similar but subtly different
+
+&lt;img src="08-time-varying_files/figure-html/compare-fits-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+&lt;!-- &lt;img src="images/spidey.jpeg" width="650px" class="center" /&gt;  --&gt;
+
+&lt;!-- * H/T Eric Pederson --&gt;
+
+---
+
+# Time-varying coefficients
+
+Time-varying (random walk) effect of depth
+
+Intercept in this model NOT time-varying
+
+
+```r
+fit_tv &lt;- sdmTMB(
+  density ~ 1, 
+* time_varying = ~ 0 + depth_scaled + depth_scaled2,
+  data = pcod, mesh = mesh,
+  time = "year",
+  family = tweedie(link = "log"),
+  spatial = "on",
+  spatiotemporal = "iid",
+  silent = FALSE
+)
+```
+
+---
+
+# Time-varying coefficients
+
+Time-varying (random walk) effect of depth
+
+&lt;!-- To plot these, we make a data frame that contains all combinations of the time-varying covariate and time. This is easily created using `expand.grid()` or `tidyr::expand_grid()`. --&gt;
+
+&lt;img src="08-time-varying_files/figure-html/tv-depth-eff-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Time-varying coefficient notes
+
+* `time_varying` is a formula for coefficients that follow a random walk over time
+
+--
+
+* Make sure a coefficient isn't in both `formula` and `time_varying`, this includes the intercept
+
+--
+
+* The `time_varying` formula cannot have smoothers `s()` in it! Instead:
+  * Polynomials: `time_varying = ~ x + I(x^2)`
+  * `formula = s(depth, by = factor_year)` (independent smooths) 
+  * `formula = s(depth, year)` (2D smooth)
+
+
+&lt;!-- See the vignette [Intro to modelling with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/basic-intro.html) for more details. --&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

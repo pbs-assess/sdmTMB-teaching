@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Model selection with sdmTMB</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.19/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Model selection with sdmTMB
+]
+.subtitle[
+## DFO TESA sdmTMB workshop
+]
+.author[
+### 
+]
+.date[
+### January 16–19 2023
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# What is the goal of modeling? 
+
+* Straight prediction?
+  * in-sample, out-of-sample, both?
+
+* Parsimony?
+  * balance of bias-variance tradeoff
+
+* Not all metrics appropriate for all applications
+
+---
+
+# Too many metrics to discuss
+
+* Root mean squared error 
+
+* AUC (see pseudo-absence example)
+  * true and false positive rates
+
+* AIC: widely used tool in ecology
+  * `\(\mathrm{AIC} = -2 \log L + 2K\)`, where `\(K\)` is the number of parameters
+  * designed for fixed effects models (Burnham and Anderson 2002)
+  
+---
+
+# AIC and likelihood with sdmTMB
+
+* `AIC()` and `logLik()` methods work, just like `glm()`  
+
+
+```r
+mesh &lt;- make_mesh(pcod,
+  xy_cols = c("X", "Y"),
+  cutoff = 10
+)
+fit &lt;- sdmTMB(
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+logLik(fit) # log likelihood
+AIC(fit) # AIC
+```
+
+---
+
+# When to use restricted maximum likelihood (REML) 
+
+* Integrates over random effects *and* fixed effects; sometimes helps convergence too
+
+* *Can* use REML when comparing different random effect structures
+
+* *Don't* use REML when comparing alternative fixed effects
+
+* *Don't* use REML for index standardization
+
+.small[
+
+```r
+fit &lt;- sdmTMB(..., reml = FALSE)
+```
+]
+
+---
+
+# Reminder: fixed and random effects in sdmTMB
+
+Random effects include
+
+* random intercepts: `(1 | group)`
+* smooth terms: `s(year)`
+* time-varying coefficients
+* all random fields
+* spatially varying coefficients (also random fields)
+
+---
+
+# Limitations of AIC
+
+* Originally conceived for fixed effects 
+  * Burnham and Anderson (2002)
+
+* Approximate &amp; problematic for mixed effects
+  * Vaida and Blanchard (2005)
+  * Liang et al. (2008)
+  
+* Great [FAQ on `glmmTMB` by Ben Bolker](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#can-i-use-aic-for-mixed-models-how-do-i-count-the-number-of-degrees-of-freedom-for-a-random-effect)
+
+---
+
+# Predictive model selection
+
+* Ideal world: use cross validation to evaluate predictive accuracy
+
+* Split data into train / test sets
+
+* Objective function:
+  * maximize log-likelihood of test data
+
+---
+
+# ELPD
+
+Expected log pointwise predictive density
+
+Interpreted as theoretical expectation for new dataset  
+  
+ELPD: `\(\frac{\log ( \sum( \exp( \log L(y^*|\theta))))} {N}\)`,
+
+where: `\(y^*\)` are left-out data, `\(\theta\)` are parameters, and `\(N\)` is the number of left-out data points
+
+[Vehtari, Gelman, and Gabry (2017)](https://arxiv.org/abs/1507.04544)
+
+---
+
+# Cross validation in sdmTMB
+
+
+
+.small[
+
+```r
+*fit &lt;- sdmTMB_cv(
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+* k_folds = 8,
+* fold_ids = NULL,
+* parallel = TRUE,
+* use_initial_fit = FALSE
+)
+```
+]
+
+* More folds = more computation time
+* `use_initial_fit = TRUE` 
+  * fits first fold, and initializes subsequent model fits from that  
+
+---
+
+# Cross validation in sdmTMB
+
+`sdmTMB_cv()` returns:  
+
+- A list of models (each `sdmTMB()` object)  
+
+- `fold_loglik`: sum of held out likelihoods for each fold
+
+- `sum_loglik`: sum across `fold_loglik`, or all data
+
+- `fold_elpd`: expected log predictive density for each fold
+
+- `elpd`: Expected log predictive density across all data
+
+---
+
+# How to choose folds? How many?
+
+.small[
+* Words of wisdom:
+  * Can be highly variable based on data, folds, sampling scheme
+  
+* Spatial sampling or random?
+  * [blockCV R package](https://cran.r-project.org/web/packages/blockCV/index.html), [Valavi et al. (2019)](https://doi.org/10.1111/2041-210X.13107)
+  
+* How to sample with time / years? 
+  * LOOCV (leave-one-out...) vs. LFOCV (leave-future-out...)
+
+* `sdmTMB_cv()` does random fold assignment
+  * Custom folds can be specified with `fold_ids`
+]
+
+---
+
+# Basic cross validation example
+
+Set a `future::plan()`; the folds will be fit in parallel
+
+
+```r
+*library(future)
+*plan(multisession)
+mesh &lt;- make_mesh(pcod, c("X", "Y"), cutoff = 10)
+*m_cv &lt;- sdmTMB_cv(
+  density ~ s(depth, k = 5), data = pcod, mesh = mesh,
+  family = tweedie(link = "log"), 
+* k_folds = 2
+)
+# Sum of log likelihoods of left-out data:
+m_cv$sum_loglik
+#&gt; [1] -7139.614
+# Expected log pointwise predictive density
+# of left-out data:
+m_cv$elpd
+#&gt; [1] -1.011555
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Example: Spatial modeling of Pacific cod</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.19/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Example: Spatial modeling of Pacific cod
+]
+.subtitle[
+## DFO TESA sdmTMB workshop
+]
+.author[
+### 
+]
+.date[
+### January 16–19 2023
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# The Pacific Cod dataset
+
+DFO trawl survey data from Queen Charlotte Sound off BC
+
+.small[
+
+```r
+library(dplyr)
+library(ggplot2)
+library(sdmTMB)
+pcod %&gt;%
+  select(year, X, Y, depth, density, present) %&gt;% 
+  head()
+#&gt; # A tibble: 6 × 6
+#&gt;    year     X     Y depth density present
+#&gt;   &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+#&gt; 1  2003  446. 5793.   201   113.        1
+#&gt; 2  2003  446. 5800.   212    41.7       1
+#&gt; 3  2003  449. 5802.   220     0         0
+#&gt; 4  2003  437. 5802.   197    15.7       1
+#&gt; 5  2003  421. 5771.   256     0         0
+#&gt; 6  2003  418. 5772.   293     0         0
+```
+]
+
+---
+
+# Building a mesh
+
+.small[
+
+```r
+mesh &lt;- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+plot(mesh)
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/unnamed-chunk-2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Adding spatial random fields
+
+
+```r
+fit &lt;- sdmTMB(
+  present ~ 1, # intercept only
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+* spatial = "on"
+)
+```
+
+---
+
+# Should we include depth?
+
+* Predictions here in *logit* space  
+
+&lt;img src="03-pcod-spatial_files/figure-html/plotdepth-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Add depth as a quadratic effect
+
+
+```r
+fit &lt;- sdmTMB(
+* present ~ poly(log(depth), 2),
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+* spatial = "on"
+)
+```
+
+---
+
+# Checking convergence  
+
+* Learning curve of TMB can be steep  
+* Models can be very complex (hard to diagnose issues)
+* `sanity()` function tries to help
+
+.small[
+
+```r
+sanity(fit)
+#&gt; ✔ Non-linear minimizer suggests successful convergence
+#&gt; ✔ Hessian matrix is positive definite
+#&gt; ✔ No extreme or very small eigenvalues detected
+#&gt; ✔ No gradients with respect to fixed effects are &gt;= 0.001
+#&gt; ✔ No fixed-effect standard errors are NA
+#&gt; ✔ No standard errors look unreasonably large
+#&gt; ✔ No sigma parameters are &lt; 0.01
+#&gt; ✔ No sigma parameters are &gt; 100
+#&gt; ✔ Range parameter doesn't look unreasonably large
+```
+]
+
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+fit
+*#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Formula: present ~ poly(log(depth), 2)
+#&gt; Mesh: mesh
+#&gt; Data: pcod
+#&gt; Family: binomial(link = 'logit')
+#&gt;  
+#&gt;                      coef.est coef.se
+#&gt; (Intercept)             -0.45    0.43
+#&gt; poly(log(depth), 2)1   -74.39    8.87
+#&gt; poly(log(depth), 2)2  -107.16    8.76
+#&gt; 
+#&gt; Matern range: 43.54
+#&gt; Spatial SD: 1.65
+#&gt; ML criterion at convergence: 1042.157
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+fit
+#&gt; Spatial model fit by ML ['sdmTMB']
+*#&gt; Formula: present ~ poly(log(depth), 2)
+*#&gt; Mesh: mesh
+*#&gt; Data: pcod
+*#&gt; Family: binomial(link = 'logit')
+#&gt;  
+#&gt;                      coef.est coef.se
+#&gt; (Intercept)             -0.45    0.43
+#&gt; poly(log(depth), 2)1   -74.39    8.87
+#&gt; poly(log(depth), 2)2  -107.16    8.76
+#&gt; 
+#&gt; Matern range: 43.54
+#&gt; Spatial SD: 1.65
+#&gt; ML criterion at convergence: 1042.157
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+fit
+#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Formula: present ~ poly(log(depth), 2)
+#&gt; Mesh: mesh
+#&gt; Data: pcod
+#&gt; Family: binomial(link = 'logit')
+#&gt;  
+*#&gt;                      coef.est coef.se
+*#&gt; (Intercept)             -0.45    0.43
+*#&gt; poly(log(depth), 2)1   -74.39    8.87
+*#&gt; poly(log(depth), 2)2  -107.16    8.76
+#&gt; 
+#&gt; Matern range: 43.54
+#&gt; Spatial SD: 1.65
+#&gt; ML criterion at convergence: 1042.157
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+---
+
+# Inspecting the model output
+
+.small[
+
+```r
+fit
+#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Formula: present ~ poly(log(depth), 2)
+#&gt; Mesh: mesh
+#&gt; Data: pcod
+#&gt; Family: binomial(link = 'logit')
+#&gt;  
+#&gt;                      coef.est coef.se
+#&gt; (Intercept)             -0.45    0.43
+#&gt; poly(log(depth), 2)1   -74.39    8.87
+#&gt; poly(log(depth), 2)2  -107.16    8.76
+#&gt; 
+*#&gt; Matern range: 43.54
+*#&gt; Spatial SD: 1.65
+*#&gt; ML criterion at convergence: 1042.157
+#&gt; 
+#&gt; See ?tidy.sdmTMB to extract these values as a data frame.
+```
+]
+
+---
+
+# Extracting parameters in a data frame
+
+
+```r
+# Main effects:
+tidy(fit)
+#&gt; # A tibble: 3 × 3
+#&gt;   term                 estimate std.error
+#&gt;   &lt;chr&gt;                   &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 (Intercept)            -0.450     0.431
+#&gt; 2 poly(log(depth), 2)1  -74.4       8.87 
+#&gt; 3 poly(log(depth), 2)2 -107.        8.76
+
+# Variance-related terms:
+tidy(fit, "ran_pars", conf.int = TRUE)
+#&gt; # A tibble: 2 × 5
+#&gt;   term    estimate std.error conf.low conf.high
+#&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;lgl&gt;        &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 range      43.5  NA           28.4      66.8 
+#&gt; 2 sigma_O     1.65 NA            1.27      2.14
+```
+
+---
+
+# Making predictions
+
+.small[
+
+```r
+*p &lt;- predict(fit)
+select(p, X, Y, est:omega_s)
+#&gt; # A tibble: 2,143 × 6
+#&gt;        X     Y     est est_non_rf  est_rf omega_s
+#&gt;    &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+#&gt;  1  446. 5793.  0.0701      0.241 -0.171  -0.171 
+#&gt;  2  446. 5800. -0.184      -0.169 -0.0158 -0.0158
+#&gt;  3  449. 5802. -0.429      -0.480  0.0510  0.0510
+#&gt;  4  437. 5802.  1.21        0.383  0.826   0.826 
+#&gt;  5  421. 5771. -2.34       -1.98  -0.352  -0.352 
+#&gt;  6  418. 5772. -3.49       -3.64   0.147   0.147 
+#&gt;  7  408. 5771. -7.77       -9.01   1.25    1.25  
+#&gt;  8  408. 5767. -6.76       -7.96   1.21    1.21  
+#&gt;  9  414. 5761. -3.09       -3.27   0.184   0.184 
+#&gt; 10  400. 5749.  0.467      -2.60   3.07    3.07  
+#&gt; # … with 2,133 more rows
+```
+]
+
+---
+
+# Making predictions
+
+* `est`: Overall estimate **in link space** (logit here)
+* `est_non_rf`: Estimate of non-random-field components
+* `est_rf`: Estimate of random-field components
+* `omega_s`: Spatial random field
+
+---
+
+# Making predictions on new data
+
+.small[
+* `qcs_grid`: a 2x2 km grid extending over the full survey domain
+]
+.small[
+
+```r
+nd &lt;- filter(qcs_grid, year == 2017) # pick any year
+ggplot(nd, aes(X, Y, fill = depth)) + 
+  geom_raster() +
+  coord_fixed()
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/unnamed-chunk-9-1.png" width="500px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Making predictions on new data
+
+
+
+```r
+head(select(nd, X, Y, depth))
+#&gt;     X    Y    depth
+#&gt; 1 456 5636 347.0834
+#&gt; 2 458 5636 223.3348
+#&gt; 3 460 5636 203.7408
+#&gt; 4 462 5636 183.2987
+#&gt; 5 464 5636 182.9998
+#&gt; 6 466 5636 186.3892
+
+*p &lt;- predict(fit, newdata = nd)
+```
+
+---
+
+# Plotting predictions on new data
+
+.small[
+
+```r
+ggplot(p, aes(X, Y, fill = plogis(est))) +
+  geom_raster() +
+  scale_fill_viridis_c() +
+  coord_fixed()
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/unnamed-chunk-11-1.png" width="600px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting main effect contributions
+
+.small[
+
+```r
+ggplot(p, aes(X, Y, fill = plogis(est_non_rf))) +
+  geom_raster() +
+  scale_fill_viridis_c() +
+  coord_fixed()
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/unnamed-chunk-12-1.png" width="600px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting spatial random effects
+
+.small[
+
+```r
+ggplot(p, aes(X, Y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed()
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/unnamed-chunk-13-1.png" width="600px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting depth effect
+
+.small[
+
+```r
+nd &lt;- data.frame(depth = seq(30, 500, length.out = 300))
+p &lt;- predict(
+  fit, 
+  newdata = nd, 
+* se_fit = TRUE,
+* re_form = ~ 0
+)
+p$lwr &lt;- plogis(p$est - 1.96 * p$est_se)
+p$upr &lt;- plogis(p$est + 1.96 * p$est_se)
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/pcod-sp-depth-pred-plot-1.png" width="500px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting depth effect with visreg
+
+.small[
+
+```r
+visreg::visreg(fit, xvar = "depth", gg = TRUE)
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/pcod-sp-depth-visreg-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting depth effect with visreg
+
+.small[
+
+```r
+visreg::visreg(fit, xvar = "depth", scale = "response")
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/pcod-sp-depth-visreg-resp-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting depth effect with ggeffects
+
+.small[
+
+```r
+g &lt;- ggeffects::ggeffect(fit, "depth [10:500 by=2]")
+plot(g)
+```
+
+&lt;img src="03-pcod-spatial_files/figure-html/pcod-sp-depth-ggeffects-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
