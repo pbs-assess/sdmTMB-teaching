@@ -294,7 +294,7 @@ y ~ 0 + as.factor(year)
 cpue ~ breakpt(temperature)
 ```
 
-```{r make-breakpt, out.width='500px', fig.width=5}
+```{r make-breakpt, out.width='400px', fig.width=5}
 df <- data.frame(x = seq(1, 100))
 slope <- 0.1
 df$y <- ifelse(df$x < 50, slope * df$x, slope * 50)
@@ -304,6 +304,10 @@ ggplot(df, aes(x, y)) +
   ylab("CPUE") +
   ggtitle("Breakpoint function")
 ```
+
+.tiny[
+Essington, T.E. S.C. Anderson, L.A.K. Barnett, H.M. Berger, S.A. Siedlecki, E.J. Ward. Advancing statistical models to reveal the effect of dissolved oxygen on the spatial distribution of marine taxa using thresholds and a physiologically based index. 2022. Ecography 2022(8): e06249. <https://doi.org/10.1111/ecog.06249>
+]
 
 ---
 
