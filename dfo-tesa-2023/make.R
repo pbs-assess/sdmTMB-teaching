@@ -1,4 +1,4 @@
-PARALLEL <- FALSE
+PARALLEL <- TRUE
 
 folder <- "dfo-tesa-2023"
 files <- list.files(folder, pattern = "\\.Rmd$")

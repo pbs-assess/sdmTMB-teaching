@@ -1,4 +1,6 @@
-# sdmTMB setup on DFO computers
+---
+title: sdmTMB setup on DFO computers
+---
 
 1. Install the following programs (on DFO Windows laptops, using the 'Software Centre'):
 
