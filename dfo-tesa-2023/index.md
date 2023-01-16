@@ -1,6 +1,4 @@
----
-title: DFO TESA Workshop 2023
----
+# DFO TESA Workshop 2023
 
 January 16--19 2023
 
