@@ -20,7 +20,7 @@ January 16--19 2023
 
 2. [Introduction to sdmTMB](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/02-intro-sdmTMB.html)
 
-3. [Pacific Cod spatial example](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/04-pcod-spatial.html)
+3. [Pacific Cod spatial example](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/03-pcod-spatial.html)
 
 4. [Pacific Cod spatiotemporal example](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/04-pcod-spatiotemporal.html)
 
