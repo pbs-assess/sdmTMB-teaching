@@ -292,3 +292,34 @@ filter(p, year %in% c(2013, 2015, 2017)) %>%
   coord_fixed()
 ```
 ]
+
+---
+
+# Considering anisotropy
+
+* Default is isotropic: correlation decays in all directions at same rate
+* Anisotropic: directionally dependent spatial correlation
+
+```{r pcod-aniso, echo=TRUE, message=FALSE, results='hide'}
+fit_aniso <- update(fit, anisotropy = TRUE)
+```
+
+```{r pcod-aniso-aic, echo=TRUE}
+AIC(fit, fit_aniso)
+```
+
+.xsmall[
+* Not favoured here; often important on narrow continental shelves
+]
+
+---
+
+# Plotting anisotropy
+
+.small[
+Plot shows range in all directions from zero in the center
+
+```{r pcod-aniso-plot, echo=TRUE}
+plot_anisotropy(fit_aniso)
+```
+]

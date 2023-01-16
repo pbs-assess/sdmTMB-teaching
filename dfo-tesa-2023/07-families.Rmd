@@ -94,48 +94,41 @@ ggplot(df, aes(y)) +
 
 * Some arguments can be a list, e.g.
 ```{r argdemo, eval=FALSE, echo=TRUE}
-fit(..., 
-formula = list(pres ~ 1, 
-  pos ~ depth + s(temp)),
-spatial = list('on', 'off'),  
-spatiotemporal = list('off', 'ar1'), 
-share_range = list(TRUE, FALSE),...)  
+fit <- sdmTMB(
+  list(
+    density ~ 1, 
+    density ~ depth
+  ),
+  spatial = list('on', 'off'),  
+  spatiotemporal = list('off', 'ar1'), 
+  share_range = list(TRUE, FALSE),
+  ...
+)
 ```
+
 * by default, all arguments shared  
 * rest of arguments must be shared  
-
----
-
-# Formulas as lists for multivariate responses
-
-* e.g. model size-at-age and weight-at-age-simultaneously 
-```{r argdemo2, eval=FALSE, echo=TRUE}
-fit(..., 
-formula = list(length ~ depth, 
-    weight ~ depth + s(temp)),
-family = list('lognormal', 'lognormal'),...)  
-```
-
-* currently little benefit, as sdmTMB shares no information between these models (e.g. no shared spatial / spatiotemporal fields)
+* smoothers and random intercepts must be shared
 
 ---
 
 # An aside on mixture models
 
 Positive components may be modeled as a mixture of 2 distributions
+
 * Finite mixture model (2 components)  
 
 * Also referred to as "ECE" (extreme catch event) model, Thorson et al. (2012)  
 
 * Mechanisms: shoaling, etc.  
 
-* Implemented with `gamma_mix` and `lognormal_mix`  
+* See `gamma_mix()` and `lognormal_mix()`
 
-* Can be combined with delta model as `delta_gamma_mix` and `delta_lognormal_mix`
+* Can be delta model as `delta_gamma_mix()` and `delta_lognormal_mix()`
 
 ---
 
-# SDMs with presence only data
+# SDMs with presence-only data
 
 Infinitely Weighted Logistic Regression (IWLR)  
 * [Fithian & Hastie (2013)](https://doi.org/10.1214/13-AOAS667)  
@@ -144,4 +137,3 @@ Downweighted Poisson Regression (DWPR)
 * [Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352) 
 
 Code examples with sdmTMB [here](https://github.com/pbs-assess/sdmTMB/blob/main/scratch/julia-vignettes/presence_absence.Rmd)
-

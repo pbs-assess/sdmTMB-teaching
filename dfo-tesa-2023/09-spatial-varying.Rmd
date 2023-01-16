@@ -160,10 +160,10 @@ Because there does not appear to be much correlation between years, year will be
 * Predictor should be roughly mean zero and SD of 1 to help with estimation
 --
 
-* Current sdmTMB limited to one effect; an unlimited version is in development in a branch
---
+* Used to be limited to one effect; now no limitations
 
+--
 
 See vignette: [Fitting spatial trend models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
 
-See sdmTMB paper appendix for Snowy Owl model
+See sdmTMB paper for Snowy Owl example led by Philina

@@ -26,7 +26,7 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
-# Maximum likelihood doesn't involve priors!? 
+# Can maximum likelihood have priors!? 
 
 * Penalized maximum likelihood estimation
 
@@ -86,10 +86,9 @@ fit_prior <- sdmTMB(
   present ~ depth,
   data = pcod, mesh = mesh,
   family = binomial(link = "logit"),
-  priors = sdmTMBpriors(b = normal(#<<
-    location = c(4.2, NA),#<<
-    scale = c(0.1, NA))#<<
-  )
+  priors = sdmTMBpriors( #<<
+    b = normal(location = c(4.2, NA), scale = c(0.1, NA)) #<<
+  ) #<<
 )
 ```
 ]

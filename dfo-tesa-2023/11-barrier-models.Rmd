@@ -240,6 +240,7 @@ In this example:
 
 # Advice
 
+.small[
 * Physical barriers aren't an issue for some coastlines
 
 * Don't choose a `range_fraction` that is much lower than 0.1
@@ -248,4 +249,7 @@ In this example:
 
 * Accounting for spatial correlation barriers can affect estimates of range and variance
 
-* But, if the goal is to sum up biomass or abundance across space (e.g., index standardization), the impact is usually subtle
+* If the goal is index standardization, the impact is usually subtle
+
+* Anisotropy often more important than barriers (and you can't currently have both)
+]
