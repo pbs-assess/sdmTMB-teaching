@@ -71,7 +71,7 @@ library(ggplot2)
 ```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
-  density ~ s(depth, k = 5) + 0 + as.factor(year), #<<
+  density ~ 0 + as.factor(year), #<<
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
@@ -108,7 +108,8 @@ ggplot(.p, aes(X, Y, fill = exp(est_trim))) +
   geom_raster() +
   scale_fill_viridis_c(trans = "sqrt") +
   facet_wrap(~year) +
-  coord_fixed()
+  coord_fixed() +
+  labs(fill = "Biomass density\n(kg/km^2)")
 ```
 
 ---
