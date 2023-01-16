@@ -38,15 +38,15 @@ January 16--19 2023
 
 4. [Pacific Cod spatiotemporal example](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/04-pcod-spatiotemporal.html)
 
-5. [Index standardization](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/05-index-standardization.html)
+5. [Comparing models](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/05-comparing-models.html)
 
-6. [Comparing models](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/06-comparing-models.html)
+6. [Families](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/06-families.html)
 
-7. [Families](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/07-families.html)
+7. [Time-varying coefficients](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/07-time-varying.html)
 
-8. [Time-varying coefficients](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/08-time-varying.html)
+8. [Spatially varying coefficients](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/08-spatial-varying.html)
 
-9. [Spatially varying coefficients](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/09-spatial-varying.html)
+9. [Index standardization](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/09-index-standardization.html)
 
 10. [Forecasting](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/10-forecasting.html)
 

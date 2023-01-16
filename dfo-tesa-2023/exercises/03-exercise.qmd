@@ -130,7 +130,6 @@ fit_dg
 
 1.  How does this model output differ from that of the Tweedie?
 2.  What differences do you notice between parameter estimates in the two component models of the delta model?
-3.  What other delta families are there in sdmTMB? See `?sdmTMB::Families`. Which other ones could be appropriate here?
 
 Let's take a closer look at parameter estimates. We can specify which model we want with the `model` argument.
 

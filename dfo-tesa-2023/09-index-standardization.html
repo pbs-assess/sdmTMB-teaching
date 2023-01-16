@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="" xml:lang="">
   <head>
-    <title>Family options in sdmTMB</title>
+    <title>Area-weighted index standardization</title>
     <meta charset="utf-8" />
     <meta name="author" content="" />
     <script src="libs/header-attrs-2.19/header-attrs.js"></script>
@@ -13,7 +13,7 @@
 class: center, middle, inverse, title-slide
 
 .title[
-# Family options in sdmTMB
+# Area-weighted index standardization
 ]
 .subtitle[
 ## DFO TESA sdmTMB workshop
@@ -34,106 +34,144 @@ class: center, middle, inverse, title-slide
 
 
 
-# Families
+# Why model-based index standadrization?
 
-Many of the same families used in `glm()`, `glmmTMB()`, `mgcv::gam()` can be used here
+* Design-based methods (stratified means) are straightforward but assume perfect survey implementation
 
-Includes:
-  `gaussian()`, `Gamma()`, 
-  `binomial()`, `poisson()`, `Beta()`, 
-  `student()`, `tweedie()`, 
-  `nbinom1()`, `nbinom2()`,
-  `truncated_nbinom1()`, `truncated_nbinom2()`,
-  `delta_gamma()`, `delta_lognormal()`, `delta_beta()`, and more...
-  
-All have `link` arguments
-  
-See `?sdmTMB::Families`
+--
 
----
-&lt;!-- These are exported dimensions from Powerpoint * 80% --&gt;
-.center[
-&lt;img src="images/family_diagram.png" width="800px" height = "450px"/&gt;
- 
-*New distributions continue to be added  
+* Model-based approaches can account for (some) aspects of imperfect implementation
 
-]
+--
+
+* Model-based approaches can leverage spatial correlation to improve precision
+
+--
+
+* Model-based approaches can integrate additional data sources, multiple gear types, accounting for gear calibration, etc.
 
 ---
 
-# An aside on the Tweedie
+# Design- vs. model-based estimators
 
-.small[
-Useful for positive continuous data with zeros (e.g., biomass density per unit effort) 
+--
 
-Dispersion ( `\(\phi\)` ) and power ( `\(p\)` ) parameters allow for a wide variety of shapes including many zeros
+* Design-based: fish are homogenously distributed within strata; noise comes from sampling
 
-Also known as compound Poisson-Gamma distribution
-]
+--
 
-&lt;img src="07-families_files/figure-html/sim-tweedie-1.png" width="400px" style="display: block; margin: auto;" /&gt;
+* Model-based: fish are distributed according to a mathematical model; noise from uncertainty in fish distribution and sampling
 
 ---
 
-# Delta models  
+# Calculating an area-weighted population index
 
-* Delta/hurdle model has 2 sub-models:
-- presence/absence (binomial, logit link)  
-- positive model (link varies by family)  
+1. Fit a sensible model: .blue[`sdmTMB()`]
 
-* `family` argument to sdmTMB can be a list()  
-- for convenience, many delta- families implemented: `delta_gamma`, `delta_lognormal`, `delta_truncated_nbinom2` etc  
+2. Predict on a grid covering the survey domain: .blue[`predict(..., newdata = ...)`]
+
+3. Sum up the density multiplied by cell area to calculate total abundance or biomass: .blue[`get_index()`]
 
 ---
 
-# Delta models
+# Fit a sensible model
 
-* Some arguments can be a list, e.g.
 
 ```r
+mesh &lt;- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit &lt;- sdmTMB(
-  list(
-    density ~ 1, 
-    density ~ depth
-  ),
-  spatial = list('on', 'off'),  
-  spatiotemporal = list('off', 'ar1'), 
-  share_range = list(TRUE, FALSE),
-  ...
+* density ~ 0 + as.factor(year),
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",
+  time = "year",
+* spatiotemporal = "iid",
+  silent = FALSE # show progress!
 )
 ```
 
-* by default, all arguments shared  
-* rest of arguments must be shared  
-* smoothers and random intercepts must be shared
+---
+
+# Predict over the survey domain
+
+.small[
+
+```r
+pred &lt;- predict(
+  fit, newdata = qcs_grid, return_tmb_object = TRUE
+)
+#&gt; Free parallelADFun object.
+select(pred$data, year, X, Y, est) |&gt; 
+  head()
+#&gt;   year   X    Y      est
+#&gt; 1 2003 456 5636 1.639835
+#&gt; 2 2003 458 5636 1.682362
+#&gt; 3 2003 460 5636 1.724889
+#&gt; 4 2003 462 5636 1.767417
+#&gt; 5 2003 464 5636 1.889949
+#&gt; 6 2003 466 5636 2.361589
+```
+]
 
 ---
 
-# An aside on mixture models
+# Predict over the survey domain
 
-Positive components may be modeled as a mixture of 2 distributions
-
-* Finite mixture model (2 components)  
-
-* Also referred to as "ECE" (extreme catch event) model, Thorson et al. (2012)  
-
-* Mechanisms: shoaling, etc.  
-
-* See `gamma_mix()` and `lognormal_mix()`
-
-* Can be delta model as `delta_gamma_mix()` and `delta_lognormal_mix()`
+&lt;img src="09-index-standardization_files/figure-html/pcod-st-plot-est2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
 
 ---
 
-# SDMs with presence-only data
+# Sum up the density multiplied by cell area
 
-Infinitely Weighted Logistic Regression (IWLR)  
-* [Fithian &amp; Hastie (2013)](https://doi.org/10.1214/13-AOAS667)  
+(*and calculate standard errors)
 
-Downweighted Poisson Regression (DWPR)  
-* [Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352) 
 
-Code examples with sdmTMB [here](https://github.com/pbs-assess/sdmTMB/blob/main/scratch/julia-vignettes/presence_absence.Rmd)
+```r
+index &lt;- get_index(pred, area = 4, bias_correct = TRUE)
+head(index)
+#&gt;   year       est       lwr       upr  log_est        se
+#&gt; 1 2003  936192.2  653707.9 1340745.5 13.74958 0.1832484
+#&gt; 2 2004 1832131.6 1359016.7 2469952.2 14.42099 0.1524103
+#&gt; 3 2005 1757226.3 1224183.3 2522371.1 14.37925 0.1844231
+#&gt; 4 2007  452107.9  328781.9  621693.4 13.02168 0.1625163
+#&gt; 5 2009  722994.0  518720.1 1007711.7 13.49116 0.1694095
+#&gt; 6 2011 1357912.0 1028868.6 1792187.0 14.12146 0.1415783
+```
+
+---
+
+# The resulting standardized index
+
+.xsmall[
+
+```r
+ggplot(index, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+
+&lt;img src="09-index-standardization_files/figure-html/pcod-st-index-plot-1.png" width="600px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Remember...
+
+There is *one* design-based index.
+
+--
+
+A good model-based estimated depends on the modeller constructing a reasonable model!
+
+--
+
+There are *many* possible model-based indexes. Thankfully, results are often (but not always!) qualitatively similar across configurations.
+
+
+.tiny[
+Commander, C.J.C, L.A.K. Barnett, E.J. Ward, S.C. Anderson, T.E. Essington. 2022. The shadow model: how and why small choices in spatially explicit species distribution models affect predictions. PeerJ. 10: e12783. &lt;https://doi.org/10.7717/peerj.12783&gt;
+]
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
