@@ -26,13 +26,41 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
+# Why model-based index standadrization?
+
+* Design-based methods (stratified means) are straightforward but assume perfect survey implementation
+
+--
+
+* Model-based approaches can account for (some) aspects of imperfect implementation
+
+--
+
+* Model-based approaches can leverage spatial correlation to improve precision
+
+--
+
+* Model-based approaches can integrate additional data sources, multiple gear types, accounting for gear calibration, etc.
+
+---
+
+# Design- vs. model-based estimators
+
+--
+
+* Design-based: fish are homogenously distributed within strata; noise comes from sampling
+
+--
+
+* Model-based: fish are distributed according to a mathematical model; noise from uncertainty in fish distribution and sampling
+
 ---
 
 # Calculating an area-weighted population index
 
 1. Fit a sensible model: .blue[`sdmTMB()`]
 
-2. Predict on a grid covering the survey domain: [.blue[`predict(..., newdata = ...)`]
+2. Predict on a grid covering the survey domain: .blue[`predict(..., newdata = ...)`]
 
 3. Sum up the density multiplied by cell area to calculate total abundance or biomass: .blue[`get_index()`]
 
@@ -59,11 +87,29 @@ fit <- sdmTMB(
 # Predict over the survey domain
 
 .small[
-```{r pcod-st-index1, echo=TRUE}
-pred <- predict(fit, newdata = qcs_grid, return_tmb_object = TRUE)
-head(pred$data)
+```{r pcod-st-index1, echo=TRUE, message=FALSE, warning=FALSE}
+pred <- predict(
+  fit, newdata = qcs_grid, return_tmb_object = TRUE
+)
+select(pred$data, year, X, Y, est) |> 
+  head()
 ```
 ]
+
+---
+
+# Predict over the survey domain
+
+```{r pcod-st-plot-est2, echo=FALSE, fig.width=7}
+.p <- pred$data
+max_est <- quantile(.p$est, 0.998)
+.p <- mutate(.p, est_trim = if_else(est > max_est, max_est, est))
+ggplot(.p, aes(X, Y, fill = exp(est_trim))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt") +
+  facet_wrap(~year) +
+  coord_fixed()
+```
 
 ---
 
@@ -87,3 +133,19 @@ ggplot(index, aes(year, est)) + geom_line() +
   xlab('Year') + ylab('Biomass estimate (kg)')
 ```
 ]
+
+---
+
+# Remember...
+
+There is *one* design-based index.
+
+--
+
+A good model-based estimated depends on the modeller constructing a reasonable model!
+
+--
+
+There are *many* possible model-based indexes. 
+
+Thankfully, results are often (but not always!) qualitatively similar across configurations.
