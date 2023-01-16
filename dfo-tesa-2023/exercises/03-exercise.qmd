@@ -184,7 +184,7 @@ But the anisotropy is poorly estimated. See `ln_H_input` here:
 fit_dg_aniso$sd_report
 ```
 
-And it appears that including the spatiotemporal field in both components (`fit_dg`) is more important than the anisotropy (`fit_dg_aniso`). These models are close enough, however, that we would probably chose a model for reasons other than AIC.
+And it appears that including the spatiotemporal field in both components (`fit_dg`) is more important than the anisotropy (`fit_dg_aniso`). These models are close enough, however, that we would probably choose a model for reasons other than AIC.
 
 ```{r}
 AIC(fit_dg, fit_dg_aniso)
@@ -231,14 +231,11 @@ visreg_delta(fit, xvar = "year_factor", model = 1, type = "conditional")
 visreg_delta(fit, xvar = "year_factor", model = 2)
 ```
 
-### Exercise:
-
-1.  Which link space are each of the above plots in? Can you remember how to put them in natural/response space?
-2.  Can you produce similar plots in response space for the depth effect from both component models?
+Here are the depth effects in response space:
 
 ```{r, echo=FALSE}
-visreg_delta(fit, xvar = "log_depth", model = 1, scale = "response") # exercise
-visreg_delta(fit, xvar = "log_depth", model = 2, scale = "response") # exercise
+visreg_delta(fit, xvar = "log_depth", model = 1, scale = "response")
+visreg_delta(fit, xvar = "log_depth", model = 2, scale = "response")
 ```
 
 ## Mapping delta model predictions
@@ -264,7 +261,7 @@ glimpse(p)
 
 1.  How does this data frame of predictions differ from what we would have gotten when predicting from a Tweedie model?
 2.  What is the link and inverse link for model component one (binomial) and two (gamma)?
-3.  How would we calculate the combined prediction from `est1` and `est2`?
+3.  How would we calculate the combined prediction from `est1` and `est2`? Hint: we do it below in the map plots.
 
 We can plot each of the components spatially:
 

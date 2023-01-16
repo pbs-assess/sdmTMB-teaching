@@ -115,6 +115,7 @@ fit_spatial <- sdmTMB(
 sanity(fit_spatial)
 fit_spatial
 ```
+
 ### Exercise:
 
 A refresher from yesterday:

@@ -381,8 +381,8 @@ sanity(fit_ye)
 
 1.  What is the problem with the above?
 2.  What are some ways you could attempt to fix this?
-4.  What is a simpler random field structure you could try? Try that below with `fit_ye1`.
-3.  What is a simpler family you could try? Try that below with `fit_ye2`.
+3.  What is a simpler random field structure you could try? Try that below with `fit_ye1`.
+4.  What is a simpler family you could try? Try that below with `fit_ye2`.
 
 ```{r}
 fit_ye1 <- update(fit_ye, spatiotemporal = "off") # answer
