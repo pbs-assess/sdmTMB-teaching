@@ -14,6 +14,20 @@ January 16--19 2023
 
 <https://github.com/pbs-assess/sdmTMB-teaching/blob/main/dfo-tesa-2023/00-install.Rmd>
 
+### Shared Google Docs notes and questions
+
+<https://docs.google.com/document/d/1JScvWtNWrJUfMrUvDZMzWhTUXqsLZSyiN2ULZdaihZk/edit#>
+
+### Draft manuscript:
+
+[Original preprint](https://doi.org/10.1101/2022.03.24.485545)
+
+[Updated draft](https://www.dropbox.com/s/bejw28ykmfw2l94/sdmTMB-preprint-jss.pdf?dl=1)
+
+### Exercises:
+
+<https://github.com/pbs-assess/sdmTMB-teaching/tree/main/dfo-tesa-2023/exercises>
+
 ### Slides:
 
 1. [Introduction to random fields](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/01-intro-random-fields.html)
@@ -43,20 +57,6 @@ January 16--19 2023
 13. [Presence-only models](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/13-presence-only.html)
 
 14. [Troubleshooting, tips, and tricks](https://pbs-assess.github.io/sdmTMB-teaching/dfo-tesa-2023/14-extra.html)
-
-### Shared Google Docs notes and questions
-
-<https://docs.google.com/document/d/1JScvWtNWrJUfMrUvDZMzWhTUXqsLZSyiN2ULZdaihZk/edit#>
-
-### Draft manuscript:
-
-[Original preprint](https://doi.org/10.1101/2022.03.24.485545)
-
-[Updated draft](https://www.dropbox.com/s/bejw28ykmfw2l94/sdmTMB-preprint-jss.pdf?dl=1)
-
-### Exercises:
-
-<https://github.com/pbs-assess/sdmTMB-teaching/tree/main/dfo-tesa-2023/exercises>
 
 ### GitHub folder for these slides:
 
