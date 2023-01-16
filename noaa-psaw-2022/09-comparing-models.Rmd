@@ -75,19 +75,19 @@ AIC(fit) # AIC
 
 # When to use restricted maximum likelihood (REML) 
 
-* Don't use REML when comparing alternative fixed effects with same random effects structure (Zuur et al. 2009)  
+* Integrates over random effects *and* fixed effects; sometimes helps convergence too
 
-* Use REML when comparing different random effect structures
+* *Can* use REML when comparing different random effect structures
 
-* Where is REML in sdmTMB?
+* *Don't* use REML when comparing alternative fixed effects
 
+* *Don't* use REML for index standardization
+
+.small[
 ```{r echo=TRUE, eval=FALSE}
-fit <- sdmTMB(
-  ...,
-  reml = FALSE, #<<
-  ...
-)
+fit <- sdmTMB(..., reml = FALSE)
 ```
+]
 
 ---
 

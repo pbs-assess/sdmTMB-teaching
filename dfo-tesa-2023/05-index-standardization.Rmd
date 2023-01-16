@@ -43,12 +43,12 @@ library(ggplot2)
 ```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
-  density ~ s(depth, k = 5) + 0 + as.factor(year),
+  density ~ s(depth, k = 5) + 0 + as.factor(year), #<<
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
   spatial = "on",
-  time = "year", #<<
+  time = "year",
   spatiotemporal = "iid", #<<
   silent = FALSE # show progress!
 )

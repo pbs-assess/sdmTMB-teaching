@@ -75,19 +75,19 @@ AIC(fit) # AIC
 
 # When to use restricted maximum likelihood (REML) 
 
-* Don't use REML when comparing alternative fixed effects with same random effects structure (Zuur et al. 2009)  
+* Integrates over random effects *and* fixed effects; sometimes helps convergence too
 
-* Use REML when comparing different random effect structures
+* *Can* use REML when comparing different random effect structures
 
-* Where is REML in sdmTMB?
+* *Don't* use REML when comparing alternative fixed effects
 
+* *Don't* use REML for index standardization
+
+.small[
 ```{r echo=TRUE, eval=FALSE}
-fit <- sdmTMB(
-  ...,
-  reml = FALSE, #<<
-  ...
-)
+fit <- sdmTMB(..., reml = FALSE)
 ```
+]
 
 ---
 
@@ -207,7 +207,7 @@ fit <- sdmTMB_cv( #<<
 
 # Basic cross validation example
 
-Set a `future::plan()`; the folds would be fit in parallel
+Set a `future::plan()`; the folds will be fit in parallel
 
 ```{r cv, warning=FALSE, echo=TRUE}
 library(future) #<<
@@ -224,44 +224,3 @@ m_cv$sum_loglik
 # of left-out data:
 m_cv$elpd
 ```
-
----
-
-# Ensembling
-
-Rather than choose best model, we can do model averaging
-
-* Ensemble may perform better than any single model  
-
-* AIC weights (please don't!)
-
-* Stacking
-
----
-
-# Stacking
-
-* Borrowed from Bayesian literature, e.g. Yao et al. (2018)
-
-* Given set of models, $m_{1}, m_{2}, ..., m_{M}$
-
-* Estimate weights to maximize combined predictive density
-
-$$p(y^* | y) = \sum_{i=1}^{M} w_{i} p(y^*|y, m_{i})$$
-$y^*$ is new data (e.g. test); $\sum_{i=1}^{M} w_{i} = 1$  
-
----
-
-# Stacking in sdmTMB
-
-```{r eval = FALSE, echo=TRUE}
-sdmTMB_stacking(model_list,
-  include_folds = NULL
-)
-```
-
-* `model_list` is a collection of models fit with `sdmTMB_cv`
-
-* `optim()` is used to find the best weights $w_{i}$ to maximize the combined predictive density
-
-* Not in `main` branch yet!

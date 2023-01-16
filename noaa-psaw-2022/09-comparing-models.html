@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="author" content="" />
     <meta name="date" content="2022-03-09" />
+    <script src="libs/header-attrs-2.19/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -12,9 +13,18 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
+.title[
 # Model selection with sdmTMB
+]
+.subtitle[
 ## NOAA PSAW Seminar Series
+]
+.author[
+### 
+]
+.date[
 ### March 9, 2022
+]
 
 ---
 
@@ -75,20 +85,20 @@ AIC(fit) # AIC
 
 # When to use restricted maximum likelihood (REML) 
 
-* Don't use REML when comparing alternative fixed effects with same random effects structure (Zuur et al. 2009)  
+* Integrates over random effects *and* fixed effects; sometimes helps convergence too
 
-* Use REML when comparing different random effect structures
+* *Can* use REML when comparing different random effect structures
 
-* Where is REML in sdmTMB?
+* *Don't* use REML when comparing alternative fixed effects
 
+* *Don't* use REML for index standardization
+
+.small[
 
 ```r
-fit &lt;- sdmTMB(
-  ...,
-* reml = FALSE,
-  ...
-)
+fit &lt;- sdmTMB(..., reml = FALSE)
 ```
+]
 
 ---
 
@@ -218,11 +228,11 @@ mesh &lt;- make_mesh(pcod, c("X", "Y"), cutoff = 10)
 )
 # Sum of log likelihoods of left-out data:
 m_cv$sum_loglik
-#&gt; [1] -115921
+#&gt; [1] -12541.86
 # Expected log pointwise predictive density
 # of left-out data:
 m_cv$elpd
-#&gt; [1] -1.011784
+#&gt; [1] -1.00918
 ```
 
 ---
@@ -312,6 +322,19 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
     deleted = true;
   });
 })();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
 (function() {
   "use strict"
   // Replace <script> tags in slides area to make them executable
