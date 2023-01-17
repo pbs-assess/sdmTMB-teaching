@@ -20,6 +20,8 @@ execute:
 library(sdmTMB)
 library(dplyr)
 library(ggplot2)
+library(inlabru)
+library(purrr)
 options(ggplot2.continuous.colour = "viridis")
 options(ggplot2.continuous.fill = "viridis")
 theme_set(theme_light())
@@ -80,7 +82,7 @@ dat$year_factor <- as.factor(dat$year)
 
 # Constructing a mesh
 
-We start by constructing an SPDE mesh with INLA. This creates some matrices that are used internally when fitting the model. We will use the shortcut function `make_mesh()` and use a cutoff (minimum triangle length of 10 km). A full analysis could explore sensitivity to this decision or other more complex meshes created with INLA.
+We start by constructing an SPDE mesh with INLA. This creates some matrices that are used internally when fitting the model. We will use the shortcut function `make_mesh()` and use a cutoff (minimum triangle length of 10 km). Note: this is the only parameter that can be changed in `make_mesh()` but more control over mesh arguments can be done with INLA (`inla.mesh.2d()`).
 
 ```{r}
 mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
@@ -98,7 +100,7 @@ ggplot() + inlabru::gg(mesh$mesh) + coord_fixed() +
 
 # Fitting a spatial model
 
-The most basic model we could fit would be a model with only spatial random fields. This is similar to what we were fitting yesterday. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging to monitor progress.
+The most basic model we could fit would be a model with a single spatial random field, and no covariates. This is similar to what we were fitting yesterday. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging to monitor progress.
 
 ```{r, results='hide'}
 fit_spatial <- sdmTMB(
@@ -126,9 +128,14 @@ A refresher from yesterday:
 
 # Cross validation
 
-We can consider whether including a quadratic effect of depth improves model predictions. AIC would be one way to compare models but is not ideal when we're dealing with mixed effects models---particularly when the random effects are contributing substantially to our predictions.
+We can consider whether including a quadratic effect of depth improves model predictions. AIC would be one way to compare models but is not ideal when we're dealing with mixed effects models---particularly when the random effects are contributing substantially to our predictions. For simpler models, AIC has a nice property of approximating Leave One Out Cross Validation (LOOCV) so results should be roughly similar.
 
-Instead we will demonstrate cross validation using the built-in `sdmTMB_cv()` function.
+We will demonstrate cross validation using the built-in `sdmTMB_cv()` function. As a refresher for cross validation,
+
+1.  The data are divided into `k` folds
+2.  In turn, each fold is used as the test or validation dataset, with the remaining data used to fit the model
+3.  Measures of predictive accuracy are calculated for each fold, and finally across the full dataset
+4.  The number of folds, and how folds are selected can affect results
 
 ```{r}
 # optional for parallel processing (just FYI)
@@ -164,7 +171,7 @@ cv_depth$fold_elpd
 cv_depth$fold_elpd - cv_intercept$fold_elpd
 ```
 
-These are the expected log predictive densities for all left out data combined. Larger (more positive) values are better.
+These are the expected log predictive densities for all left out data combined. 
 
 ```{r}
 cv_intercept$elpd
@@ -184,7 +191,7 @@ We won't dwell on this model here for the sake of time, but in practice we would
 
 This first model includes a quadratic effect of log depth (`poly(log_depth, 2)`), a factor effect for each year, and models total density using a Tweedie distribution and a log link. The spatial field and spatiotemporal fields are estimated.
 
-The year factors give each year its own mean. The `0 +` omits the intercept such that each year's estimate represents a mean as opposed to a difference from the intercept. This part is arbitrary and chosen for the sake of this exercise.
+The year factors give each year its own mean (this is generally the approach used in fisheries stock assessment). The `0 +` omits the intercept such that each year's estimate represents a mean as opposed to a difference from the intercept. This part is arbitrary and chosen for the sake of this exercise.
 
 The choice to use log depth helps the model fit because we have fewer samples from the deeper depths.
 
@@ -408,9 +415,8 @@ hist(dat$density, xlim = c(0, 30), breaks = 200, freq = FALSE)
 
 ## Exercise:
 
-1.  What is anisotropy?
-2.  Why might you want to allow for it?
-3.  What is the default setting for `anisotropy` in `sdmTMB`?
+1.  What is anisotropy and why might you want to allow for it?
+2.  What is the default setting for `anisotropy` in `sdmTMB`?
 
 We will re-fit our model with REML so we can use AIC to compare models with different random effect structures (although not strictly necessary). We will then fit a model with anisotropy enabled. We will use the handy method `update()` here, but we could also re-write the whole `sdmTMB()` function call each time.
 
