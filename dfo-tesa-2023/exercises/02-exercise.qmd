@@ -115,8 +115,19 @@ fit_spatial <- sdmTMB(
 
 ```{r}
 sanity(fit_spatial)
+```
+
+Did it have trouble? If so, try an extra optimization run and see if that's sufficient:
+
+```{r}
+fit_spatial <- run_extra_optimization(fit_spatial)
+sanity(fit_spatial)
+```
+
+```{r}
 fit_spatial
 ```
+
 
 ### Exercise:
 
