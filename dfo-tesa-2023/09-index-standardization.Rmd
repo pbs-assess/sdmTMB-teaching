@@ -26,7 +26,7 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
-# Why model-based index standadrization?
+# Why model-based index standardization?
 
 * Design-based methods (stratified means) are straightforward but assume perfect survey implementation
 
