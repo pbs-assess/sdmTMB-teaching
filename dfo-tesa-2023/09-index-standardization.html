@@ -19,7 +19,7 @@ class: center, middle, inverse, title-slide
 ## DFO TESA sdmTMB workshop
 ]
 .author[
-### 
+###
 ]
 .date[
 ### January 16–19 2023
@@ -34,7 +34,7 @@ class: center, middle, inverse, title-slide
 
 
 
-# Why model-based index standadrization?
+# Why model-based index standardization?
 
 * Design-based methods (stratified means) are straightforward but assume perfect survey implementation
 
@@ -102,7 +102,7 @@ pred &lt;- predict(
   fit, newdata = qcs_grid, return_tmb_object = TRUE
 )
 #&gt; Free parallelADFun object.
-select(pred$data, year, X, Y, est) |&gt; 
+select(pred$data, year, X, Y, est) |&gt;
   head()
 #&gt;   year   X    Y      est
 #&gt; 1 2003 456 5636 1.639835
