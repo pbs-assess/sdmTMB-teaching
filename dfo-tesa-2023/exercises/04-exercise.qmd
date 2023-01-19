@@ -201,7 +201,7 @@ ggplot(pred$data, aes(X, Y, fill = omega_s2)) +
   geom_raster() +
   scale_fill_gradient2() +
   coord_fixed() +
-  ggtitle("Spatial random field 1")
+  ggtitle("Spatial random field 2")
 ```
 
 ```{r}
@@ -210,7 +210,7 @@ ggplot(pred$data, aes(X, Y, fill = epsilon_st1)) +
   scale_fill_gradient2() +
   facet_wrap(~year) +
   coord_fixed() +
-  ggtitle("Spatiotemporal random fields 2")
+  ggtitle("Spatiotemporal random fields 1")
 ```
 
 ```{r}
