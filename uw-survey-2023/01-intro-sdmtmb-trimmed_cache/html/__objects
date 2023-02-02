@@ -1,0 +1,36 @@
+libs	
+sim-rf-intro	mesh	predictor_dat	sim_dat
+sim-rf-intro-cor	mesh	predictor_dat	sim_dat
+show-gp	d	df	f1	f2	g1	g2	knots	x
+unnamed-chunk-1	
+make-mesh	d	mesh
+formulas1	
+formulas-other	
+unnamed-chunk-2	nd
+pcod-st-fit	fit	mesh
+pcod-st-fit-covariate	fit
+checksanity	
+print-pcod-st-fit	
+pcod-st-print2	
+resid1	rq_res
+resid2	pcod
+unnamed-chunk-3	nd
+pcod-st-index1	pred
+pcod-st-plot-est	.p	max_est
+pcod-st-plot-non-rf	
+pcod-st-plot-omega	
+pcod-st-plot-eps	
+pcod-sp-depth-visreg-resp	
+pcod-index	index
+pcod-st-index-plot	
+formulas-smoothers	
+pcod-gam-fit	fit_gam
+pcod-gam-partial-1	
+pcod-gam-partial-2	
+pcod-gam-pred	pred_gam	pred_gam_df
+pcod-gam-index	level	lwr_fn	sims	sims_sum	upr_fn
+pcod-gam-index-plot	
+pcod-gam-fit-s	fit_gam_s
+pcod-gam-fit-s-plot1	
+pcod-gam-fit-s-plot2	
+pcod-gam-fit-st	fit_gam_st

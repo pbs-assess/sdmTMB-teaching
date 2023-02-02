@@ -15,12 +15,13 @@ execute:
 -   Gain familiarity with fitting, comparing and interpreting different random field structures.
 -   Calculate an area-weighted biomass index and compare how model structure can impact an index.
 
-```{r, message=FALSE, warning=FALSE}
-#| echo=FALSE
+```{r, message=FALSE, warning=FALSE, echo = FALSE}
 library(sdmTMB)
+library(mgcv)
+library(gratia)
+library(visreg)
 library(dplyr)
 library(ggplot2)
-library(inlabru)
 library(purrr)
 options(ggplot2.continuous.colour = "viridis")
 options(ggplot2.continuous.fill = "viridis")
@@ -102,7 +103,7 @@ ggplot() + inlabru::gg(mesh$mesh) + coord_fixed() +
 
 The most basic model we could fit would be a model with a single spatial random field, and no covariates. This is similar to what we were fitting yesterday. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging to monitor progress.
 
-```{r, results='hide'}
+```{r, results='hide', warning=FALSE}
 fit_spatial <- sdmTMB(
   density ~ 1, # intercept only
   data = dat,  
@@ -151,19 +152,11 @@ fit <- sdmTMB(
 )
 ```
 
-### Exercise:
-
-1.  Skim the help file (`?sdmTMB`). What are the other options for `spatiotemporal`?
-
 Print the model:
 
 ```{r}
 fit
 ```
-
-### Exercise:
-
-1.  What is new in the output of `fit` compared to `fit_spatial`?
 
 Run a basic sanity check on the model:
 
@@ -171,45 +164,14 @@ Run a basic sanity check on the model:
 sanity(fit)
 ```
 
-We can use the tidy function to get the coefficients for the fixed effects:
-
-```{r}
-tidy(fit, conf.int = TRUE)
-```
-
-and by setting `effects = "ran_pars"`, we can extract the variance and random effect components:
-
-```{r}
-tidy(fit, effects = "ran_pars", conf.int = TRUE)
-```
-
-There are multiple ways we can plot the depth effect on density. First, we can create a new data frame of all potential values, setting the other predictors (here year) to a fixed value.
-
-```{r}
-nd <- data.frame(log_depth = seq(log(50), log(700), length.out = 100), year = 2004)
-# (picking any one year)
-nd$year_factor <- as.factor(nd$year)
-
-p <- predict(
-  fit,
-  newdata = nd,
-  re_form = ~ 0, # means only include the fixed effects (not the default)
-  se_fit = TRUE # means calculate standard errors (not the default)
-)
-
-ggplot(p, aes(log_depth, exp(est),
-  ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se))) +
-  geom_line() + geom_ribbon(alpha = 0.4)
-```
-
-The second approach is to pass the sdmTMB object to the visreg package. This shows the conditional effect, where all values other than depth are held at a particular value. Note the default visreg plot is in link (here, log) space and the dots are randomized quantile residuals.
+There are multiple ways we can plot the depth effect on density. The first approach is to pass the sdmTMB object to the visreg package. This shows the conditional effect, where all values other than depth are held at a particular value. Note the default visreg plot is in link (here, log) space and the dots are randomized quantile residuals.
 
 ```{r}
 visreg::visreg(fit, xvar = "log_depth")
 visreg::visreg(fit, xvar = "log_depth", scale = "response")
 ```
 
-Third, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *Note that won't yet work with smoother `s()` terms*, but will soon work with the similar `ggeffects::ggpredict()` .
+Second, we could use the `ggeffects` package, which can be used to show the marginal effects of predictors (averaging over all other covariates rather than using a single fixed value). For more details see the [visualizing marginal effects vignette](https://pbs-assess.github.io/sdmTMB/articles/ggeffects.html). *Note that won't yet work with smoother `s()` terms*, but will soon work with the similar `ggeffects::ggpredict()` .
 
 ```{r}
 g <- ggeffects::ggeffect(fit, "log_depth [3.5:6.7 by=0.05]")
@@ -342,6 +304,12 @@ Anisotropic range is best examined graphically:
 plot_anisotropy(fit_aniso)
 ```
 
+Notice how the correlation occurs over longer distances along the NW/SE plane
+than the NE/SW plane. In contrast, the correlation distance is constant in all
+dimensions in our initial (isotropic) model. In other words, if we were to make 
+a similar plot to the above for the isotropic model, it would be a circle 
+whose radius is the estimated spatial range.
+
 We can check the AIC of the 2 models:
 
 ```{r}
@@ -384,3 +352,139 @@ bind_rows(index, index_c) %>%
   xlab("Year") +
   ylab("Biomass estimate (tonnes)")
 ```
+
+# Fit a few GAMs and estimate an abundance index
+
+Include a covariate (depth)
+
+Analogous to nonspatial model (spatial = "off", spatiotemporal = "off")
+
+```{r}
+fit_gam <- gam(
+  formula = density ~ s(depth) + as.factor(year),
+  family = tw(link = "log"),
+  data = dat
+)
+```
+
+Get model summary
+
+```{r}
+summary(fit_gam)
+```
+
+Plot partial effects of covariates
+
+```{r}
+plot(fit_gam, shade = TRUE, residuals = TRUE)
+```
+
+Get diagnostics and perform model checking
+
+```{r}
+gam.check(fit_gam)
+```
+
+Review console output to help verify convergence, and whether there were an adequate number of basis functions (k).
+
+Examine the four diagnostic plots. Each of these gives a different way of looking at your model residuals. On the top-left is a Q-Q plot, which compares the model residuals to the expected/assumed distribution family. A well-fit model's residuals will be close to the 1-1 line, otherwise there may be under- or over-dispersion present. On bottom left is a histogram of residuals. We want this to have a shape similar to the distribution family we specified. On top-right is a plot of residual values as a function of the linear predictor. These should be evenly distributed around zero in a well-fitted model. Finally, on the bottom-right is plot of response against fitted values. A well-fitted model would show values near the 1-1 line.
+
+# Predict to survey area (new data)
+
+```{r}
+pred_gam <- predict(fit_gam, type = "response", newdata = grid)
+pred_gam_df <- cbind(grid, pred_gam)
+```
+
+Plot predictions over survey area
+
+```{r}
+ggplot(pred_gam_df, aes(X, Y, fill = pred_gam)) + geom_raster() +
+  scale_fill_viridis_c() + facet_wrap(~year) + coord_fixed() +
+  labs(fill = "Log Biomass density\n(kg/km^2)")
+```
+
+# Calculate biomass index from GAM via simulation
+
+```{r}
+sims <- gratia::fitted_samples(fit_gam, n=10, newdata=grid, 
+                               scale="response", seed=9)
+sims$year <- grid$year[sims$row]
+sims$biomass <- sims$fitted * 4 # expand from density to biomass, given area
+
+level <- 0.95 # specify probability for confidence interval
+
+# Get sum of simulated biomass (density*area) across grid cells, with CI
+lwr_fn <- function(x) {as.numeric(quantile(x, probs = (1 - level) / 2))}
+upr_fn <- function(x) {as.numeric(quantile(x, probs = 1 - (1 - level) / 2))}
+
+sims_sum <-  sims %>% 
+  group_by(year,draw) %>% 
+  summarise_at("biomass", list(biomass = sum)) %>%
+  group_by(year) %>%
+  summarise_at("biomass", list(est = median, # could use mean
+                           lwr = lwr_fn,
+                           upr = upr_fn))
+```
+
+Note that this approach uses a Gaussian approximation to the posterior, which is all that is implemented currently in the gratia package. However, a better estimate of uncertainty could be derived from sampling from the actual posterior distribution. However, this is beyond the scope of today's lesson.
+
+Plot the biomass index
+
+```{r}
+ggplot(sims_sum, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+
+# Fit a GAM analogous to a spatial model in sdmTMB
+
+Include a 2-D smooth over space
+
+```{r}
+fit_gam_s <- gam(
+  formula = density ~ s(depth) + as.factor(year) + 
+    s(X,Y), #<<
+  family = tw(link = "log"),
+  data = dat
+)
+```
+
+Visualize smooths, where the first plot shows the 1-D smooth on depth and 
+the second plot shows the 2-D (or bivariate) spatial smooth
+
+```{r}
+plot(fit_gam_s)
+```
+
+or
+
+```{r}
+plot(fit_gam_s, scheme = 1)
+```
+
+or
+
+```{r}
+plot(fit_gam_s, scheme = 2)
+```
+
+Note that you may have to play around with these types of visualizations because 2-D smooths can be tough to visualize. Also see the vis.gam package for more options.
+
+# Fit a GAM analogous to a spatiotemporal model in sdmTMB
+
+Include a 2-D smooth over space for each year
+
+```{r}
+fit_gam_st <- gam(
+  formula = density ~ s(depth) + as.factor(year) +
+    s(X,Y, by = year), #<<
+  family = tw(link = "log"),
+  data = dat)
+```
+
+### Exercise:
+
+1.  Try fitting similar models and estimating indices from your own data. Do a lot of data visualization and consider different distribution families (e.g. Gaussian).
+
+Don't hesitate to ask questions!

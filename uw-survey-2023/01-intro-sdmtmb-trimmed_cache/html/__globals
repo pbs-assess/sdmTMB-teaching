@@ -1,0 +1,36 @@
+libs	library
+sim-rf-intro	~	aes	c	data.frame	gaussian	geom_point	ggplot	guide_legend	guides	make_mesh	observed	runif	scale_color_gradient2	sdmTMB_simulate	set.seed	X	Y
+sim-rf-intro-cor	~	aes	c	data.frame	gaussian	geom_point	ggplot	guide_legend	guides	make_mesh	observed	runif	scale_color_gradient2	sdmTMB_simulate	set.seed	X	Y
+show-gp	$	$<-	::	[[	~	aes	as.matrix	c	coord_cartesian	data.frame	dist	element_blank	exp	geom_point	geom_smooth	geom_vline	ggplot	rnorm	seq	set.seed	theme	xlab	y	ylab
+unnamed-chunk-1	~	dat	gaussian	mesh	sdmTMB
+make-mesh	$	c	data.frame	make_mesh	plot	runif
+formulas1	~
+formulas-other	~
+unnamed-chunk-2	==	aes	coord_fixed	depth	filter	geom_raster	ggplot	qcs_grid	X	Y	year
+pcod-st-fit	~	c	make_mesh	pcod	sdmTMB	tweedie
+pcod-st-fit-covariate	~	mesh	pcod	sdmTMB	tweedie
+checksanity	fit	sanity
+print-pcod-st-fit	fit
+pcod-st-print2	
+resid1	fit	qqline	qqnorm	residuals	set.seed
+resid2	$<-	%>%	~	aes	c	coord_fixed	facet_wrap	filter	fit	geom_point	ggplot	resids	residuals	scale_colour_gradient2	X	Y	year
+unnamed-chunk-3	==	aes	coord_fixed	depth	filter	geom_raster	ggplot	qcs_grid	X	Y	year
+pcod-st-index1	$	epsilon_st	est	est_non_rf	est_rf	fit	head	omega_s	predict	qcs_grid	select	X	Y	year
+pcod-st-plot-est	$	~	>	aes	coord_fixed	est	est_trim	exp	facet_wrap	geom_raster	ggplot	if_else	labs	mutate	pred	quantile	scale_fill_viridis_c	X	Y
+pcod-st-plot-non-rf	$	~	aes	coord_fixed	est_non_rf	exp	facet_wrap	geom_raster	ggplot	pred	scale_fill_viridis_c	X	Y
+pcod-st-plot-omega	$	~	aes	coord_fixed	facet_wrap	geom_raster	ggplot	omega_s	pred	scale_fill_gradient2	X	Y
+pcod-st-plot-eps	$	~	aes	coord_fixed	epsilon_st	facet_wrap	geom_raster	ggplot	pred	scale_fill_gradient2	X	Y
+pcod-sp-depth-visreg-resp	::	fit
+pcod-index	get_index	head	pred
+pcod-st-index-plot	aes	est	geom_line	geom_ribbon	ggplot	index	lwr	upr	xlab	year	ylab
+formulas-smoothers	~
+pcod-gam-fit	~	gam	pcod	tw
+pcod-gam-partial-1	fit_gam	plot
+pcod-gam-partial-2	fit_gam	gam.check
+pcod-gam-pred	~	aes	cbind	coord_fixed	facet_wrap	fit_gam	geom_raster	ggplot	labs	predict	qcs_grid	scale_fill_viridis_c	X	Y
+pcod-gam-index	$	$<-	%>%	::	as.numeric	draw	fit_gam	group_by	list	median	qcs_grid	quantile	sum	summarise_at	year
+pcod-gam-index-plot	aes	est	geom_line	geom_ribbon	ggplot	lwr	sims_sum	upr	xlab	year	ylab
+pcod-gam-fit-s	~	gam	pcod	tw
+pcod-gam-fit-s-plot1	fit_gam_s	plot
+pcod-gam-fit-s-plot2	fit_gam_s	plot
+pcod-gam-fit-st	~	gam	pcod	tw
