@@ -1,0 +1,58 @@
+libs	
+sim-rf-intro	mesh	predictor_dat	sim_dat
+sim-rf-intro-cor	mesh	predictor_dat	sim_dat
+show-gp	d	df	f1	f2	g1	g2	knots	x
+sim-rf-dat	mesh	predictor_dat	sim_dat
+random-field-demo	
+mesh-example	mesh
+formulas1	
+formulas-smoothers	
+breakpt	
+make-breakpt	df	slope
+logistic	
+make-logistic	df	slope
+unnamed-chunk-1	d
+iid-demo	mesh2	predictor_dat	sim_dat
+ar1-demo	sim_dat
+make-mesh	d	mesh
+unnamed-chunk-2	
+formulas-other	
+pcod-st-fit	fit	mesh
+pcod-st-index1	pred
+pcod-st-plot-est2	.p	max_est
+pcod-index	index
+pcod-st-index-plot	
+unnamed-chunk-3	
+pcod-st-fit-covariate	fit
+checksanity	
+unnamed-chunk-4	nd
+unnamed-chunk-5	
+unnamed-chunk-6	
+unnamed-chunk-7	
+unnamed-chunk-8	nd
+resid1	rq_res
+resid2	pcod
+pcod-aniso	fit_aniso
+pcod-aniso-aic	
+pcod-aniso-plot	
+unnamed-chunk-9	nd
+pcod-st-plot-est	.p	max_est
+pcod-st-plot-non-rf	
+pcod-st-plot-omega	
+pcod-st-plot-eps	
+pcod-sp-depth-visreg	
+pcod-sp-depth-visreg-resp	
+print-pcod-st-fit	
+pcod-st-print2	
+pcod-gam-fit	fit_gam
+pcod-gam-fit-s	fit_gam_s
+pcod-gam-fit-st	fit_gam_st
+pcod-gam-partial	
+pcod-gam-partial-1	
+pcod-gam-partial-2	
+pcod-gam-pred	pred_gam	pred_gam_df
+pcod-gam-index-1	sims	sims_sum
+pcod-gam-index	level	lwr_fn	sims	sims_sum	upr_fn
+pcod-gam-index-plot	
+pcod-gam-fit-s-plot1	
+pcod-gam-fit-s-plot2	
