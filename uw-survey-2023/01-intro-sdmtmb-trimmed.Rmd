@@ -607,8 +607,7 @@ class: center, middle, inverse
 ]
 .small[
 ```{r, echo=TRUE, out.width="500px", fig.width=5}
-nd <- filter(qcs_grid, year == 2017) # pick any year
-ggplot(nd, aes(X, Y, fill = depth)) + 
+ggplot(qcs_grid, aes(X, Y, fill = depth)) + 
   geom_raster() +
   coord_fixed()
 ```
@@ -620,8 +619,10 @@ ggplot(nd, aes(X, Y, fill = depth)) +
 
 .xsmall[
 ```{r pcod-st-index1, echo=TRUE, message=FALSE, warning=FALSE}
+# replicate grid over all years:
+survey_grid <- replicate_df(qcs_grid, "year", unique(pcod$year))
 pred <- predict(
-  fit, newdata = qcs_grid, return_tmb_object = TRUE
+  fit, newdata = survey_grid, return_tmb_object = TRUE
 )
 select(pred$data, year, X, Y, est, est_non_rf, est_rf, omega_s, epsilon_st) |> 
   head()
@@ -770,8 +771,8 @@ fit_gam <- gam(
 
 .xsmall[
 ```{r pcod-gam-pred, echo=TRUE, eval=TRUE}
-pred_gam <- predict(fit_gam, type = "response", newdata = qcs_grid)
-pred_gam_df <- cbind(qcs_grid, pred_gam)
+pred_gam <- predict(fit_gam, type = "response", newdata = survey_grid)
+pred_gam_df <- cbind(survey_grid, pred_gam)
 
 ggplot(pred_gam_df, aes(X, Y, fill = pred_gam)) + geom_raster() +
   scale_fill_viridis_c() + facet_wrap(~year) + coord_fixed() +
@@ -785,9 +786,9 @@ ggplot(pred_gam_df, aes(X, Y, fill = pred_gam)) + geom_raster() +
 
 .xsmall[
 ```{r pcod-gam-index, echo=TRUE, eval=TRUE}
-sims <- gratia::fitted_samples(fit_gam, n=10, newdata=qcs_grid, 
+sims <- gratia::fitted_samples(fit_gam, n=10, newdata=survey_grid, 
                                scale="response", seed=9)
-sims$year <- qcs_grid$year[sims$row]
+sims$year <- survey_grid$year[sims$row]
 sims$biomass <- sims$fitted * 4 # expand from density to biomass, given area
 
 level <- 0.95 # specify probability for confidence interval

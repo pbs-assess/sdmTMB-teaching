@@ -909,8 +909,7 @@ Objects will include the following
 ]
 .small[
 ```{r, echo=TRUE, out.width="500px", fig.width=5}
-nd <- filter(qcs_grid, year == 2017) # pick any year
-ggplot(nd, aes(X, Y, fill = depth)) + 
+ggplot(qcs_grid, aes(X, Y, fill = depth)) + 
   geom_raster() +
   coord_fixed()
 ```
@@ -922,9 +921,10 @@ ggplot(nd, aes(X, Y, fill = depth)) +
 
 
 ```{r, echo=TRUE}
-head(select(nd, X, Y, depth))
+survey_grid <- replicate_df(qcs_grid, "year", unique(pcod$year))
+head(select(survey_grid, X, Y, depth))
 
-p <- predict(fit, newdata = nd) #<<
+p <- predict(fit, newdata = survey_grid) #<<
 ```
 
 ---
@@ -1103,7 +1103,7 @@ filter(pcod, year %in% c(2015, 2017)) %>%
 # Predicting on the survey grid
 
 ```{r pcod-st-pred, echo=TRUE}
-p <- predict(fit, newdata = qcs_grid)
+p <- predict(fit, newdata = survey_grid)
 ```
 
 * `est`: Overall estimate in link space (log here)
@@ -1174,7 +1174,7 @@ ggplot(p, aes(X, Y, fill = epsilon_st)) +
 
 .xsmall[
 ```{r pcod-st-index1, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
-p2 <- predict(fit, newdata = qcs_grid, return_tmb_object = TRUE) #<<
+p2 <- predict(fit, newdata = survey_grid, return_tmb_object = TRUE) #<<
 index <- get_index(p2, area = 4, bias_correct = FALSE) #<<
 ggplot(index, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
@@ -1189,7 +1189,7 @@ ggplot(index, aes(year, est)) + geom_line() +
 # Warning: may be approximate; still under testing
 # ]
 
-psims <- predict(fit, newdata = qcs_grid, nsim = 1000) #<<
+psims <- predict(fit, newdata = survey_grid, nsim = 1000) #<<
 index_sims <- get_index_sims(psims, area = rep(4, nrow(psims))) #<<
 ggplot(index_sims, aes(year, est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
