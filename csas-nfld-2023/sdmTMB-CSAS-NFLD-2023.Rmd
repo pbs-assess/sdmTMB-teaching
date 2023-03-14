@@ -723,7 +723,7 @@ Cross-package testing against VAST, INLA, mgcv, glmmTMB
 
 --
 
-.small[Now used across species and divisions here (e.g., juvenile salmon, spot prawn, species distribution modelling for marine planning)]
+.small[Now used across species and divisions here (e.g., juvenile salmon, spot prawn, eulachon, ..., species distribution modelling for marine planning)]
 
 --
 
