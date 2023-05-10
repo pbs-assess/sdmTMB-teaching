@@ -1,0 +1,236 @@
+---
+title: "Priors and parameter bounds"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+# Can maximum likelihood have priors!? 
+
+* Penalized maximum likelihood estimation
+
+* Maximize 
+
+$$L(\theta | y) \cdot P(\theta | \alpha)$$
+* $\theta$ are parameters
+* $y$ are data
+* $\alpha$ are hyperparameters controlling prior distribution  
+
+---
+
+# Penalized estimation in sdmTMB
+
+
+```{r echo = TRUE, eval=FALSE}
+fit <- sdmTMB(
+  ...,
+  priors = sdmTMBpriors(...), #<<
+  ...
+)
+```
+
+* `?sdmTMBpriors` 
+
+---
+
+# What can we put priors on?
+
+$\beta$ fixed effects  
+
+$\phi$ Observation dispersion parameter (e.g., standard deviation for Gaussian, overdispersion for nbinom2)  
+
+$\rho$ AR(1) parameter for spatiotemporal fields  
+
+$p$ Tweedie parameter (variance power)  
+
+$h$ Matérn range  
+
+$\sigma$ Matérn standard deviation
+
+---
+
+# Example: regression coefficients
+
+* Simple prior on $b_{1}$
+
+* Note: don't have to specify a prior on all coefficients  
+
+.small[
+```{r echo=TRUE}
+mesh <- make_mesh(pcod,
+  xy_cols = c("X", "Y"),
+  cutoff = 10
+)
+fit_prior <- sdmTMB(
+  present ~ depth,
+  data = pcod, mesh = mesh,
+  family = binomial(link = "logit"),
+  priors = sdmTMBpriors( #<<
+    b = normal(location = c(4.2, NA), scale = c(0.1, NA)) #<<
+  ) #<<
+)
+```
+]
+
+
+---
+
+# Example: regression coefficients
+
+```{r echo=TRUE}
+tidy(fit_prior)
+```
+  
+Compare to model without priors  
+```{r echo = FALSE}
+fit <- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off"
+)
+```
+
+```{r echo=TRUE}
+tidy(fit)
+```
+
+---
+
+# Example: regression coefficients
+
+* Covariance in fixed effects can be included with `mvnormal()`
+
+.small[
+```{r echo=TRUE, eval=FALSE}
+fit_prior <- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(
+    b = mvnormal(b_loc, scale = b_Sigma)) #<<
+)
+```
+]
+
+---
+
+# Example: Matérn priors
+
+* Spatial data may not be very informative w.r.t. spatial range and variance
+
+* Penalized complexity (PC) priors may help with model convergence
+  * [Fuglstad et al. 2016](https://www.tandfonline.com/doi/full/10.1080/01621459.2017.1415907?casa_token=TcqJrOvGCa4AAAAA%3AbPZ1eP-KoRmks3A-kI4QngKNDBNssNQBEAEQs98wemDSH0B_yZv_1q_f5waRhXVv2-ATm3RpmglH)  
+  
+* Penalty on complexity? 
+  * Simple random field = low variance, infinite range
+  * Complexity = increasing variance, small spatial range
+
+---
+
+# PC priors parameterized in terms of thresholds
+
+* $\mathrm{Pr}(h > \texttt{range_gt} ) = 1 - \texttt{range_prob}$
+* $\mathrm{Pr}(\sigma < \texttt{sigma_lt} ) = 1 - \texttt{sigma_prob}$
+```{r echo = TRUE, eval = FALSE}
+pc_matern(
+  range_gt = 10, range_prob = 0.05, #<<
+  sigma_lt = 3, sigma_prob = 0.05 #<<
+)
+```
+
+---
+
+# Visualizing PC priors
+
+```{r, echo=TRUE, fig.asp=0.7, out.width="550px"}
+sdmTMB::plot_pc_matern(
+  range_gt = 1, sigma_lt = 1.5, 
+  range_prob = 0.05, sigma_prob = 0.05
+)
+```
+
+---
+
+# Implementing PC prior: spatial random field
+
+.small[
+```{r echo=TRUE, eval=FALSE}
+fit_prior <- sdmTMB(
+  present ~ depth,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatiotemporal = "off",
+  priors = sdmTMBpriors(matern_s = pc_matern(
+    range_gt = 10, #<<
+    sigma_lt = 3, #<<
+    range_prob = 0.05, # default #<<
+    sigma_prob = 0.05  # default #<<
+  ))
+)
+```
+]
+
+---
+
+# Using PC priors with spatiotemporal model
+
+* Is range ( $h$ ) shared? `share_range` argument
+  * if so, probably not needed to specify 2 sets of PC priors
+  
+* For model without shared ranges, can specify separate PC priors
+
+```{r echo = TRUE, eval = FALSE}
+priors <- sdmTMBpriors(
+  matern_s = pc_matern(...),
+  matern_st = pc_matern(...)
+)
+```
+
+
+---
+
+# Bounds
+
+* Sometimes we may want to put hard bounds on a parameter
+* All optional, lower/upper both need not be specified
+* See `?sdmTMBcontrol`
+* Example: constrain depth effect on occurrence to be negative
+
+.small[
+```{r eval=FALSE, echo=TRUE}
+fit <- sdmTMB(
+  present ~ depth,
+  ...,
+  control = sdmTMBcontrol(
+    lower = list(b_j = c(NA, NA)), #<<
+    upper = list(b_j = c(NA, 0))  #<<
+  )
+)
+```
+]

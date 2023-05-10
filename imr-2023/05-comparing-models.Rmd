@@ -1,0 +1,226 @@
+---
+title: "Model selection with sdmTMB"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+# What is the goal of modeling? 
+
+* Straight prediction?
+  * in-sample, out-of-sample, both?
+
+* Parsimony?
+  * balance of bias-variance tradeoff
+
+* Not all metrics appropriate for all applications
+
+---
+
+# Too many metrics to discuss
+
+* Root mean squared error 
+
+* AUC (see pseudo-absence example)
+  * true and false positive rates
+
+* AIC: widely used tool in ecology
+  * $\mathrm{AIC} = -2 \log L + 2K$, where $K$ is the number of parameters
+  * designed for fixed effects models (Burnham and Anderson 2002)
+  
+---
+
+# AIC and likelihood with sdmTMB
+
+* `AIC()` and `logLik()` methods work, just like `glm()`  
+
+```{r echo=TRUE, eval=FALSE}
+mesh <- make_mesh(pcod,
+  xy_cols = c("X", "Y"),
+  cutoff = 10
+)
+fit <- sdmTMB(
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+logLik(fit) # log likelihood
+AIC(fit) # AIC
+```
+
+---
+
+# When to use restricted maximum likelihood (REML) 
+
+* Integrates over random effects *and* fixed effects; sometimes helps convergence too
+
+* *Can* use REML when comparing different random effect structures
+
+* *Don't* use REML when comparing alternative fixed effects
+
+* *Don't* use REML for index standardization
+
+.small[
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB(..., reml = FALSE)
+```
+]
+
+---
+
+# Reminder: fixed and random effects in sdmTMB
+
+Random effects include
+
+* random intercepts: `(1 | group)`
+* smooth terms: `s(year)`
+* time-varying coefficients
+* all random fields
+* spatially varying coefficients (also random fields)
+
+---
+
+# Limitations of AIC
+
+* Originally conceived for fixed effects 
+  * Burnham and Anderson (2002)
+
+* Approximate & problematic for mixed effects
+  * Vaida and Blanchard (2005)
+  * Liang et al. (2008)
+  
+* Great [FAQ on `glmmTMB` by Ben Bolker](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#can-i-use-aic-for-mixed-models-how-do-i-count-the-number-of-degrees-of-freedom-for-a-random-effect)
+
+---
+
+# Predictive model selection
+
+* Ideal world: use cross validation to evaluate predictive accuracy
+
+* Split data into train / test sets
+
+* Objective function:
+  * maximize log-likelihood of test data
+
+---
+
+# ELPD
+
+Expected log pointwise predictive density
+
+Interpreted as theoretical expectation for new dataset  
+  
+ELPD: $\frac{\log ( \sum( \exp( \log L(y^*|\theta))))} {N}$,
+
+where: $y^*$ are left-out data, $\theta$ are parameters, and $N$ is the number of left-out data points
+
+[Vehtari, Gelman, and Gabry (2017)](https://arxiv.org/abs/1507.04544)
+
+---
+
+# Cross validation in sdmTMB
+
+```{r echo=FALSE}
+mesh <- make_mesh(pcod,
+  xy_cols = c("X", "Y"),
+  cutoff = 10
+)
+```
+
+.small[
+```{r echo=TRUE}
+fit <- sdmTMB_cv( #<<
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  k_folds = 8, #<<
+  fold_ids = NULL, #<<
+  parallel = TRUE, #<<
+  use_initial_fit = FALSE #<<
+)
+```
+]
+
+* More folds = more computation time
+* `use_initial_fit = TRUE` 
+  * fits first fold, and initializes subsequent model fits from that  
+
+---
+
+# Cross validation in sdmTMB
+
+`sdmTMB_cv()` returns:  
+
+- A list of models (each `sdmTMB()` object)  
+
+- `fold_loglik`: sum of held out likelihoods for each fold
+
+- `sum_loglik`: sum across `fold_loglik`, or all data
+
+- `fold_elpd`: expected log predictive density for each fold
+
+- `elpd`: Expected log predictive density across all data
+
+---
+
+# How to choose folds? How many?
+
+.small[
+* Words of wisdom:
+  * Can be highly variable based on data, folds, sampling scheme
+  
+* Spatial sampling or random?
+  * [blockCV R package](https://cran.r-project.org/web/packages/blockCV/index.html), [Valavi et al. (2019)](https://doi.org/10.1111/2041-210X.13107)
+  
+* How to sample with time / years? 
+  * LOOCV (leave-one-out...) vs. LFOCV (leave-future-out...)
+
+* `sdmTMB_cv()` does random fold assignment
+  * Custom folds can be specified with `fold_ids`
+]
+
+---
+
+# Basic cross validation example
+
+Set a `future::plan()`; the folds will be fit in parallel
+
+```{r cv, warning=FALSE, echo=TRUE}
+library(future) #<<
+plan(multisession) #<<
+mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 10)
+m_cv <- sdmTMB_cv( #<<
+  density ~ s(depth, k = 5), data = pcod, mesh = mesh,
+  family = tweedie(link = "log"), 
+  k_folds = 2 #<<
+)
+# Sum of log likelihoods of left-out data:
+m_cv$sum_loglik
+# Expected log pointwise predictive density
+# of left-out data:
+m_cv$elpd
+```

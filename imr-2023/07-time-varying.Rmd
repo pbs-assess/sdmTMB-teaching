@@ -1,0 +1,284 @@
+---
+title: "Time-varying coefficients with sdmTMB"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+.small[
+# Why might we want time-varying effects?
+
+* Time-varying slopes: 
+  * To allow for evolving responses to covariates (e.g., species moving deeper over time)
+  
+  * Example use: [English et al. (2021) Fish and Fisheries](https://doi.org/10.1111/faf.12613)  
+    Modelled groundfish density with depth; didn't want to constrain fish if they were moving deeper when water was warmer
+  
+* Time-varying intercepts:
+  * To allow variable means across time with constraints
+  * To have a model to interpolate or forecast over time
+]
+
+---
+
+# Time-varying intercepts
+
+Several ways in sdmTMB:
+
+* factors: `as.factor(year)` (independent)
+* random effects: ` + (1 | year)` (drawn from normal distribution)
+* smooth: ` + s(year)`
+* as random walk (shown next)
+
+---
+
+#  Random walk covariates in sdmTMB
+
+Random walk:
+
+$$
+\begin{aligned}
+x_t &= x_{t-1} + \epsilon_t\\
+\epsilon &\sim \mathrm{Normal(0, \sigma^2)}
+\end{aligned}
+$$
+
+Defined by `time_varying` argument
+
+Takes a *one-sided* formula, e.g. `~ 1` or `~ 0 + depth`
+
+Note: initial coefficient is unconstrained, i.e. **do not place the same covariate in 
+the `formula` argument** (this includes the intercept)
+
+---
+
+# Time-varying intercept
+
+Note: a `0` or `-1` in formula for suppressing global intercept
+
+Otherwise, both the main effects and time-varying effects would have the same parameter and this can't be estimated.
+
+.small[
+```{r tv-int, echo = TRUE}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit <- sdmTMB(
+  density ~ 0 + s(depth, k = 5), 
+  time_varying = ~ 1, #<<
+  data = pcod, mesh = mesh,
+  time = "year",  
+  family = tweedie(link = "log")
+)
+```
+]
+
+---
+
+# Getting coefficients 
+
+Return with 
+
+.small[
+```{r sum-fit1, echo=TRUE, eval=FALSE}
+print(fit)
+```
+]
+
+.small[
+```{r, echo=TRUE, eval=FALSE}
+#> Spatiotemporal model fit by ML ['sdmTMB']
+#> Formula: density ~ 0 + s(depth, k = 5)
+#> Time column: "year"
+#> ...
+#> Time-varying parameters: #<<
+#>                  coef.est coef.se #<<
+#> (Intercept)-2003     1.96    0.29 #<<
+#> (Intercept)-2004     2.31    0.27 #<<
+#> (Intercept)-2005     2.06    0.27 #<<
+#> ... #<<
+#> (Intercept)-2015     2.07    0.27 #<<
+#> (Intercept)-2017     1.55    0.29 #<<
+#> ...
+```
+]
+
+---
+
+# Getting coefficients 
+
+Or by digging into `fit$sd_report`
+
+(Not yet in `tidy.sdmTMB()`.)
+
+```{r b-rw-est, echo=TRUE}
+library(TMB)
+est <- as.list(fit$sd_report, "Est")
+est_se <- as.list(fit$sd_report, "Std. Error")
+cbind(est$b_rw_t, est_se$b_rw_t)
+```
+
+---
+
+# Other approaches to modeling time-varying intercepts
+
+.small[
+```{r eval = FALSE, echo=TRUE}
+density ~ s(depth) + 0 + as.factor(year)
+```
+]
+.small[
+```{r eval = FALSE, echo=TRUE}
+density ~ s(depth) + (1 | year)
+```
+]
+.small[
+```{r eval = FALSE, echo=TRUE}
+density ~ s(depth) + s(year)
+```
+]
+---
+
+# These approaches are similar but subtly different
+
+```{r compare-fits, echo=FALSE}
+fit_fc <- sdmTMB(
+  density ~ s(depth, k = 5) + as.factor(year),
+  data = pcod, mesh = mesh,
+  time = "year",
+  family = tweedie(link = "log")
+)
+
+fit_sm <- sdmTMB(
+  density ~ s(depth, k = 5) + s(year, k = 7),
+  data = pcod, mesh = mesh,
+  time = "year",
+  family = tweedie(link = "log")
+)
+
+nd <- pcod
+nd$fyear <- as.factor(nd$year)
+
+fit_re <- sdmTMB(
+  density ~ s(depth, k = 5) + (1 | fyear),
+  data = nd, mesh = mesh,
+  time = "year",
+  family = tweedie(link = "log")
+)
+
+# just make predictions on avg depth / location
+newdf <- data.frame(
+  depth = mean(pcod$depth),
+  year = unique(pcod$year)
+)
+newdf$fyear <- as.factor(newdf$year)
+
+pred_fit <- predict(fit, newdata = newdf, se_fit = TRUE, re_form = ~ 0)
+pred_fit$model <- "time_varying = 1"
+pred_sm <- predict(fit_sm, newdata = newdf, se_fit = TRUE, re_form = ~ 0)
+pred_sm$model <- "s(year, k = 7)"
+pred_re <- predict(fit_re, newdata = newdf, se_fit = TRUE, re_form = ~ 0)
+pred_re$model <- "(1 | fyear)"
+pred_fc <- predict(fit_fc, newdata = newdf, se_fit = TRUE, re_form = ~ 0)
+pred_fc$model <- "as.factor(year)"
+
+pred <- rbind(pred_fit, pred_sm, pred_re, pred_fc)
+
+ggplot(pred, aes(year, est, fill = model, col = model)) +
+  geom_pointrange(aes(ymin = est - 2 * est_se, ymax = est + 2 * est_se), 
+    position = position_dodge(width = 1)) +
+  scale_colour_brewer(palette = "Dark2")
+```
+
+<!-- <img src="images/spidey.jpeg" width="650px" class="center" />  -->
+
+<!-- * H/T Eric Pederson -->
+
+---
+
+# Time-varying coefficients
+
+Time-varying (random walk) effect of depth
+
+Intercept in this model NOT time-varying
+
+```{r fit-tv-depth, eval=TRUE, echo=TRUE, message=FALSE, results='hide'}
+fit_tv <- sdmTMB(
+  density ~ 1, 
+  time_varying = ~ 0 + depth_scaled + depth_scaled2, #<<
+  data = pcod, mesh = mesh,
+  time = "year",
+  family = tweedie(link = "log"),
+  spatial = "on",
+  spatiotemporal = "iid",
+  silent = FALSE
+)
+```
+
+---
+
+# Time-varying coefficients
+
+Time-varying (random walk) effect of depth
+
+<!-- To plot these, we make a data frame that contains all combinations of the time-varying covariate and time. This is easily created using `expand.grid()` or `tidyr::expand_grid()`. -->
+
+```{r tv-depth-eff}
+nd <- expand.grid(
+  depth_scaled = seq(min(pcod$depth_scaled) + 0.2,
+    max(pcod$depth_scaled) - 0.2, length.out = 100),
+  year = unique(pcod$year)
+)
+nd$depth_scaled2 <- nd$depth_scaled^2
+p <- predict(fit_tv, newdata = nd, se_fit = TRUE, re_form = NA)
+
+p$depth <- exp(nd$depth_scaled * pcod$depth_sd[1] + pcod$depth_mean[1])
+ggplot(p, aes(depth, exp(est),
+  ymin = exp(est - 1 * est_se),
+  ymax = exp(est + 1 * est_se),
+  group = as.factor(year)
+)) +
+  geom_line(aes(colour = year), lwd = 1) +
+  geom_ribbon(aes(fill = year), alpha = 0.1) +
+  coord_cartesian(expand = FALSE, xlim = c(min(pcod$depth), 300)) +
+  labs(x = "Depth (m)", y = "Biomass density (kg/km2)")
+```
+
+---
+
+# Time-varying coefficient notes
+
+* `time_varying` is a formula for coefficients that follow a random walk over time
+
+--
+
+* Make sure a coefficient isn't in both `formula` and `time_varying`, this includes the intercept
+
+--
+
+* The `time_varying` formula cannot have smoothers `s()` in it! Instead:
+  * Polynomials: `time_varying = ~ x + I(x^2)`
+  * `formula = s(depth, by = factor_year)` (independent smooths) 
+  * `formula = s(depth, year)` (2D smooth)
+
+
+<!-- See the vignette [Intro to modelling with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/basic-intro.html) for more details. -->

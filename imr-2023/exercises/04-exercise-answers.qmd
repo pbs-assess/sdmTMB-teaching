@@ -1,0 +1,451 @@
+---
+title: "Fitting spatial/spatiotemporal models and problem solving"
+format: html
+editor: visual
+execute:
+  echo: true
+  eval: true
+---
+
+# Goals:
+
+-   Practice fitting spatial and spatiotemporal models with less guidance.
+-   See an example of using an 'offset'.
+-   Practice calculating an area-weighted biomass index with less guidance.
+-   Gain some problem solving skills by fixing 3 models with estimation problems or other errors you may encounter.
+
+```{r, message=FALSE, warning=FALSE}
+library(sdmTMB)
+library(dplyr)
+library(ggplot2)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+theme_set(theme_light())
+```
+
+We will work with lingcod data from the Queen Charlotte Sound synoptic survey:
+
+# Data
+
+```{r}
+d <- readRDS(here::here("dfo-tesa-2023/data/lingcod-qcs.rds"))
+d$area_swept <- d$area_swept / 10000
+glimpse(d)
+```
+
+Add UTM columns to the dataset. Use `utm_crs = 3156` to match the UTM zone 9 used in the grid.
+
+```{r}
+d <- add_utm_columns(d, units = "km", utm_crs = 3156) # excercise
+```
+
+Create a mesh with a `cutoff` value of `10` km.
+
+# Mesh
+
+```{r}
+mesh <- make_mesh(d, c("X", "Y"), cutoff = 10) # excercise
+plot(mesh)
+```
+
+We will run the following code to turn the `qcs_grid` grid built into the package into a grid with values for every year in the lingcod dataset.
+
+# Grid
+
+```{r}
+grid <- filter(qcs_grid, year == min(qcs_grid$year)) |>
+  select(-year) |>
+  select(-depth_scaled, -depth_scaled2) |>
+  rename(depth_m = depth)
+grid <- purrr::map_dfr(unique(d$year), ~ tibble(grid, year = .x))
+```
+
+# Spatial model
+
+This is how an 'offset' works:
+
+-   log(catch_weight/area_swept) = b0 + b1 \* x
+-   log(catch_weight) - log(area_swept) = b0 + b1 \* x
+-   log(catch_weight) = b0 + b1 \* x + log(area_swept)
+-   log(catch_weight) = b0 + b1 \* x + offset
+
+Note the offset is the **log** of the effort variable.
+
+Here, we could fit our model to catch weight with an area swept offset or to density. In other cases (e.g., count data), an offset lets us use a count distribution with an effort measure.
+
+Fit a spatial model with a delta-Gamma family:
+
+```{r}
+fit_spatial <- sdmTMB(
+  catch_weight ~ 0 + as.factor(year),
+  spatial = "on", # answer
+# spatial = , # exercise
+  offset = log(d$area_swept),
+  family = delta_gamma(), # answer
+# family =  , # exercise
+  mesh = mesh, # answer
+# mesh =  , # exercise
+  data = d, # answer
+  # silent = FALSE,
+  control = sdmTMBcontrol(newton_loops = 1) # helps with convergence here
+)
+```
+
+```{r}
+sanity(fit_spatial)
+fit_spatial
+```
+
+Calculate residuals and assign them to a new column `resid_sp` in `d`:
+
+```{r}
+d$resid_sp <- residuals(fit_spatial) # answer
+ggplot(d, aes(X, Y, colour = resid_sp)) +
+  geom_point() +
+  facet_wrap(~year) +
+  scale_colour_gradient2()
+```
+
+### Exercise:
+
+1.  Did that fit reasonably well such that we can try adding the complexity of spatiotemporal fields?
+2.  In addition to the fits, do the spatial residuals in any year show evidence of persistent spatial autocorrelation?
+
+# Spatiotemporal model
+
+Add IID spatiotemporal fields:
+
+```{r}
+fit <- sdmTMB(
+  catch_weight ~ 0 + as.factor(year),
+  time = "year", # answer
+# time = , # exercise
+  spatial = "on", # answer
+# spatial = , # exercise
+  spatiotemporal = "iid", # answer
+# spatiotemporal = , # exercise
+  offset = log(d$area_swept),
+  family = delta_gamma(), # answer
+# family = , # exercise
+  mesh = mesh, # answer
+# mesh = , # exercise
+  data = d,
+  # silent = FALSE,
+  control = sdmTMBcontrol(newton_loops = 1) # helps with convergence here
+)
+```
+
+```{r}
+sanity(fit)
+```
+
+```{r}
+fit
+```
+
+```{r}
+tidy(fit, model = 1, conf.int = TRUE)
+tidy(fit, model = 2, conf.int = TRUE)
+
+tidy(fit, "ran_pars", model = 1, conf.int = TRUE)
+tidy(fit, "ran_pars", model = 2, conf.int = TRUE)
+```
+
+### Exercise:
+
+1.  Is the range bigger or smaller for the binomial component than the Gamma component?
+2.  Is the spatial or spatiotemporal variance larger?
+3.  Does that make sense? What does this mean biologically?
+
+Calculate randomized quantile residuals into an object `resid`:
+
+```{r}
+set.seed(1)
+resid <- residuals(fit) # answer
+#resid <-  # exercise
+```
+
+How do the basic randomized quantile residuals look for the overall model?
+
+```{r}
+qqnorm(resid)
+qqline(resid)
+```
+
+Predict on the newdata `grid` and set `return_tmb_object = TRUE`. Save the output to `pred`:
+
+```{r}
+pred <- predict(fit, newdata = grid, return_tmb_object = TRUE) # answer
+#pred <-  # exercise
+```
+
+Because we set `return_tmb_object = TRUE`, the prediction data frame is in the list element `data`.
+
+```{r}
+glimpse(pred$data)
+```
+
+### Exercise:
+
+1.  What do the `1` and `2` columns represent?
+2.  How do we turn these into response space?
+
+## Plotting the model components spatially
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = plogis(est_non_rf1))) +
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  ggtitle("Fixed effect components 1")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = exp(est_non_rf2))) +
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  ggtitle("Fixed effect components 2")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = omega_s2)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed() +
+  ggtitle("Spatial random field 2")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = epsilon_st1)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  ggtitle("Spatiotemporal random fields 1")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = epsilon_st2)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  ggtitle("Spatiotemporal random fields 2")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = plogis(est1))) +
+  geom_raster() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  ggtitle("Prediction 1")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = exp(est2))) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_viridis_c(trans = "log10") +
+  coord_fixed() +
+  ggtitle("Prediction 2")
+```
+
+```{r}
+ggplot(pred$data, aes(X, Y, fill = plogis(est1) * exp(est2))) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_viridis_c(trans = "log10", option = "C") +
+  coord_fixed() +
+  ggtitle("Combined prediction")
+```
+
+# Calculating an area-weighted biomass index
+
+Use `get_index()` to calculate an area-weighted biomass index. Feel free to set `bias_correct = FALSE` to be a bit faster. Save the output to `ind`.
+
+```{r}
+ind <- get_index(pred, area = 4, bias_correct = FALSE) # answer
+#ind <-  # exercise
+```
+
+```{r}
+ggplot(ind, aes(year, y = est, ymin = lwr, ymax = upr)) +
+  geom_pointrange() +
+  scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+```
+
+# Problem solving
+
+The following are 3 models where each has some estimation problem or creates an error. Try to fix the problems.
+
+## Problem 1:
+
+```{r}
+glimpse(pcod) # built in
+```
+
+```{r}
+ggplot(pcod, aes(X, Y, size = density)) +
+  geom_point(shape = 21)
+```
+
+```{r}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 40)
+plot(mesh)
+```
+
+```{r}
+fit_pcod <- sdmTMB(
+  density ~ poly(depth, 2),
+  spatial = "on",
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  data = pcod
+)
+```
+
+```{r}
+sanity(fit_pcod)
+fit_pcod
+```
+
+### Exercise:
+
+1.  What is the problem with the above?
+
+-   Hint: look at `sanity(fit_pcod)`
+-   Hint: look at the range estimate with `print(fit_pcod)`
+-   Hint: look at the mesh `cutoff` value
+
+2.  Try fixing it below:
+
+```{r}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10) # answer
+#mesh <- # exercise
+plot(mesh)
+```
+
+```{r}
+fit_pcod2 <- sdmTMB(
+  density ~ poly(depth, 2),
+  spatial = "on",
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  data = pcod
+)
+```
+
+```{r}
+sanity(fit_pcod2)
+fit_pcod2
+```
+
+## Problem 2
+
+The following is some yelloweye rockfish data from the hard bottom longline survey on the inside waters of Vancouver Island.
+
+```{r}
+d <- readRDS(here::here("dfo-tesa-2023/data/hbll-inside-yelloweye.rds"))
+d_north <- dplyr::filter(d, survey == "HBLL INS N")
+d_north <- add_utm_columns(d_north)
+```
+
+```{r}
+ggplot(d_north, aes(X, Y, size = catch_count)) +
+  facet_wrap(~year) +
+  geom_point(shape = 21)
+```
+
+```{r}
+mesh_north <- make_mesh(d_north, xy_cols = c("X", "Y"), cutoff = 5)
+plot(mesh_north)
+fit_ye <- sdmTMB(
+  catch_count ~ 0 + as.factor(year),
+  offset = log(d_north$hook_count),
+  time = "year",
+  spatial = "on",
+  spatiotemporal = "iid",
+  family = nbinom2(link = "log"),
+  # silent = FALSE,
+  mesh = mesh_north,
+  data = d_north
+)
+```
+
+```{r}
+sanity(fit_ye)
+```
+
+### Exercise:
+
+1.  What is the problem with the above?
+2.  What are some ways you could attempt to fix this?
+3.  What is a simpler random field structure you could try? Try that below with `fit_ye1`.
+4.  What is a simpler family you could try? Try that below with `fit_ye2`.
+
+```{r}
+fit_ye1 <- update(fit_ye, spatiotemporal = "off") # answer
+#fit_ye1 <- update(fit_ye, spatiotemporal = ) # exercise
+sanity(fit_ye1)
+fit_ye1
+```
+
+```{r}
+fit_ye2 <- update(fit_ye, family = poisson(link = "log")) # answer
+#fit_ye2 <- update(fit_ye, family = ) # exercise
+sanity(fit_ye2)
+fit_ye2
+```
+
+## Problem 3
+
+```{r}
+ggplot(pcod, aes(X, Y, colour = present)) +
+  geom_point()
+```
+
+```{r}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+```
+
+```{r}
+dat <- filter(pcod, year == 2017)
+```
+
+```{r, eval=FALSE}
+fit_pcod <- sdmTMB(
+  present ~ poly(depth, 2),
+  spatial = "on",
+  family = binomial(),
+  mesh = mesh,
+  data = dat
+)
+```
+
+### Exercise:
+
+1.  What is causing the error message?
+2.  Try to fix it below.
+
+Hint: When was the mesh created relative to any filtering of the data? Why is this a problem?
+
+```{r}
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10) # answer
+# exercise
+fit_pcod <- sdmTMB(
+  present ~ poly(depth, 2),
+  spatial = "on",
+  family = binomial(),
+  mesh = mesh,
+  data = dat
+)
+fit_pcod
+```
+
+Bonus: try plotting the depth effect using the `ggeffect::ggeffect()` function.
+
+```{r}
+ggeffects::ggeffect(fit_pcod, "depth [0:600 by=2]") |> plot() # answer
+## exercise
+```

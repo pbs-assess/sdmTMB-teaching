@@ -1,0 +1,366 @@
+---
+title: "Delta models and index standardization"
+format: html
+editor: visual
+execute: 
+  echo: true
+  eval: true
+---
+
+# Goals:
+
+-   Practice fitting delta (hurdle) models.
+-   Understand how to inspect their more complicated model output.
+-   Learn how to plot aspects of component models and their combined predictions.
+-   Calculate an area-weighted biomass index and compare how model structure can impact an index.
+
+```{r, message=FALSE, warning=FALSE}
+#| echo=FALSE
+library(sdmTMB)
+library(dplyr)
+library(ggplot2)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+theme_set(theme_light())
+```
+
+# The data
+
+We will continue working with the North Pacific Spiny Dogfish in the West Coast Vancouver Island synoptic trawl survey.
+
+```{r}
+dat <- readRDS(here::here("dfo-tesa-2023/data/wcvi-dogfish.rds"))
+```
+
+```{r}
+head(dat)
+```
+
+Remember that the dataset contains sampling `depth` in meters and sample density `density` (CPUE) in units of tonnes/km^2^. Once again we will create new `log_depth` and `year_factor` variables to include as covariates in our models. We also need to add UTMs again.
+
+```{r}
+dat$log_depth <- log(dat$depth)
+dat$year_factor <- as.factor(dat$year)
+dat <- add_utm_columns(dat, utm_crs = 3156, ll_names = c("longitude", "latitude"))
+```
+
+```{r}
+mesh <- make_mesh(dat, xy_cols = c("X", "Y"), cutoff = 10)
+
+ggplot() +
+  inlabru::gg(mesh$mesh) +
+  geom_point(aes(X, Y), data = dat, alpha = 0.2, size = 0.5) +
+  coord_fixed()
+```
+
+# Review fitting a Tweedie model
+
+We will start by refreshing our memory as to what the spatiotemporal models that we were fitting yesterday looked like. Remember that there was strong anisotropy? We also explored a couple different random field configurations but did not find a big difference between them. So, let's start here with a spatial random field and independent spatiotemporal (IID) random fields. Let's review what that model looked like.
+
+```{r, results='hide'}
+fit_tweedie <- sdmTMB(
+  density ~ 0 + year_factor + poly(log_depth, 2),
+  data = dat,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",
+  spatiotemporal = "iid",
+  time = "year",
+  anisotropy = TRUE
+  # silent = FALSE
+)
+```
+
+```{r}
+sanity(fit_tweedie)
+```
+
+Did it have trouble? There are many reasons a model can suddenly have difficulty converging. What has changed this time? We only tried anisotropy with the AR1 model yesterday, and we may have used a different cutoff for our mesh. Given the only problem we have is a gradient issue (indicating the model hasn't quite converged), try an extra optimization run (with a different optimizer) and see if that's sufficient:
+
+```{r}
+fit_tweedie <- run_extra_optimization(fit_tweedie, newton_loops = 1)
+sanity(fit_tweedie)
+```
+
+```{r}
+fit_tweedie
+```
+
+# Fitting a delta model
+
+Delta (or hurdle) models have one model for zero vs. non-zero data and another component for the positive component. These models can be implemented by fitting the two components separately and combining the predictions or they can be fit at once in sdmTMB.
+
+Advantages of fitting them at once:
+
+-   easier to code
+-   some parameters can be shared
+-   derived quantities (e.g., an index of abundance) can be calculated on the combined prediction
+
+Disadvantages to fitting them all at once:
+
+-   some parts of the model structure must be shared if fit all at once whereas fitting them separately gives you complete flexibility
+
+### Exercise:
+
+1.  Why might one want to use a hurdle model instead of a Tweedie?
+
+To fit a built-in hurdle model in sdmTMB, you simply need to specify a family that starts with `delta_`. For this exercise with will focus on the `delta_gamma(link1 = "logit", link2 = "log")`. This fits a binomial presence-absence model (i.e., `binomial(link = "logit")`) and then a model for the positive catches only with a Gamma observation distribution and a log link (i.e., `Gamma(link = "log")`). Here and with other delta models, the `link1` and `link2` can be omitted and left at their default values (`delta_gamma()`).
+
+We will run this without anisotropy for now, because this more complex model has difficulty estimating this more flexible spatial field.
+
+```{r, results='hide'}
+fit_dg <- sdmTMB(
+  density ~ 0 + year_factor + poly(log_depth, 2),
+  data = dat,
+  mesh = mesh,
+  family = delta_gamma(), #< new
+  spatial = "on",
+  spatiotemporal = "iid",
+  time = "year",
+  # silent = FALSE
+)
+```
+
+```{r}
+sanity(fit_dg)
+fit_dg
+```
+
+### Exercise:
+
+1.  How does this model output differ from that of the Tweedie?
+2.  What differences do you notice between parameter estimates in the two component models of the delta model?
+
+Let's take a closer look at parameter estimates. We can specify which model we want with the `model` argument.
+
+```{r}
+tidy(fit_dg, conf.int = TRUE, model = 1)
+tidy(fit_dg, conf.int = TRUE, model = 2)
+```
+
+```{r}
+tidy(fit_dg, "ran_pars", conf.int = TRUE, model = 1)
+tidy(fit_dg, "ran_pars", conf.int = TRUE, model = 2)
+```
+
+### Exercise:
+
+1.  Which model has tighter standard errors on the fixed effects? Is that what you expected?
+
+# Delta models with different model structures between the component models
+
+For delta models, by default, the formula, spatial, and spatiotemporal structure, and anisotropy are shared between the two model components. However, some elements (`formula`, `spatial`, `spatiotemporal`, and `share_range`) can also be specified independently for each model using a `list()` format within the function argument (see examples below). The first element of the list is for the binomial component and the second element is for the positive component (e.g., Gamma). Some formula elements must be shared for now (e.g., smoothers, random intercepts, spatially varying coefficients, and time-varying coefficients).
+
+Given that we know anisotropy was important for the Tweedie models from yesterday, maybe we can find a configuration of the delta model that can estimate it. One option is to turn off the spatiotemporal fields in the binomial component. It turns out that is sufficient to allow this model to converge, and that adding any additional flexibility caused the model to have difficulty estimating the anisotropy parameters. (Remember, these models are complex and it's easy to create models that cannot be estimated well!)
+
+```{r}
+fit_dg_aniso <- update(
+  fit_dg,
+  spatiotemporal = list("off", "iid"), #<
+  anisotropy = TRUE
+)
+```
+
+```{r}
+sanity(fit_dg_aniso)
+fit_dg_aniso
+```
+
+```{r}
+plot_anisotropy(fit_tweedie)
+plot_anisotropy(fit_dg_aniso)
+```
+
+The delta model is slightly preferred over the Tweedie with AIC:
+
+```{r}
+AIC(fit_tweedie, fit_dg_aniso)
+```
+
+But the anisotropy is poorly estimated. See `ln_H_input` here:
+
+```{r}
+fit_dg_aniso$sd_report
+```
+
+And it appears that including the spatiotemporal field in both components (`fit_dg`) is more important than the anisotropy (`fit_dg_aniso`). These models are close enough, however, that we would probably choose a model for reasons other than AIC.
+
+```{r}
+AIC(fit_dg, fit_dg_aniso)
+```
+
+# Visualizing delta models
+
+For easy exploration of different models, we can rename any of our models `fit`, but in this case we will choose the one with the lowest AIC. A more thorough exploration would consider the residuals and possibly cross validation.
+
+```{r}
+fit <- fit_dg
+```
+
+## Checking residuals
+
+We can calculate randomized quantile residuals with the `residuals.sdmTMB()` function and plot them against possible confounding covariates, whether they were included in the model or not:
+
+```{r}
+dat$resid <- residuals(fit)
+
+ggplot(dat, aes(log_depth, resid)) +
+  geom_point(size = 0.5)
+```
+
+We can also plot those residuals spatially:
+
+```{r}
+ggplot(dat, aes(X, Y, colour = resid)) +
+  facet_wrap(~year) +
+  geom_point(size = 0.5) +
+  coord_fixed() +
+  scale_colour_gradient2()
+```
+
+## Covariate effects
+
+Now, let's inspect the covariate effects of our delta model. The easiest way to check the relationships within each model is to use the sdmTMB function `visreg_delta()` to pass each component model separately to visreg. The argument `type = "conditional"` (the default) holds other variables constant at the median for numeric variables and the most common category for factors. The `ggeffects::ggeffect()` function doesn't work with delta models yet.
+
+```{r}
+visreg_delta(fit, xvar = "year_factor", model = 1, type = "conditional")
+```
+
+```{r}
+visreg_delta(fit, xvar = "year_factor", model = 2)
+```
+
+Here are the depth effects in response space:
+
+```{r, echo=FALSE}
+visreg_delta(fit, xvar = "log_depth", model = 1, scale = "response")
+visreg_delta(fit, xvar = "log_depth", model = 2, scale = "response")
+```
+
+## Mapping delta model predictions
+
+First, we need to generate an appropriate prediction grid with all the same time elements as our model data:
+
+```{r}
+wcvi_grid <- readRDS(here::here("dfo-tesa-2023/data/wcvi-grid.rds"))
+head(wcvi_grid)
+wcvi_grid$log_depth <- log(wcvi_grid$depth)
+grid <- purrr::map_dfr(unique(dat$year), ~ tibble(wcvi_grid, year = .x))
+grid$year_factor <- as.factor(grid$year)
+```
+
+If we predict from our delta model, we get all the model components with `1` or `2` after them for the two parts. Everything is in link space.
+
+```{r}
+p <- predict(fit, newdata = grid)
+glimpse(p)
+```
+
+### Exercise:
+
+1.  How does this data frame of predictions differ from what we would have gotten when predicting from a Tweedie model?
+2.  What is the link and inverse link for model component one (binomial) and two (gamma)?
+3.  How would we calculate the combined prediction from `est1` and `est2`? Hint: we do it below in the map plots.
+
+We can plot each of the components spatially:
+
+```{r}
+plot_map <- function(data, column_name) {
+  ggplot(data, aes(X, Y, fill = {{ column_name }})) +
+    facet_wrap(~year) +
+    geom_raster() +
+    coord_fixed()
+}
+```
+
+```{r}
+# Estimates in link space
+plot_map(p, est1) +
+  scale_fill_viridis_c()
+
+plot_map(p, est2) +
+  scale_fill_viridis_c()
+```
+
+```{r}
+# Depth and year effect contribution transformed into natural space:
+# (Everything not a random field)
+plot_map(p, plogis(est_non_rf1)) + # plogis() is the inverse logit function
+  scale_fill_viridis_c()
+
+plot_map(p, exp(est_non_rf2)) +
+  scale_fill_viridis_c()
+```
+
+```{r}
+# Spatial random field:
+plot_map(p, omega_s1) +
+  scale_fill_gradient2()
+
+plot_map(p, omega_s2) +
+  scale_fill_gradient2()
+```
+
+```{r}
+# Spatial-temporal random field:
+plot_map(p, epsilon_st1) +
+  scale_fill_gradient2()
+
+plot_map(p, epsilon_st2) +
+  scale_fill_gradient2()
+```
+
+To get our combined prediction, we can multiply the 2 models in response space. I.e. probability of observing a fish times the biomass density observed if observed.
+
+```{r}
+plot_map(p, plogis(est1) * exp(est2)) +
+  scale_fill_viridis_c(trans = "log10")
+```
+
+# Index standardization
+
+To calculate an index from any of these models, we need to run the `predict.sdmTMB()` function with the argument `return_tmb_object = TRUE`. We can then run the `get_index()` function to extract the total biomass calculations and standard errors.
+
+We can set the area argument to our `cell_area` column in km^2^. In this case the value is 4 km^2^ for all of the cells, since our grid cells are 2 km x 2 km. If some grid cells were not fully in the survey domain (or were on land), we could feed a vector of grid areas to the area argument that matched the number of grid cells. Because the density units are tonnes per km^2^ for this data, the index is in tonnes.
+
+```{r}
+p_dg <- predict(fit, newdata = grid, return_tmb_object = TRUE)
+index_dg <- get_index(p_dg, area = grid$cell_area, bias_correct = FALSE)
+
+ggplot(index_dg, aes(year, est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab("Year") +
+  ylab("Biomass estimate (tonnes)")
+```
+
+Let's see if this index differs from what it would look like using the Tweedie model.
+
+```{r}
+p_tw <- predict(fit_tweedie, newdata = grid, return_tmb_object = TRUE)
+index_tw <- get_index(p_tw, area = grid$cell_area, bias_correct = FALSE)
+
+index_dg$Method <- "Delta-gamma"
+index_tw$Method <- "Tweedie"
+
+bind_rows(index_dg, index_tw) %>%
+  ggplot(aes(year, est, fill = Method)) +
+  geom_line(aes(colour = Method)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab("Year") +
+  ylab("Biomass estimate (tonnes)")
+```
+
+We used `bias_correction = FALSE` to speed things up, but for any final result you will want to use the bias correction. Let's see how much it changes with the simpler (and therefore faster) Tweedie model.
+
+```{r}
+index_twc <- get_index(p_tw, area = grid$cell_area, bias_correct = TRUE)
+index_twc$Method <- "Bias correction"
+
+bind_rows(index_tw, index_twc) %>%
+  ggplot(aes(year, est, fill = Method)) +
+  geom_line(aes(colour = Method)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab("Year") +
+  ylab("Biomass estimate (tonnes)")
+```

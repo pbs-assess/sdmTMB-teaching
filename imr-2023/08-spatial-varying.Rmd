@@ -1,0 +1,169 @@
+---
+title: "Spatially varying coefficients with sdmTMB"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+# What is a spatially varying coefficient?
+
+* Describes how the effect of a variable varies over space
+
+  * e.g., how does the temporal trend in fish density vary among locations?
+  
+  * e.g., how does fish distribution look when the PDO is high vs. low?
+  
+---
+
+# Mathematically
+
+Minimal model: 
+
+$$g(u_{s}) = \omega_{s} + X_{\zeta}\zeta_{s}$$
+* $g()$ is an inverse link function and $u$ a linear predictor 
+* $\omega_{s}$ represents spatial field (intercept)  
+* $X_{\zeta}$ is design matrix of covariates (usually varying by time, but constant in space)
+* $\zeta_{s}$ is estimated spatially varying coefficient  
+
+---
+
+# When might we want a spatially varying coefficient?
+
+* When we suspect non-local effects of a regional forcing, that varies spatially
+
+  * e.g., the influence of ENSO depends on latitude; influence of Bering Sea cold pool on pollock
+  
+--
+
+* When the question requires evaluating change at fine spatial scales
+  * e.g., there is no directional trend in species distribution shifts at broad scales, due to nuanced or opposing patterns over space being obscured 
+---
+
+# Spatially varying coefficients in sdmTMB
+
+Spatially varying effect of time on cod density:
+
+```{r spat-varying-fit, echo=TRUE}
+pcod$year_scaled <- as.numeric(scale(pcod$year))
+mesh <- make_mesh(pcod, c("X", "Y"), cutoff = 10)
+fit <- sdmTMB(
+  density ~ s(depth, k = 5) + year_scaled,
+  spatial_varying = ~ 0 + year_scaled, #<<
+  data = pcod, 
+  mesh = mesh, 
+  time = "year",
+  family = tweedie(link = "log"),
+  spatiotemporal = "off"
+)
+```
+
+<!-- See `zeta_s` in the output, which represents the coefficient varying in space. You'll want to ensure you set up your model such that it ballpark has a mean of 0 (e.g., by including it in `formula` too). -->
+
+---
+
+# Local trends in cod population density
+
+```{r plot-zeta}
+qcs_grid$year_scaled <- (qcs_grid$year - mean(pcod$year)) / sd(pcod$year)
+p <- predict(fit, qcs_grid)
+p <- dplyr::filter(p, year == 2011) # any year
+ggplot(p, aes(X, Y, fill = zeta_s_year_scaled)) + geom_raster() +
+  scale_fill_gradient2()
+```
+
+---
+
+# Scale-dependent interpretation of species distribution shifts
+
+<img src="images/local_trend_COG_atf_ecography_2021.png" width="1000px" class="center" />
+
+.tiny[
+[Barnett, L.A.K., Ward, E.J. & Anderson, S.C. Improving estimates of species distribution change by incorporating local trends. Ecography, 44: 427-439. (2021)](https://doi.org/10.1111/ecog.05176)
+]
+
+<!-- To see how the interpretation of change in distribution depends on spatial scale, lets compare our fine-scale interpretation to a coarse-scale interpretation using a time series of the coastwide COG. These are results for arrowtooth flounder on the US west coast, where I am showing maps of the trend in population density over time, clusters of locations with similar trends, and the prediction of mean density over all years, which shows us that arrowtooth are most prevalent in the northern half of the region.  However, the trend map indicates that densities are mostly decreasing in the north and increasing in the central area toward the southern end of its core range.  Thus, it seems that arrowtooth are expanding southward as a traveling wave at the leading edge of the range.
+
+On the far right panel, you can see that the COG also indicates a southward shift, yet it is slight and only detectable in this case because of a narrow 95% CI.  From this alone it would be hard to say whether the change is really due to increased southward movement or productivity, or a decrease in productivity in the north. -->
+
+--
+
+* Potential applied uses
+  * Determining spatial structure of assessment model inputs
+  * Determining quota allocation over space
+
+---
+
+# Spatially varying effect of NAO on Snowy Owls
+
+.small[
+```{r owl-fit, echo=TRUE, eval=FALSE}
+mesh <- make_mesh(snow, c("X", "Y"), cutoff = 1.5)
+fit_owls <- sdmTMB(
+  count ~ 1 + nao + (1 | year_factor),
+  spatial_varying = ~ 0 + nao, #<<
+  family = nbinom2(link = "log"), 
+  data = snow, 
+  mesh = mesh,
+  time = "year", 
+  spatial = "on",
+  spatiotemporal = "iid"
+)
+```
+]
+
+<!-- Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others.
+The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016]. 
+The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. -->
+
+<!-- Description: spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual citizen science Christmas Bird Counts 1979--2020 in Canada and the US. 
+
+Our only fixed effect will be the NAO climate index (`nao`), but because of the wide spatial extent of these surveys, we also expect that the effect of NAO might not be consistent throughout North America. Therefore, the effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`.
+
+Because there does not appear to be much correlation between years, year will be included as a random factor: `(1 | year_factor)`, allowing the mean estimate for each of these spatiotemporal fields to vary. 
+-->
+
+---
+
+# Influence of NAO on Snowy Owls is greatest in southeast
+
+<img src="images/owl-nao-effect.png" width="1000px" class="center" />
+
+<!-- Interpretation: Points represent all count locations and circle area is scaled to the mean number of owls observed per year. We found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect.This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO. (The effect is multiplicative on owl count per NAO unit) -->
+
+---
+
+# Tips and tricks
+
+* Unlike `time_varying`, likely *do* want the same coefficient in the main `formula` effects
+  * `spatial_varying` represents a random field with mean zero
+--
+
+* Predictor should be roughly mean zero and SD of 1 to help with estimation
+--
+
+* Used to be limited to one effect; now no limitations
+
+--
+
+See vignette: [Fitting spatial trend models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
+
+See sdmTMB paper for Snowy Owl example led by Philina

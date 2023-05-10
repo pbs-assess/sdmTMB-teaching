@@ -1,0 +1,155 @@
+---
+title: "Area-weighted index standardization"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+# Why model-based index standardization?
+
+* Design-based methods (stratified means) are straightforward but assume perfect survey implementation
+
+--
+
+* Model-based approaches can account for (some) aspects of imperfect implementation
+
+--
+
+* Model-based approaches can leverage spatial correlation to improve precision
+
+--
+
+* Model-based approaches can integrate additional data sources, multiple gear types, accounting for gear calibration, etc.
+
+---
+
+# Design- vs. model-based estimators
+
+--
+
+* Design-based: fish are homogenously distributed within strata; noise comes from sampling
+
+--
+
+* Model-based: fish are distributed according to a mathematical model; noise from uncertainty in fish distribution and sampling
+
+---
+
+# Calculating an area-weighted population index
+
+1. Fit a sensible model: .blue[`sdmTMB()`]
+
+2. Predict on a grid covering the survey domain: .blue[`predict(..., newdata = ...)`]
+
+3. Sum up the density multiplied by cell area to calculate total abundance or biomass: .blue[`get_index()`]
+
+---
+
+# Fit a sensible model
+
+```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit <- sdmTMB(
+  density ~ 0 + as.factor(year), #<<
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",
+  time = "year",
+  spatiotemporal = "iid", #<<
+  silent = FALSE # show progress!
+)
+```
+
+---
+
+# Predict over the survey domain
+
+.small[
+```{r pcod-st-index1, echo=TRUE, message=FALSE, warning=FALSE}
+pred <- predict(
+  fit, newdata = qcs_grid, return_tmb_object = TRUE
+)
+select(pred$data, year, X, Y, est) |> 
+  head()
+```
+]
+
+---
+
+# Predict over the survey domain
+
+```{r pcod-st-plot-est2, echo=FALSE, fig.width=7}
+.p <- pred$data
+max_est <- quantile(.p$est, 0.998)
+.p <- mutate(.p, est_trim = if_else(est > max_est, max_est, est))
+ggplot(.p, aes(X, Y, fill = exp(est_trim))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt") +
+  facet_wrap(~year) +
+  coord_fixed() +
+  labs(fill = "Biomass density\n(kg/km^2)")
+```
+
+---
+
+# Sum up the density multiplied by cell area
+
+(*and calculate standard errors)
+
+```{r pcod-index, echo=TRUE}
+index <- get_index(pred, area = 4, bias_correct = TRUE)
+head(index)
+```
+
+---
+
+# The resulting standardized index
+
+.xsmall[
+```{r pcod-st-index-plot, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
+ggplot(index, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+]
+
+---
+
+# Remember...
+
+There is *one* design-based index.
+
+--
+
+A good model-based estimated depends on the modeller constructing a reasonable model!
+
+--
+
+There are *many* possible model-based indexes. Thankfully, results are often (but not always!) qualitatively similar across configurations.
+
+
+.tiny[
+Commander, C.J.C, L.A.K. Barnett, E.J. Ward, S.C. Anderson, T.E. Essington. 2022. The shadow model: how and why small choices in spatially explicit species distribution models affect predictions. PeerJ. 10: e12783. <https://doi.org/10.7717/peerj.12783>
+]

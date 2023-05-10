@@ -1,0 +1,294 @@
+---
+title: "Related packages, troubleshooting, tips"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(sdmTMB)
+```
+
+# Getting help
+
+* sdmTMB GitHub repository:  
+  <https://github.com/pbs-assess/sdmTMB>
+  
+* sdmTMB documentation:  
+  <https://pbs-assess.github.io/sdmTMB/index.html>
+
+*  New features to suggest? Bugs?  
+  <https://github.com/pbs-assess/sdmTMB/issues>
+  
+*  Resources and reference material: 
+  <https://github.com/pbs-assess/sdmTMB/wiki/resources>
+
+---
+
+# Related modelling software
+
+.center[
+<img src="images/table_comparison.png" width="550px" height = "500px"/>
+]
+<!-- --- -->
+
+<!-- # SPDE approach / INLA / etc; comparison with other software -->
+
+<!-- --- -->
+
+<!-- # Fitting basic spatial models in sdmTMB (Philina) -->
+
+<!-- * Making meshes … link to INLA tutorial (+interactive meshbuilder) -->
+<!-- * How do you know your model hasn’t converged? Who is Hessian and why hasn’t he converged? -->
+<!-- * What warnings do you need to worry about?  -->
+<!-- * Overall magnitude of errors / observation error etc.  -->
+
+---
+
+# sdmTMB limitations
+
+sdmTMB fits a variety of models with univariate responses
+
+sdmTMB: 
+
+* does not fit multivariate models ([see VAST](https://github.com/James-Thorson-NOAA/VAST))
+* does not conduct spatial (dynamic) factor analysis ([see VAST](https://github.com/James-Thorson-NOAA/VAST))
+
+---
+
+class: center, middle, inverse
+
+# Troubleshooting
+
+---
+
+# Example of non-converging model
+
+.small[
+```{r pcod-spatial-rf, echo=TRUE, eval=TRUE, warning=FALSE}
+mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+
+fit <- sdmTMB(
+  present ~ depth * year,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+```
+
+```r
+#> Warning message:
+#> The model may not have converged: 
+#> non-positive-definite Hessian matrix. 
+```
+]
+---
+
+# Who is Hessian and why are they not "positive definite"?
+
+* A Hessian matrix is a matrix of second derivatives of a function (here the log likelihood surface)
+
+--
+
+* The inverse of the negative Hessian is the parameter covariance matrix
+
+--
+
+* Warning means the curvature of the log-likelihood surface is inconsistent with the model having found the best fit
+
+--
+
+* Overparameterized? Variance estimated near zero?
+
+--
+
+* See [vignette("troubleshooting", "glmmTMB")](https://cran.r-project.org/web/packages/glmmTMB/vignettes/troubleshooting.html)
+
+---
+
+# Inspecting output
+
+One or more standard errors being `NaN` is a problem:
+
+.small[
+```{r, echo=TRUE, highlight.output=10}
+fit
+```
+]
+
+---
+
+# Sanity
+
+* `NaN` checks alone can't diagnose all problems
+
+```{r checksanity, eval=FALSE}
+sanity(fit)
+```
+
+
+---
+
+# Inspecting output
+
+We could also look directly at output from TMB `TMB::sdreport()`:
+
+.small[
+```{r, echo=TRUE, highlight.output=c(6, 9, 10, 11)}
+fit$sd_report
+```
+]
+
+---
+
+# Looking at gradients
+
+Log likelihood gradient with respect to fixed effects:
+
+.small[
+```{r, echo=TRUE}
+max(fit$gradients)
+```
+]
+
+* Gradient becomes smaller as likelihood surface becomes flatter at the location in parameter space
+
+--
+
+* Flatter surface = closer to point of maximum likelihood
+
+--
+
+* So, small values are consistent with convergence (no hard rule, perhaps at least < 0.001)
+
+---
+
+# Interpretation
+
+* Linear interaction term seems tricky to estimate
+
+* Solutions:
+  * make sure the model is identifiable
+  * drop linear interaction (maybe not important)
+  * try re-scaling predictors
+  * try a different mesh setup
+  * simplify some other part of the model
+  * try a related fixed-effect structure, e.g., non-linear smooths
+  
+---
+
+# Smooth effects by year
+
+For example, separate smooths by year:
+
+```{r eval = FALSE, echo=TRUE}
+pcod$fyear <- as.factor(pcod$year)
+fit <- sdmTMB(
+  present ~ s(depth, by = fyear), #<<
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+```
+
+---
+ 
+# Other warning messages
+
+* `Matrix` package, compiler warnings
+  * generally OK, but see glmmTMB page:  
+    <https://glmmtmb.github.io/glmmTMB/>
+
+* TMB users forum  
+  <https://groups.google.com/g/tmb-users/>  
+
+---
+
+# Words of wisdom
+
+**Start simple!**
+
+--
+
+These are complex models:
+
+--
+
+* May take a while to fit (`silent = FALSE`)
+
+--
+
+* Easy to create configurations that won't converge
+
+--
+
+* Can also be hard to wrap your head around
+
+---
+
+# Words of wisdom
+
+--
+
+Options for starting simple:
+
+--
+
+* Start intercept only
+
+--
+
+* Start with a spatial not spatiotemporal model
+
+--
+
+* Start without random fields:  
+  `spatial = 'off', spatiotemporal = 'off'`
+  
+--
+
+* Start with coarse meshes, maybe increase later  
+  .xsmall[Mesh resolution greatly impacts speed and finer is not always better; can affect convergence.]
+
+---
+
+# More words of wisdom
+
+
+--
+
+* Make lots of plots  
+  .xsmall[Plot the raw data, plot the predictions, plot the random fields, ...]
+
+--
+
+* Don't get too caught up in model configuration  
+  .xsmall[Many are only subtly different and can produce similar predictions]
+
+--
+
+* Consider the scale of the response and predictors
+  .xsmall[Keep parameters not too big or small]
+
+--
+
+* Consider if observation error variance >> process variance   
+  .xsmall[Known to be problematic for state-space models]
+  

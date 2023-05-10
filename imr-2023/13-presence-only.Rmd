@@ -1,0 +1,318 @@
+---
+title: "Spatial modeling of presence-only data"
+subtitle: "DFO TESA sdmTMB workshop"
+author: ""
+institute: ""
+date: "January 16--19 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("dfo-tesa-2023/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+```
+
+# Spatial patterning of trees: bei dataset
+
+* Barro Colorado Island = classic in ecology
+  * Hubbell's (2001) unified neutral theory of biodiversity
+  
+```{r dat, echo=FALSE}
+dat <- data.frame(
+  x = spatstat.data::bei$x,
+  y = spatstat.data::bei$y
+)
+```
+
+```{r plot-trees, fig.asp=0.5}
+ggplot(dat, aes(x, y)) +
+  geom_point(col = "darkblue", alpha = 0.1) +
+  coord_cartesian(expand = FALSE)
+```
+
+---
+
+# Pseudo-absences  
+
+* Georeferenced locations of trees, no 0s  
+
+* Need to generate 0s: how?
+  * quadrature points ([Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352))  
+  
+* Strategy?
+  * generate regularly spaced or random?
+  * Large enough so that predictive performance does not change as more are added
+
+---
+  
+# Pseudo-absences from sdmTMB
+
+* Example of uniform grid strategy
+
+```{r make-zeros, echo = TRUE}
+res <- 5
+zeros <- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
+```
+
+---
+
+# Bind the observed and pseudo-zeros together
+
+.small[
+```{r bind-dat, echo=TRUE}
+dat$present <- 1
+zeros$present <- 0
+all_dat <- rbind(dat, zeros)
+
+mesh <- make_mesh(
+  all_dat,
+  xy_cols = c("x", "y"),
+  cutoff = 25 # min. distance
+)
+
+mesh$mesh$n # extract number of vertices/knots
+```
+]
+
+---
+
+# Combined data 
+
+* blue dots are data; red grid dots are quadrature points
+* grey triangles are from the SPDE mesh
+
+.small[
+```{r mesh-viz, fig.asp=0.5, echo=FALSE}
+all_dat$fpres <- as.factor(all_dat$present)
+ggplot() +
+  inlabru::gg(mesh$mesh) +
+  geom_point(
+    data = all_dat,
+    aes(x = x, y = y, col = fpres), size = 0.2, alpha = 0.3
+  ) +
+  coord_equal() +
+  # guides(colour = guide_legend(override.aes = list(alpha = 1))) + 
+  guides(col = guide_legend(title = "Present"))
+```
+]
+
+---
+
+# Infinitely Weighted Logistic Regression (IWLR)
+
+* [Fithian & Hastie (2013)](https://doi.org/10.1214/13-AOAS667)
+
+```{r make-iwlr, echo=TRUE}
+nW <- 1.0e6
+all_dat$wt <- nW^(1 - all_dat$present)
+```
+
+* weights can be passed into model of choice
+  * `glm()`, `glmmTMB()`, etc.
+  * adding random fields makes this a "spatial log-Gaussian Cox process"
+
+---
+
+# IWLR & sdmTMB
+
+* convergence may be affected by size of pseudo-absences    
+* intercept and log-likelihood affected by `nW`
+```{r iwlr-fit, echo = TRUE}
+fit <- sdmTMB(
+  present ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  weights = all_dat$wt #<<
+)
+```
+
+---
+
+# Downweighted Poisson Regression (DWPR)
+
+* Similar to IWLR, uses different weights
+* Doesn't have same arbitrary effects on intercept, likelihood  
+
+```{r make-dwpr, echo=TRUE}
+# small values at presence locations
+all_dat$wt <- 1e-6
+
+# pseudo-absences: area per quadrature point
+tot_area <- diff(range(dat$x)) * diff(range(dat$y))
+n_zeros <- length(which(all_dat$present == 0))
+
+all_dat$wt <- ifelse(all_dat$present == 1,
+  1e-6, tot_area / n_zeros
+)
+```
+
+---
+
+# DWPR & sdmTMB
+
+```{r fit-dwpr, echo=TRUE}
+fit <- sdmTMB(
+  present / wt ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = poisson(link = "log"),
+  weights = all_dat$wt #<<
+)
+```
+
+---
+
+# Plotting spatial random effects
+
+.small[
+```{r plot-rf, echo=FALSE}
+p <- predict(fit, newdata = zeros)
+ggplot(p, aes(x, y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  coord_fixed(expand = FALSE)
+```
+]
+
+---
+
+# Predictions in link (log) space
+
+.xsmall[
+```{r plot-link, echo=FALSE}
+ggplot(p, aes(x, y, fill = est)) +
+  geom_raster() +
+  scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE) # +
+# geom_point(aes(x, y, size = n),
+# data = dat, pch = 21, colour = "grey60", inherit.aes = FALSE)
+```
+]
+
+---
+
+# Does adding more pseudo-absences improve performance?
+
+* Increase 0s from ~ 20K to 30K
+
+* AUC similar (other criteria could be used) 
+
+```{r inc-points-auc, echo=FALSE}
+dat <- data.frame(
+  x = spatstat.data::bei$x,
+  y = spatstat.data::bei$y
+)
+
+res <- 4
+zeros <- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
+
+dat$present <- 1
+zeros$present <- 0
+all_dat <- rbind(dat, zeros)
+mesh <- make_mesh(
+  all_dat,
+  xy_cols = c("x", "y"),
+  cutoff = 25 # min. distance between knots in X-Y units
+)
+# mesh$mesh$n # extract number of vertices/knots
+
+all_dat$wt <- 1e-6
+
+# pseudo-absences: area per quadrature point
+area <- diff(range(dat$x)) * diff(range(dat$y))
+all_dat$wt[which(all_dat$present == 0)] <-
+  area / length(which(all_dat$present == 0))
+
+fit2 <- sdmTMB(
+  present / wt ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = poisson(link = "log"),
+  weights = all_dat$wt
+)
+
+all_dat$p <- predict(fit2)$est # total predictions, logit
+rocr <- ROCR::prediction(plogis(all_dat$p), all_dat$present)
+ROCR::performance(rocr, measure = "auc")@y.values[[1]]
+```
+
+---
+
+# What about using a higher resolution mesh?
+
+* Change cutoff from 25 to 15
+
+* Knots change from ~700 to ~1750
+
+* Marginal gains in AUC with finer mesh
+  * Note: it's not adding more pseudo-absences but changing the mesh that's more important here  
+  
+```{r auc-highres-mesh, echo=FALSE}
+dat <- data.frame(
+  x = spatstat.data::bei$x,
+  y = spatstat.data::bei$y
+)
+
+res <- 4
+zeros <- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
+
+dat$present <- 1
+zeros$present <- 0
+all_dat <- rbind(dat, zeros)
+mesh <- make_mesh(
+  all_dat,
+  xy_cols = c("x", "y"),
+  cutoff = 15 # min. distance between knots in X-Y units
+)
+# mesh$mesh$n # extract number of vertices/knots
+
+all_dat$wt <- 1e-6
+
+# pseudo-absences: area per quadrature point
+area <- diff(range(dat$x)) * diff(range(dat$y))
+all_dat$wt[which(all_dat$present == 0)] <-
+  area / length(which(all_dat$present == 0))
+
+fit3 <- sdmTMB(
+  present / wt ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = poisson(link = "log"),
+  weights = all_dat$wt
+)
+
+all_dat$p <- predict(fit3)$est # total predictions, logit
+rocr <- ROCR::prediction(plogis(all_dat$p), all_dat$present)
+ROCR::performance(rocr, measure = "auc")@y.values[[1]]
+```
+
+---
+
+# Benefits of pseudo-absence modeling
+
+* Estimate of spatial range isn't sensitive to choice of raster / lattice resolution
+* Doesn't require wrangling raw data (e.g. aggregating to larger cell size to model counts)

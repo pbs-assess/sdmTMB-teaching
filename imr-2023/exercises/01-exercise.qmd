@@ -1,0 +1,368 @@
+---
+title: "Simulating and fitting spatial random fields"
+format: html
+editor: visual
+execute: 
+  echo: true
+  eval: true
+---
+
+# Goals:
+
+-   Understand the spatial range.
+-   Become familiar with spatial random fields through simulation.
+-   Become familiar with spatiotemporal random fields and how they can combine with spatial random fields.
+-   Understand how correlation in spatiotemporal random fields looks.
+
+```{r}
+#| echo=FALSE
+library(sdmTMB)
+library(ggplot2)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+theme_set(theme_light())
+```
+
+# Understanding the spatial range
+
+The spatial range is the distance at which two data points are effectively independent. Technically, this is the distance at which correlation declines to approximately 0.13.
+
+We can visualize the Matérn correlation function for various range values:
+
+```{r}
+range <- 0.5 #< try changing this
+
+kappa <- sqrt(8) / range
+distance <- seq(0.001, 1, length.out = 100)
+correlation <- kappa * distance * besselK(kappa * distance, nu = 1)
+plot(distance, correlation, type = "l", ylim = c(0, 1))
+abline(h = 0.13, lty = 2) # 0.13 correlation
+abline(v = range, lty = 2)
+```
+
+Here we have a unitless distance from 0 to 1. In real situations these would be in something like m or km and so the range would be units of m or km.
+
+### Exercise:
+
+1.  Try running the previous chunk over and over with various `range` values. Note how the correlation function changes.
+
+# Spatial simulation
+
+Next we will simulate some spatial random fields to understand what they look like and how their parameters control them.
+
+First, this chunk creates a set of X and Y spatial coordinates and constructs a mesh using a minimum triangle edge length cutoff distance of 0.05. We need this for the internal random field calculations with the SPDE.
+
+```{r}
+# A grid of X and Y values:
+predictor_dat <- expand.grid(
+  X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100)
+)
+mesh <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.05)
+plot(mesh)
+```
+
+The basic function for simulating random fields in sdmTMB is `sdmTMB_simulate()`.
+
+-   The formula here contains only an intercept but could include covariates.
+
+-   The family is Gaussian to specify that we simulate a normally distributed response.
+
+-   The range (see above) is 0.6.
+
+-   The two important standard deviation parameters are `sigma_O` (controlling the marginal standard deviation of `omega`, the spatial random field) and `phi` (controlling the observation error standard deviation).
+
+-   We are plotting `observed` (observed values: the expected value plus observation error).
+
+```{r}
+sim_dat <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat,
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.6, #< try changing this (spatial range)
+  sigma_O = 0.2, #< try changing this (spatial standard deviation)
+  phi = 0.001, #< try changing this observation error standard deviation
+  B = 0 # intercept
+)
+# head(sim_dat)
+
+ggplot(sim_dat, aes(X, Y, fill = observed)) +
+  geom_raster()
+```
+
+### Exercise:
+
+1.  Try running the previous chunk over and over. Try changing the `range` and `sigma_O` values. What do you observe?
+2.  Try increasing the observation error standard deviation `phi` and re-running it many times. Try making it equal to `sigma_O` and twice its size. What happens when observation error is much larger than `sigma_O`?
+
+Note that the colour scale may be changing between runs!
+
+# Spatiotemporal simulation
+
+```{r}
+predictor_dat2 <- expand.grid(
+  X = seq(0, 1, length.out = 100), Y = seq(0, 1, length.out = 100), year = 1:6
+)
+mesh2 <- make_mesh(predictor_dat2, c("X", "Y"), cutoff = 0.1)
+```
+
+```{r}
+sim_dat2 <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat2,
+  time = "year",
+  mesh = mesh2,
+  family = gaussian(),
+  range = 0.5, #< spatial/spatiotemporal range
+  sigma_O = 0.2, #< spatial SD
+  sigma_E = 0.1, #< spatiotemporal SD
+  phi = 0.001,
+  B = 0 # intercept
+)
+# head(sim_dat2)
+```
+
+```{r spatial-fields}
+ggplot(sim_dat2, aes(X, Y, fill = omega_s)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2()
+```
+
+```{r spatiotemporal-fields}
+ggplot(sim_dat2, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2()
+```
+
+```{r simulated-observations}
+ggplot(sim_dat2, aes(X, Y, fill = observed)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2()
+```
+
+### Exercise:
+
+1.  Try running the previous 4 chunks over and over and observe the various components.
+2.  What do you notice about `omega_s` (spatial random field) across the time slices? Conversely, what do you notice about `epsilon_st` (spatiotemporal random fields) across time?
+3.  Try increasing `sigma_E` (spatiotemporal SD) to be larger than `sigma_O` (spatial SD). How do the observations change?
+
+# Correlated spatiotemporal fields
+
+The above spatiotemporal fields were left as their default: independent across years (`spatiotemporal = "iid"`). They can also be correlated. Here we will simulate and plot spatiotemporal fields with various levels of correlation.
+
+```{r}
+sim_dat3 <- sdmTMB_simulate(
+  formula = ~ 1,
+  data = predictor_dat2,
+  time = "year",
+  mesh = mesh2,
+  family = gaussian(),
+  range = 0.5,
+  sigma_O = 0,
+  sigma_E = 0.1,
+  spatiotemporal = "ar1", #< field type
+  rho = 0.6, #< AR(1) field correlation
+  phi = 0.001,
+  B = 0 # intercept
+)
+ggplot(sim_dat3, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_gradient2()
+```
+
+### Exercise:
+
+1.  In the previous chunk, try setting the AR(1) random field correlation (`rho`) to values ranging from 0 to near 1 (e.g., 0.99). What do you observe?
+2.  When might you observe a process that resembles the above?
+3.  What happens when `rho` is \< 0? Is `rho` more likely to be \> or \< than 0 in ecological systems? Can you think of a situation where `rho < 0`?
+
+# Fitting a geostatistical spatial model
+
+Let's fit a basic spatial model to some simulated data. We'll simulate on a grid and then down-sample from that grid. (We'll do it this way so we can plot a smooth known random field in the end for comparison.)
+
+```{r}
+predictor_dat <- expand.grid(
+  X = seq(0, 1, length.out = 100), 
+  Y = seq(0, 1, length.out = 100)
+)
+set.seed(19201) # for consistency
+predictor_dat$covariate <- rnorm(n = nrow(predictor_dat))
+mesh <- make_mesh(predictor_dat, c("X", "Y"), cutoff = 0.05)
+plot(mesh)
+
+sim_dat4 <- sdmTMB_simulate(
+  formula = ~ 1 + covariate,
+  data = predictor_dat,
+  mesh = mesh,
+  family = gaussian(link = "identity"),
+  range = 0.5,
+  sigma_O = 0.4,
+  phi = 0.3,
+  B = c(0.4, 0.2), # intercept and covariate coefficient
+  seed = 98259 # for consistency
+)
+head(sim_dat4)
+
+ggplot(sim_dat4, aes(X, Y, fill = omega_s)) +
+  geom_raster()
+
+ggplot(sim_dat4, aes(X, Y, fill = mu)) +
+  geom_raster()
+
+ggplot(sim_dat4, aes(X, Y, fill = observed)) +
+  geom_raster()
+```
+
+### Exercise:
+
+1.  What did we just simulate above? What is the one addition from the first spatial simulation?
+2.  What do the last 3 plots represent? Why do they get increasingly noisy?
+
+Now we'll down-sample to simulate sampling/observing only 300 locations:
+
+```{r}
+set.seed(1098)
+to_sample <- sample(seq_len(nrow(sim_dat4)), size = 300)
+obs_dat <- sim_dat4[to_sample, ]
+ggplot(obs_dat, aes(X, Y, colour = observed)) +
+  geom_point()
+```
+
+Start by fitting a regular GLM:
+
+```{r}
+fit_glm <- glm(observed ~ 1 + covariate, family = gaussian(), data = obs_dat)
+summary(fit_glm)
+```
+
+We can calculate and plot the residuals spatially:
+
+```{r}
+obs_dat$resid <- residuals(fit_glm)
+ggplot(obs_dat, aes(X, Y, colour = resid)) +
+  geom_point() +
+  scale_colour_gradient2()
+```
+
+And plot predictions spatially on the full grid:
+
+```{r}
+sim_dat4$pred_glm <- predict(fit_glm, newdata = sim_dat4)
+
+lims <- range(c(sim_dat4$mu, sim_dat4$pred_glm))
+
+g1 <- ggplot(sim_dat4, aes(X, Y, fill = mu)) +
+  geom_raster() + ggtitle("Truth") +
+  scale_fill_viridis_c(limits = lims)
+g2 <- ggplot(sim_dat4, aes(X, Y, fill = pred_glm)) +
+  geom_raster() + ggtitle("Estimated") +
+  scale_fill_viridis_c(limits = lims)
+cowplot::plot_grid(g1, g2, nrow = 2)
+```
+
+### Exercise:
+
+1.  Do you see spatial correlation in the residuals?
+2.  What are at least 2 problems this creates?
+3.  How good do those predictions look compared to the known truth?
+4.  In the context of this workshop, what is a solution to this?
+
+First, let's convince ourselves that we can fit the exact same model with sdmTMB. All we have to do is turn off the spatial random fields:
+
+```{r}
+fit_glm2 <- sdmTMB(observed ~ 1 + covariate, family = gaussian(), 
+  data = obs_dat, spatial = "off") # default is spatial = "on"
+summary(fit_glm2)
+```
+
+### Exercise:
+
+1.  Check if `fit_glm` and `fit_glm2` match and represent the same model.
+
+Now, try fitting a GLM with Gaussian random fields:
+
+```{r}
+fitting_mesh <- make_mesh(obs_dat, c("X", "Y"), cutoff = 0.05)
+plot(fitting_mesh)
+fit_sdmTMB <- sdmTMB(
+  observed ~ 1 + covariate, 
+  family = gaussian(), 
+  data = obs_dat, 
+  spatial = "on",
+  mesh = fitting_mesh
+)
+sanity(fit_sdmTMB)
+summary(fit_sdmTMB)
+tidy(fit_sdmTMB, conf.int = TRUE)
+tidy(fit_sdmTMB, "ran_pars", conf.int = TRUE)
+```
+
+```{r}
+summary(fit_glm2)
+summary(fit_sdmTMB)
+```
+
+### Exercise:
+
+1.  How did the dispersion parameter (Gaussian SD) differ between `fit_glm2` and `fit_sdmTMB`? Why?
+2.  How close are the estimated values to the truth? Is that about what you expected?
+
+Now let's calculate and plot residuals for the random field model:
+
+```{r}
+obs_dat$resid_sdmTMB <- residuals(fit_sdmTMB)
+ggplot(obs_dat, aes(X, Y, colour = resid_sdmTMB)) +
+  geom_point() +
+  scale_colour_gradient2()
+```
+
+And make predictions on the full grid:
+
+```{r}
+p <- predict(fit_sdmTMB, newdata = sim_dat4)
+```
+
+```{r}
+lims <- range(c(sim_dat4$mu, p$est))
+g1 <- ggplot(sim_dat4, aes(X, Y, fill = mu)) +
+  geom_raster() + ggtitle("True mean") +
+  scale_fill_viridis_c(limits = lims)
+
+g2 <- ggplot(p, aes(X, Y, fill = est)) +
+  geom_raster() + ggtitle("Estimated value") +
+  scale_fill_viridis_c(limits = lims)
+
+cowplot::plot_grid(g1, g2, nrow = 2)
+```
+
+```{r}
+lims <- range(c(sim_dat4$omega_s, p$omega_s))
+g1 <- ggplot(sim_dat4, aes(X, Y, fill = omega_s)) +
+  geom_raster() + ggtitle("True random field") +
+  scale_fill_gradient2(limits = lims)
+
+g2 <- ggplot(p, aes(X, Y, fill = omega_s)) +
+  geom_raster() + ggtitle("Estimated random field") +
+  scale_fill_gradient2(limits = lims)
+cowplot::plot_grid(g1, g2, nrow = 2)
+```
+
+Predicted vs. true for the two models:
+
+```{r}
+par(mfrow = c(2, 1))
+plot(sim_dat4$mu, sim_dat4$pred_glm, main = "GLM", 
+  xlab = "True", ylab = "Predicted")
+plot(sim_dat4$mu, p$est, main = "GLM with random fields", 
+  xlab = "True", ylab = "Predicted")
+```
+
+### Exercise:
+
+1.  How do the residuals look now? Why?
+2.  How do the predictions look compared to before? Why?
+3.  How do the random fields look? Is this as good as you expected? What would make these easier/harder to estimate?
