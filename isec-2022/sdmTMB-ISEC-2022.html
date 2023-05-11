@@ -4,7 +4,7 @@
     <title>sdmTMB: an R package for fast, flexible, and accessible generalized linear mixed effects models with spatial and spatiotemporal random fields</title>
     <meta charset="utf-8" />
     <meta name="author" content="Sean C. Anderson1, Eric J. Ward2, Philina A. English1, Lewis A.K. Barnett2" />
-    <script src="libs/header-attrs-2.14/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -247,16 +247,20 @@ fit
 
 ```r
 tidy(fit, conf.int = TRUE)
-#&gt;          term estimate std.error conf.low conf.high
-#&gt; 1 (Intercept)  2.25655 0.1906295 1.882923  2.630177
+#&gt; # A tibble: 1 × 5
+#&gt;   term        estimate std.error conf.low conf.high
+#&gt;   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 (Intercept)     2.26     0.191     1.88      2.63
 
 
 tidy(fit, effects = "ran_pars", conf.int = TRUE)
-#&gt;        term  estimate std.error  conf.low conf.high
-#&gt; 1     range 12.644158        NA  7.952713 20.103168
-#&gt; 3       phi 12.178506        NA 11.428478 12.977757
-#&gt; 4   sigma_O  2.043052        NA  1.655013  2.522071
-#&gt; 5 tweedie_p  1.566288        NA  1.546349  1.586015
+#&gt; # A tibble: 4 × 5
+#&gt;   term      estimate std.error conf.low conf.high
+#&gt;   &lt;chr&gt;        &lt;dbl&gt; &lt;lgl&gt;        &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 range        12.6  NA            7.95     20.1 
+#&gt; 2 phi          12.2  NA           11.4      13.0 
+#&gt; 3 sigma_O       2.04 NA            1.66      2.52
+#&gt; 4 tweedie_p     1.57 NA            1.55      1.59
 ```
 
 ---
@@ -275,9 +279,9 @@ head(p)
 
 ```
 #&gt;     X    Y       est est_non_rf    est_rf   omega_s
-#&gt; 1 456 5636 -2.915723  -3.079354 0.1636317 0.1636317
-#&gt; 2 458 5636  2.262416   2.000233 0.2621831 0.2621831
-#&gt; 3 460 5636  3.218463   2.857729 0.3607346 0.3607346
+#&gt; 1 456 5636 -2.915726  -3.079358 0.1636326 0.1636326
+#&gt; 2 458 5636  2.262415   2.000230 0.2621842 0.2621842
+#&gt; 3 460 5636  3.218462   2.857727 0.3607358 0.3607358
 ```
 
 ---
