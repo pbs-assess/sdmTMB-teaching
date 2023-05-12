@@ -1,9 +1,9 @@
 ---
 title: "Introduction to random fields"
-subtitle: "DFO TESA sdmTMB workshop"
+subtitle: "IMR sdmTMB workshop"
 author: ""
 institute: ""
-date: "January 16--19 2023"
+date: "May 23--25 2023"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("dfo-tesa-2023/preamble.R"))
+source(here::here("imr-2023/preamble.R"))
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
@@ -27,17 +27,17 @@ library(ggplot2)
 library(mgcv)
 ```
 
-# Who we are
+<!-- # Who we are -->
 
-<img src="images/intro_slide.png" width="650px" class="center" />
-<!-- * Eric Ward, Northwest Fisheries Science Center (Seattle) -->
-<!-- * Sean Anderson, Fisheries and Oceans Canada (Nanaimo) -->
-<!-- * Lewis Barnett, Alaska Fisheries Science Center (Seattle)  -->
-<!-- * Philina English, Fisheries and Oceans Canada (Nanaimo) -->
+<!-- <img src="images/intro_slide.png" width="650px" class="center" /> -->
+<!-- <!-- * Eric Ward, Northwest Fisheries Science Center (Seattle) --> -->
+<!-- <!-- * Sean Anderson, Fisheries and Oceans Canada (Nanaimo) --> -->
+<!-- <!-- * Lewis Barnett, Alaska Fisheries Science Center (Seattle)  --> -->
+<!-- <!-- * Philina English, Fisheries and Oceans Canada (Nanaimo) --> -->
 
----
+<!-- --- -->
 
-# Plan for the 4-day course
+# Plan for the 3-day course
 
 * Day 1: Intro to random fields, intro to sdmTMB, spatial models
 
@@ -45,16 +45,13 @@ library(mgcv)
 
 * Day 3: Time-varying effects, spatially varying effects, index standardization
 
-* Day 4: Extrapolation and forecasting, touch on other advanced topics (e.g., correlation barriers, presence-only data, priors)
-
-
 ---
 
-# Plan for the 4-day course
+# Plan for the 3-day course
 
-* Each day: about 1-1:15 hours of lectures, 5 minute break, ~50 minutes of exercises, ~15 minute regroup
+* Each day: about 75 minutes of lectures, 5 minute break, ~60 minutes of exercises, ~25 minute regroup
 
-* Have questions? Use the [Google Doc](https://docs.google.com/document/d/1JScvWtNWrJUfMrUvDZMzWhTUXqsLZSyiN2ULZdaihZk/edit?usp=sharing), ask during any pause, or at the end of each day. Thanks!
+* Have questions? Use the [Google Doc](https://docs.google.com/document/d/12ZVzOmjbBa8VVTK0tmaNEcN1eP93g6iagDM2c8sSsfo/edit?usp=sharing), ask during any pause, or at the end of each day. Thanks!
 
 ---
 

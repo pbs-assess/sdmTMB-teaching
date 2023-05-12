@@ -1,9 +1,9 @@
 ---
 title: "Random fields with physical barriers"
-subtitle: "DFO TESA sdmTMB workshop"
+subtitle: "IMR sdmTMB workshop"
 author: ""
 institute: ""
-date: "January 16--19 2023"
+date: "May 23--25 2023"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("dfo-tesa-2023/preamble.R"))
+source(here::here("imr-2023/preamble.R"))
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
