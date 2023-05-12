@@ -377,7 +377,7 @@ tidy(fit, effects = "ran_pars", conf.int = TRUE)
 # Prediction
 
 ```{r grid, echo=FALSE, eval=TRUE}
-grid <- subset(qcs_grid, year == 2003)
+grid <- qcs_grid
 ```
 
 ```{r predict1, echo=TRUE, eval=FALSE}
@@ -737,7 +737,7 @@ fit_aniso <- sdmTMB(
 g1 <- ggplot(pcod_wcvi, aes(X, Y, colour = log(density))) +
   geom_point(pch = 20, alpha = 0.9) +
   coord_equal()
-g2 <- sdmTMB:::plot_anisotropy2(fit_aniso)
+g2 <- sdmTMB:::plot_anisotropy(fit_aniso)
 cowplot::plot_grid(g1, g2, nrow = 1, align = "hv")
 ```
 
@@ -814,6 +814,7 @@ fit_sv <- sdmTMB(
 
 ```{r svc2}
 nd <- qcs_grid
+nd <- replicate_df(nd, "year", unique(pcod$year))
 nd$centered_year <- nd$year - mean(pcod$year)
 p1 <- predict(fit_sv, newdata = nd)
 ```
