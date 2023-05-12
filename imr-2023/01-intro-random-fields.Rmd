@@ -139,9 +139,30 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
   * 2D smooths in mgcv
   * Random fields and the Stochastic Partial Differential Equation (SPDE)
 
+---
+
+# Spatial smoothing with GAMs (mgcv)
+
+```{r gam-examples, eval=FALSE, echo=TRUE}
+gam(y ~ s(lon, lat) + s(time), ...)
+
+gam(y ~ s(lon, lat) + s(time) + 
+      ti(lon, lat, time, d=c(2,1)), ...)
+
+gam(y ~ s(lon, lat, by = "time") + 
+      s(time), ...)
+```
+
+---
+
+# Spatial smoothing with SPDE (INLA, inlabru)
+
 * SPDE differs in that it explicitly estimates meaningful parameters for spatial covariance function
 
-.xsmall[
+* SPDE and GAMs can produce the identical results
+
+
+.small[
 Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020)
 ]
 
