@@ -1,6 +1,6 @@
-# DFO TESA Workshop 2023
+# IMR Workshop 2023
 
-January 16--19 2023
+23--25 May 2023
 
 ### sdmTMB:
 
@@ -9,10 +9,6 @@ January 16--19 2023
 <https://github.com/pbs-assess/sdmTMB>
 
 <https://pbs-assess.github.io/sdmTMB/index.html>
-
-### DFO-specific install instructions
-
-<https://github.com/pbs-assess/sdmTMB-teaching/blob/main/dfo-tesa-2023/00-install.Rmd>
 
 ### Shared Google Docs notes and questions
 
