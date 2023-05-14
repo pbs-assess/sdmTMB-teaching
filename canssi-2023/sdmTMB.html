@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>sdmTMB and explorations in mesh resolution see-sawing indices of abundance</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Sean C. Anderson1, Eric J. Ward2, Philina A. English1, Lewis A.K. Barnett2" />
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+
+class: middle, inverse
+
+&lt;h1&gt;sdmTMB: an R package for fast,&lt;br&gt;
+flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields&lt;/h1&gt;
+
+&lt;!-- &lt;h1&gt;sdmTMB and explorations in mesh resolution see-sawing indices of abundance&lt;/h1&gt; --&gt;
+
+Sean C. Anderson&lt;sup&gt;1&lt;/sup&gt;, Eric J. Ward&lt;sup&gt;2&lt;/sup&gt;, Philina A. English&lt;sup&gt;1&lt;/sup&gt;, Lewis A.K. Barnett&lt;sup&gt;2&lt;/sup&gt;
+
+.xsmall[
+&lt;sup&gt;1&lt;/sup&gt;Fisheries and Oceans Canada  
+&lt;sup&gt;2&lt;/sup&gt;U.S. National Oceanic and Atmospheric Administration
+]
+
+&lt;!-- &lt;img src="logo-sdmTMB.png" height="130px" class="centering"/&gt; --&gt;
+
+---
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+&lt;!--
+Plan
+
+1. spatial models
+2. random field approaches
+3. why sdmTMB?
+4. accessible syntax
+  - example
+  - basic syntax walk through
+5. fast
+6. advanced functionality examples
+8. summary
+9. finding out more
+10. acknowledgements
+
+--&gt;
+
+
+
+
+
+
+
+# Geostatistical data are ubiquitous in ecology and fisheries
+
+
+
+&lt;img src="sdmTMB_files/figure-html/vis-spatial-explicit-1.png" width="440px" style="display: block; margin: auto;" /&gt;
+
+Latent variables can cause complex spatial correlation
+
+--
+
+Gaussian random fields are an increasingly popular method for approximating these patterns
+
+---
+
+# Random fields are computationally challenging
+
+Solutions:
+
+--
+
+* Gaussian predictive process models (Banerjee et al. 2008, Latimer et al. 2009)
+
+--
+
+* Covariance tapering (Furrer et al. 2006), nearest neighbour (Datta et al. 2016) approaches
+
+--
+
+* Stochastic Partial Differential Equation (SPDE) approach (Lindgren et al. 2011, INLA)
+
+---
+
+# SPDE approach estimation
+
+The solution to an SPDE is an approximation of a Gaussian random field
+
+VAST developed links between R-INLA and TMB
+
+Options:
+
+&lt;img src="images/m0m1m2.png" height="300px" class="centering"/&gt;
+
+---
+
+# Why sdmTMB?
+
+&lt;img src="logo-sdmTMB.png" height="130px" class="centering"/&gt;
+
+.small[Familiar syntax (similar to glmmTMB, mgcv)]
+
+--
+
+.small[Fast marginal maximum likelihood estimation via TMB (or MCMC via Stan)]
+
+--
+
+.small[Features: e.g., penalized splines, time-varying parameters, breakpoint models]
+
+--
+
+.small[
+Modularity: mesh, fitting, predicting, index calculation, etc.
+]
+
+---
+
+# sdmTMB models as GLMMs
+
+&lt;br&gt;
+&lt;br&gt;
+
+&lt;img src="eqn.png" height="320px" class="centering"/&gt;
+
+---
+
+# `sdmTMB()`
+
+Set up is similar to `glmmTMB()`.  
+Common arguments:
+
+```r
+fit &lt;- sdmTMB(
+  formula,
+  data,
+  mesh,
+  time = NULL,
+  family = gaussian(link = "identity"),
+  spatial = c("on", "off"),
+  spatiotemporal = c("iid", "ar1", "rw", "off"),
+  offset = NULL,
+  ...
+)
+```
+
+See `?sdmTMB`
+
+---
+
+class: center, middle, inverse
+
+# A basic spatial random field example
+
+---
+
+# The built-in Pacific Cod dataset
+
+.xsmall[
+
+```r
+library(sdmTMB)
+head(pcod)
+```
+]
+
+
+
+
+.xsmall[
+```
+#&gt;  year density   lon    lat   X     Y
+#&gt; &lt;int&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+#&gt;  2003   113.  -130.0  52.3  446  5793
+#&gt;  2003    41.7 -130.0  52.3  446  5800
+#&gt;  2003     0   -130.0  52.4  449  5802
+```
+]
+
+&lt;img src="sdmTMB_files/figure-html/plot-pcod-raw-1.png" width="575px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Construct a mesh
+
+.small[
+
+```r
+mesh &lt;- make_mesh(pcod, c("X", "Y"), cutoff = 8)
+plot(mesh)
+```
+
+&lt;img src="sdmTMB_files/figure-html/mesh-demo-1.png" width="400px" style="display: block; margin: auto;" /&gt;
+
+Or supply any INLA mesh to `make_mesh(..., mesh = )`
+]
+
+---
+
+# Fit the model
+
+.large[
+
+```r
+fit &lt;- sdmTMB(
+  density ~ s(depth),
+  data = pcod,
+  family = tweedie(link = "log"),
+  mesh = mesh,
+  spatial = "on"
+)
+```
+]
+
+---
+
+# Summary
+
+.small[
+
+```r
+fit
+```
+]
+
+.xsmall[
+
+```r
+#&gt; Spatial model fit by ML ['sdmTMB']
+#&gt; Formula: density ~ s(depth)
+#&gt; Mesh: mesh
+#&gt; Data: pcod
+#&gt; Family: tweedie(link = 'log')
+#&gt;  
+#&gt;             coef.est coef.se
+#&gt; (Intercept)     2.26    0.19
+#&gt; sdepth         10.89   23.88
+#&gt; 
+#&gt; Smooth terms:
+#&gt;            Std. Dev.
+#&gt; sds(depth)     13.07
+#&gt; 
+#&gt; Dispersion parameter: 12.18
+#&gt; Tweedie p: 1.57
+#&gt; Matern range: 12.64
+#&gt; Spatial SD: 2.04
+#&gt; ML criterion at convergence: 6353.582
+```
+]
+
+---
+
+# Sanity check
+
+.small[
+
+```r
+sanity(fit)
+#&gt; ✔ Non-linear minimizer suggests successful convergence
+#&gt; ✔ Hessian matrix is positive definite
+#&gt; ✔ No extreme or very small eigenvalues detected
+#&gt; ✔ No gradients with respect to fixed effects are &gt;= 0.001
+#&gt; ✔ No fixed-effect standard errors are NA
+#&gt; ✔ No standard errors look unreasonably large
+#&gt; ✔ No sigma parameters are &lt; 0.01
+#&gt; ✔ No sigma parameters are &gt; 100
+#&gt; ✔ Range parameter doesn't look unreasonably large
+```
+]
+
+---
+
+# Tidy (extract parameter values)
+
+
+```r
+tidy(fit, conf.int = TRUE)
+#&gt; # A tibble: 1 × 5
+#&gt;   term        estimate std.error conf.low conf.high
+#&gt;   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 (Intercept)     2.26     0.191     1.88      2.63
+
+
+tidy(fit, effects = "ran_pars", conf.int = TRUE)
+#&gt; # A tibble: 4 × 5
+#&gt;   term      estimate std.error conf.low conf.high
+#&gt;   &lt;chr&gt;        &lt;dbl&gt; &lt;lgl&gt;        &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 range        12.6  NA            7.95     20.1 
+#&gt; 2 phi          12.2  NA           11.4      13.0 
+#&gt; 3 sigma_O       2.04 NA            1.66      2.52
+#&gt; 4 tweedie_p     1.57 NA            1.55      1.59
+```
+
+---
+
+# Prediction
+
+
+
+
+```r
+p &lt;- predict(fit) # fitted data
+p &lt;- predict(fit, newdata = grid) # new data
+head(p)
+```
+
+
+```
+#&gt;     X    Y       est est_non_rf    est_rf   omega_s
+#&gt; 1 456 5636 -2.915726  -3.079358 0.1636326 0.1636326
+#&gt; 2 458 5636  2.262415   2.000230 0.2621842 0.2621842
+#&gt; 3 460 5636  3.218462   2.857727 0.3607358 0.3607358
+```
+
+---
+
+# Visualizing predictions
+
+.small[
+
+```r
+ggplot(p, aes(X, Y, fill = exp(est))) +
+  geom_raster()
+
+ggplot(p, aes(X, Y, fill = omega_s)) +
+  geom_raster()
+```
+]
+
+&lt;img src="sdmTMB_files/figure-html/vis-predictions-1.png" width="800px" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+class: center, middle, inverse
+
+# Syntax
+
+---
+
+# Formula interface
+
+Similar interface to widely used R packages:
+
+.small[
+
+```r
+# linear effect of x1:
+formula = y ~ x1
+
+# add smoother effect of x2:
+formula = y ~ x1 + s(x2)
+
+# add random intercept by group g:
+formula = y ~ x1 + s(x2) + (1 | g)
+```
+]
+
+---
+
+# Smoothers (as in mgcv)
+
+Penalized smoothers ('p-splines'):
+
+.small[
+
+```r
+# smoother effect of x:
+formula = y ~ s(x)
+
+# basis dimension of 5:
+formula = y ~ s(x, k = 5)
+
+# bivariate smoother effect of x &amp; y:
+formula = y ~ s(x, y)
+
+# smoother effect of x1 varying by x2:
+formula = y ~ s(x1, by = x2)
+
+# other kinds of mgcv smoothers:
+formula = ~ s(month, bs = "cc", k = 12)
+```
+]
+
+---
+
+# Families
+
+.small[
+'Standard' families:  
+  `gaussian()`, `Gamma()`, 
+  `binomial()`, `poisson()`, `Beta()`, 
+  `student()`, `tweedie()`, 
+  `nbinom1()`, `nbinom2()`,
+  `truncated_nbinom1()`, `truncated_nbinom2()`
+]
+
+--
+
+.small[
+Delta/hurdle families:  
+  `delta_gamma()`, `delta_lognormal()`,
+  `delta_truncated_nbinom1()`,
+  `delta_truncated_nbinom2()` 
+]
+  
+--
+
+.small[
+Extraordinary catch event families (Thorson et al. 2011):  
+  `gamma_mix()`, `lognormal_mix()`, `nbinom2_mix()`, ...
+]
+
+--
+
+.small[
+Censored family:  
+  `censored_poisson()` (Watson et al. 2023, CJFAS)
+]
+
+---
+
+# Spatial fields can be turned on/off
+
+By default `sdmTMB()` estimates a spatial field  
+
+
+```r
+fit &lt;- sdmTMB(
+  y ~ x,
+  family = gaussian(),
+  data = dat,
+  mesh = mesh,
+* spatial = "on",
+  ...
+)
+```
+
+---
+
+# Spatiotemporal fields can be added
+
+By default `sdmTMB()` estimates a spatiotemporal  
+field if the `time` argument is specified
+
+
+```r
+fit &lt;- sdmTMB(
+  y ~ x,
+  family = gaussian(),
+  data = dat,
+  mesh = mesh,
+* time = "year", # column in data
+* spatiotemporal = "iid",
+  ...
+)
+```
+
+---
+
+# Types of spatiotemporal fields
+
+* None: `spatiotemporal = "off"`
+
+* Independent: `spatiotemporal = "iid"`
+
+* Random walk: `spatiotemporal = "rw"`
+
+* Autoregressive: `spatiotemporal = "ar1"`
+
+---
+
+# Independent spatiotemporal fields
+
+&lt;img src="sdmTMB_files/figure-html/iid-demo-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# AR1 spatiotemporal fields
+
+&lt;img src="sdmTMB_files/figure-html/ar1-demo-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+class: center, middle, inverse
+
+# Speed
+
+---
+
+# TMB and hence sdmTMB is fast
+
+.xsmall[
+7–30 times faster than INLA*
+]
+
+&lt;img src="images/speed.png" height="360px" class="centering"/&gt;
+
+
+
+
+.tiny[
+`*` Maximum marginal likelihood vs. approximate Bayes  
+`*` SPDE-based GLM with a spatial random field and increasing mesh complexity  
+`*` 1 core; faster empirical Bayes INLA integration; marginal likelihood vs. approximate Bayes]
+
+
+
+
+
+---
+
+class: center, middle, inverse
+
+# Example advanced features
+
+---
+
+# Anisotropy
+
+
+
+.xsmall[
+
+```r
+fit_aniso &lt;- sdmTMB(
+  density ~ as.factor(year),
+* anisotropy = TRUE,
+  time = "year",
+  data = pcod_wcvi,
+  mesh = mesh_wcvi,
+  family = tweedie()
+)
+```
+]
+
+&lt;img src="sdmTMB_files/figure-html/aniso-plot-1.png" width="750px" style="display: block; margin: auto;" /&gt;
+
+.tiny[
+Haskard 2007, Cressie Wikle 2011, Thorson et al. 2015
+]
+
+---
+
+# Time-varying coefficients
+
+
+
+
+.xsmall[
+
+```r
+fit_tv &lt;- sdmTMB(
+  density ~ 0 + as.factor(year),
+* time_varying = ~ 0 + depth_scaled + I(depth_scaled^2),
+  data = pcod,
+  mesh = pcod_mesh,
+  family = tweedie(link = "log"),
+  time = "year",
+  spatiotemporal = "off"
+)
+```
+]
+
+
+
+
+&lt;img src="sdmTMB_files/figure-html/timevarying-plot-1.png" width="550px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Spatially varying coefficients
+
+
+
+.xsmall[
+
+```r
+fit_sv &lt;- sdmTMB(
+  density ~ centered_year, 
+* spatial_varying = ~ 0 + centered_year,
+  data = pcod,
+  mesh = mesh, 
+  family = tweedie(link = "log")
+)
+```
+]
+
+
+
+&lt;img src="sdmTMB_files/figure-html/spatial-varying-plot-1.png" width="550px" style="display: block; margin: auto;" /&gt;
+
+.tiny[
+Hastie Tibshirani 1993, Gelfand et al. 2003, Barnett et al. 2021, Thorson et al. 2023, ...
+]
+
+---
+
+# Feature comparisons
+
+.pull-left[
+.small[
+sdmTMB:
+- Non-linear coefficients
+  - Thresholds, P-splines, time-varying coefs
+- Additional distributions:
+  - NB1, 0-truncated, censored, ...
+- Optional priors/penalties
+- Cross-validation
+- Model ensembling
+- More modular
+]
+]
+
+.pull-right[
+.small[
+VAST:
+- Spatial factor analyses
+- Multivariate responses
+- EOF analyses
+- Data integration
+- More, I'm sure!
+]
+]
+
+---
+
+class: center, middle, inverse
+
+# Index standardization
+
+---
+
+# Fit a model for index standardization of Pacific Cod data
+
+
+```r
+fit &lt;- sdmTMB(
+* density ~ s(depth) + as.factor(year),
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",  
+* time = "year",
+* spatiotemporal = "iid"
+)
+```
+
+---
+
+# Predict over the survey domain
+
+
+
+
+```r
+pred &lt;- predict(
+  fit, 
+  newdata = survey_grid, 
+  return_tmb_object = TRUE
+)
+```
+
+---
+
+# Plotting depth and year effects
+
+.xsmall[
+&lt;img src="sdmTMB_files/figure-html/pcod-st-plot-depth-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting spatial random effects
+
+.xsmall[
+&lt;img src="sdmTMB_files/figure-html/pcod-st-plot-omega-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting spatiotemporal random effects
+
+.xsmall[
+&lt;img src="sdmTMB_files/figure-html/pcod-st-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting overall predictions
+
+&lt;img src="sdmTMB_files/figure-html/pcod-st-plot-est-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Calculating an area-weighted population index
+
+Sum densities multiplied by cell areas and calculate standard errors
+
+
+```r
+index &lt;- get_index(pred, area = 4, bias_correct = TRUE)
+```
+
+---
+
+# Plot the standardized index
+
+&lt;br&gt;
+
+.small[
+&lt;img src="sdmTMB_files/figure-html/pcod-st-index-plot-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Learning more
+
+.small[
+**CRAN:**
+https://CRAN.R-project.org/package=sdmTMB
+
+**GitHub:** &lt;https://github.com/pbs-assess/sdmTMB&gt;
+
+**Documentation:**  
+&lt;https://pbs-assess.github.io/sdmTMB/index.html&gt;
+
+**Preprint:**  
+Anderson, S.C., E.J. Ward, P.A. English, L.A.K. Barnett. 2022. sdmTMB: an R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields. bioRxiv 2022.03.24.485545; &lt;https://doi.org/10.1101/2022.03.24.485545&gt;
+
+]
+
+---
+
+# Acknowledgements
+
+*Co-developers:*  
+Eric Ward (NOAA), Philina English (DFO), Lewis Barnett (NOAA)
+
+*Software inspiration and dependencies:*  
+VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), glmmTMB (Brooks et al. 2017), INLA (Rue et al. 2009; Lindgren et al. 2011), inlabru (Bachl et al. 2019), mgcv (Wood et al. 2011)
+
+*sdmTMB improvements:*  
+Jim Thorson, Joe Watson, Cole Monnahan, Julia Indivero, Max Lindmark, Stan Kotwicki, Jillian Dunic
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="libs/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
