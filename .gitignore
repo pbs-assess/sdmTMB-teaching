@@ -12,3 +12,4 @@
 xaringan-themer.css
 scrap.R
 .DS_Store
+libs/remark-latest.min.js
