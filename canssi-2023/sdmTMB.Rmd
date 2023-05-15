@@ -154,11 +154,11 @@ Options:
 
 --
 
-.small[Fast marginal maximum likelihood estimation via TMB (or MCMC via Stan)]
+.small[Fast marginal maximum likelihood estimation via TMB (or MCMC via tmbstan/Stan)]
 
 --
 
-.small[Features: e.g., penalized splines, time-varying parameters, breakpoint models]
+.small[Features: e.g., penalized splines, time-varying parameters, breakpoint models, priors/penalties, censored distributions]
 
 --
 
@@ -426,35 +426,13 @@ Similar interface to widely used R packages:
 formula = y ~ x1
 
 # add smoother effect of x2:
-formula = y ~ x1 + s(x2)
+formula = y ~ x1 + s(x2) # etc.
+
+# add hockey-stick effect of x1:
+formula = y ~ breakpt(x1)
 
 # add random intercept by group g:
 formula = y ~ x1 + s(x2) + (1 | g)
-```
-]
-
----
-
-# Smoothers (as in mgcv)
-
-Penalized smoothers ('p-splines'):
-
-.small[
-```{r formulas-smoothers, echo=TRUE, eval=FALSE}
-# smoother effect of x:
-formula = y ~ s(x)
-
-# basis dimension of 5:
-formula = y ~ s(x, k = 5)
-
-# bivariate smoother effect of x & y:
-formula = y ~ s(x, y)
-
-# smoother effect of x1 varying by x2:
-formula = y ~ s(x1, by = x2)
-
-# other kinds of mgcv smoothers:
-formula = ~ s(month, bs = "cc", k = 12)
 ```
 ]
 
@@ -836,35 +814,6 @@ Hastie Tibshirani 1993, Gelfand et al. 2003, Barnett et al. 2021, Thorson et al.
 
 ---
 
-# Feature comparisons
-
-.pull-left[
-.small[
-sdmTMB:
-- Non-linear coefficients
-  - Thresholds, P-splines, time-varying coefs
-- Additional distributions:
-  - NB1, 0-truncated, censored, ...
-- Optional priors/penalties
-- Cross-validation
-- Model ensembling
-- More modular
-]
-]
-
-.pull-right[
-.small[
-VAST:
-- Spatial factor analyses
-- Multivariate responses
-- EOF analyses
-- Data integration
-- More, I'm sure!
-]
-]
-
----
-
 class: center, middle, inverse
 
 # Index standardization
@@ -1014,3 +963,41 @@ VAST (Thorson et al. 2019), TMB (Kristensen et al. 2016), glmmTMB (Brooks et al.
 
 *sdmTMB improvements:*  
 Jim Thorson, Joe Watson, Cole Monnahan, Julia Indivero, Max Lindmark, Stan Kotwicki, Jillian Dunic
+
+---
+
+class: center, middle, inverse
+
+# Extra
+
+---
+
+# Feature comparisons
+
+.pull-left[
+.small[
+sdmTMB:
+- Non-linear coefficients
+  - Thresholds, P-splines, time-varying coefs
+- Additional distributions:
+  - NB1, 0-truncated, censored, ...
+- Optional priors/penalties
+- Cross-validation
+- Model ensembling
+- More modular
+]
+]
+
+.pull-right[
+.small[
+VAST:
+- Spatial factor analyses
+- Multivariate responses
+- EOF analyses
+- Data integration
+- More, I'm sure!
+]
+]
+
+---
+
