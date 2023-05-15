@@ -148,7 +148,7 @@ Options:
 
 # Why sdmTMB?
 
-<img src="logo-sdmTMB.png" height="130px" class="centering"/>
+<img src="logo-sdmTMB.png" height="120px" class="centering"/>
 
 .small[Familiar syntax (similar to glmmTMB, mgcv)]
 
@@ -158,7 +158,7 @@ Options:
 
 --
 
-.small[Features: e.g., penalized splines, time-varying parameters, breakpoint models, priors/penalties, censored distributions]
+.small[Features: e.g., penalized splines, time-varying parameters, breakpoint models, priors/penalties, censored distributions, cross-validation, ...]
 
 --
 
@@ -195,8 +195,6 @@ fit <- sdmTMB(
   ...
 )
 ```
-
-See `?sdmTMB`
 
 ---
 
@@ -428,11 +426,11 @@ formula = y ~ x1
 # add smoother effect of x2:
 formula = y ~ x1 + s(x2) # etc.
 
-# add hockey-stick effect of x1:
+# hockey-stick effect of x1:
 formula = y ~ breakpt(x1)
 
 # add random intercept by group g:
-formula = y ~ x1 + s(x2) + (1 | g)
+formula = y ~ x1 + (1 | g)
 ```
 ]
 
