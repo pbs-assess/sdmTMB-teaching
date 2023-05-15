@@ -590,7 +590,7 @@ class: center, middle, inverse
 # TMB and hence sdmTMB is fast
 
 .xsmall[
-7–30 times faster than INLA*
+<strike>2–8</strike> &nbsp; <strike>4–16</strike> &nbsp; 7–30 times faster than INLA*
 ]
 
 <img src="images/speed.png" height="360px" class="centering"/>
