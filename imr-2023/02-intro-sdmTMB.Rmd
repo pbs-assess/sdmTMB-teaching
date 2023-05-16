@@ -406,6 +406,36 @@ P.S: beware when df << 3. All noise is assimilated in the "observation error"
 Anderson, S. C., Branch, T. A., Cooper, A. B., and Dulvy, N. K. 2017. Black-swan events in animal populations. Proceedings of the National Academy of Sciences, 114: 3252–3257. http://www.pnas.org/lookup/doi/10.1073/pnas.16115.
 ]
 
+
+---
+
+# An aside on delta models  
+
+* Delta/hurdle model has 2 sub-models:
+- presence/absence (binomial, logit link)  
+- positive model (link varies by family)  
+
+* `family` argument to sdmTMB can be a list()  
+- for convenience, many delta- families implemented: `delta_gamma`, `delta_lognormal`, `delta_truncated_nbinom2` etc  
+
+* More detail coming on day 3
+
+---
+
+# An aside on mixture models
+
+Positive components may be modeled as a mixture of 2 distributions
+
+* Finite mixture model (2 components)  
+
+* Also referred to as "ECE" (extreme catch event) model, Thorson et al. (2012)  
+
+* Mechanisms: shoaling, etc.  
+
+* See `gamma_mix()` and `lognormal_mix()`
+
+* But requires data 
+
 ---
 
 class: center, middle, inverse
