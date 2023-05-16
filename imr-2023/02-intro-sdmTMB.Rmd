@@ -81,7 +81,7 @@ Warning: The INLA package is large, not on CRAN, and can be slow to install. If 
 
 ---
 
-# sdmTMB workflow
+# General sdmTMB workflow
 
 1. Prepare data .xsmall[(convert to UTMs, scale covariates, ...)]
 
@@ -97,7 +97,7 @@ Warning: The INLA package is large, not on CRAN, and can be slow to install. If 
 
 ---
 
-# sdmTMB workflow
+# General sdmTMB workflow
 
 1. Prepare data: .blue[`add_utm_columns()`]
 
@@ -117,11 +117,21 @@ Warning: The INLA package is large, not on CRAN, and can be slow to install. If 
 
 class: center, middle, inverse
 
-# Preparing data: getting into constant distance coordinates
+# Preparing the data
 
 ---
 
-# Getting into UTMs
+# The usual things
+
+Prepare the data in wide format (i.e. row = observation)
+
+Make sure there is no **NA** in the used covariates
+
+**NA** in the response value is OK (internally checked)
+
+---
+
+# Preparing the "space": the use of UTMs
 
 Need a projection that preserves constant distance
 
@@ -163,9 +173,9 @@ class: center, middle, inverse
 
 `make_mesh()` has 2 shortcuts to mesh construction
 
-1. K-means algorithm: used to cluster points (e.g., `n_knots = 100`); approach taken in VAST; sensitive to random `seed` argument!
+1. K-means algorithm: used to cluster points (e.g., `n_knots = 100`); approach taken in VAST; sensitive to random `seed` argument! 
 
-2. Cutoff: minimum allowed distance between vertices (e.g., `cutoff = 10`)
+2. Cutoff: minimum allowed distance between vertices (e.g., `cutoff = 10`) - **_the preferred option_**
   
 Alternatively, build any INLA mesh and supply it to the `mesh` argument in `make_mesh()`
 
@@ -379,28 +389,49 @@ ggplot(df, aes(y)) +
 
 ---
 
+# An aside on the student-t 
+
+.small[
+Useful for continuous data with extreme values. 
+
+Can also be used to deal with positive data when using _log_ `link`  
+
+`df` parameters controls for the amount of tail in the distribution i.e. degree of "extreme" values
+
+P.S: beware when df << 3. All noise is assimilated in the "observation error"
+
+]
+
+.tiny[
+Anderson, S. C., Branch, T. A., Cooper, A. B., and Dulvy, N. K. 2017. Black-swan events in animal populations. Proceedings of the National Academy of Sciences, 114: 3252–3257. http://www.pnas.org/lookup/doi/10.1073/pnas.16115.
+]
+
+---
+
 class: center, middle, inverse
 
 # Syntax: spatial model components
 
 ---
 
-# Spatial vs. spatiotemporal fields
+# Spatial vs. spatiotemporal fields -  notion
 
 * A spatial field can be thought of as a spatial intercept
 
-  * a wiggly spatial process that is constant in time
+  * a wiggly spatial process that is constant in time.
+  e.g. areas that has on average a higher/lower animal density, constant "hot/cold-spot" 
   
 --
 
 * Spatiotemporal variation represents separate fields estimated for each time
   slice (possibly correlated)
   
-  * wiggly spatial processes that change through time
+  * wiggly spatial processes that change through time.
+  e.g. inter-annual variability in "hot/cold-spot" locations
 
 --
 
-* Refer to [model description](https://pbs-assess.github.io/sdmTMB/articles/model-description.html) vignette for math notation
+* See [model description](https://pbs-assess.github.io/sdmTMB/articles/model-description.html) vignette for math notation
 
 ---
 
@@ -463,6 +494,10 @@ fit <- sdmTMB(
 
 # Independent (IID) spatiotemporal fields
 
+.small[
+Useful if pattern changes much between years
+]
+
 ```{r iid-demo}
 predictor_dat <- expand.grid(
   x = seq(0, 1, length.out = 100),
@@ -495,6 +530,11 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
 
 # AR1 spatiotemporal fields
 
+.small[
+Useful if pattern are related between years.                 
+P.S: Random walk = AR1 with 1.0 correlation
+]
+
 ```{r ar1-demo}
 sim_dat <- sdmTMB_simulate(
   formula = ~ 1,
@@ -518,7 +558,6 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
   guides(fill = "none")
 ```
 
-.small[Random walk = AR1 with 1.0 correlation]
 
 ---
 
@@ -539,7 +578,7 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
 
 ---
 
-# After model fitting
+# After model fitting (tomorrow)
 
 Inspecting, summarizing, predicting, etc.
 
