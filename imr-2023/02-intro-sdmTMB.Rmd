@@ -16,7 +16,8 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source("preamble.R")
+# source(here::here("imr-2023/preamble.R"))
+source(paste0(getwd(), "/preamble.R"))
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
@@ -438,6 +439,14 @@ Positive components may be modeled as a mixture of 2 distributions
 
 ---
 
+# Decision tree for family choice
+
+.center[
+<img src="images/family_diagram_highlighted.png" width="800px" height = "500px"/>
+]
+
+---
+
 class: center, middle, inverse
 
 # Syntax: spatial model components
@@ -608,11 +617,11 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
 
 ---
 
-# After model fitting (tomorrow)
+# After model fitting (more tomorrow)
 
 Inspecting, summarizing, predicting, etc.
 
-Covered in examples in next slides.
+Covered in examples in tomorrow's slides.
 
 * `predict()`: `?predict.sdmTMB`
 * `residuals()`: `?residuals.sdmTMB`
