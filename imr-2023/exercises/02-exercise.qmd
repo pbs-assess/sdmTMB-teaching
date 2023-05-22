@@ -32,7 +32,7 @@ theme_set(theme_light())
 We will work with data representing North Pacific Spiny Dogfish in the West Coast Vancouver Island synoptic trawl survey.
 
 ```{r}
-dat <- readRDS(here::here("dfo-tesa-2023/data/wcvi-dogfish.rds"))
+dat <- readRDS(here::here("imr-2023/data/wcvi-dogfish.rds"))
 ```
 
 ```{r}
@@ -128,7 +128,6 @@ sanity(fit_spatial)
 fit_spatial
 ```
 
-
 ### Exercise:
 
 A refresher from yesterday:
@@ -182,7 +181,7 @@ cv_depth$fold_elpd
 cv_depth$fold_elpd - cv_intercept$fold_elpd
 ```
 
-These are the expected log predictive densities for all left out data combined. 
+These are the expected log predictive densities for all left out data combined.
 
 ```{r}
 cv_intercept$elpd
@@ -289,7 +288,7 @@ plot(g)
 Let's now predict on a grid that covers the entire survey (`wcvi_grid`).
 
 ```{r}
-wcvi_grid <- readRDS(here::here("dfo-tesa-2023/data/wcvi-grid.rds"))
+wcvi_grid <- readRDS(here::here("imr-2023/data/wcvi-grid.rds"))
 head(wcvi_grid)
 wcvi_grid$log_depth <- log(wcvi_grid$depth)
 ```
