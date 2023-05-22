@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("imr-2023/preamble.R"))
+source("preamble.R")
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 

@@ -32,7 +32,8 @@ theme_set(theme_light())
 We will work with data representing North Pacific Spiny Dogfish in the West Coast Vancouver Island synoptic trawl survey.
 
 ```{r}
-dat <- readRDS(here::here("imr-2023/data/wcvi-dogfish.rds"))
+#dat <- readRDS(here::here("imr-2023/data/wcvi-dogfish.rds"))
+dat <- readRDS("../data/wcvi-dogfish.rds")
 ```
 
 ```{r}
@@ -288,7 +289,7 @@ plot(g)
 Let's now predict on a grid that covers the entire survey (`wcvi_grid`).
 
 ```{r}
-wcvi_grid <- readRDS(here::here("imr-2023/data/wcvi-grid.rds"))
+wcvi_grid <- readRDS("../data/wcvi-grid.rds")
 head(wcvi_grid)
 wcvi_grid$log_depth <- log(wcvi_grid$depth)
 ```
