@@ -3,6 +3,8 @@
 # clean survey data and calculate cod swept area density (kg / nm2)
 
 # read in catch level data
+library(here)
+library(tidyverse)
 dfc <- readRDS(here('data','survey_catch.rds'))
 
 # filter / clean data
@@ -67,4 +69,22 @@ dfc <- dfc %>% filter(commonname == "torsk") %>%
 dfc <- dfc %>% select(haulid, year, date, lat, lon, depth, area, stockarea, commonname,
                       serialnumber, sweptarea, catchcount, catchweight, density)
 saveRDS(dfc, here('data','survey_catch_clean.rds'))
+
+
+# ------------------------------------------------------------------------------
+# but the survey index is calculated with some other modifications in stox...
+# better to use stox project estimated cod swept area density (by 5 cm length bin)
+# see R:\421-Bunnfisk\Kysttorsk\R-skript for å lage tab og fig frå BootstrapImpute\Get_SweptAreaDensity_update2022.R
+df <- read.table(here('data','SweptAreaCod2003-current.txt'), header=TRUE, sep=',')
+df$haulid <- paste(df$startdate, df$serialno, sep="-")
+df2 <- df %>% group_by(haulid) %>% 
+  mutate(dens_over15cm = sum(Density[LengthGroup >= 15])) %>% ungroup() %>%
+  distinct(haulid, .keep_all = TRUE) %>% 
+  select(-c(LengthGroup, Density)) %>% 
+  rename(lon = longitudestart, lat = latitudestart, date = startdate) %>% 
+  mutate(stockarea = case_when(lat < 67 ~ '62-67N',
+                               lat > 67 ~ 'north of 67N')) %>% 
+  as.data.frame()
+saveRDS(df2, here('data','survey_catch_clean_stox.rds'))
+
 
