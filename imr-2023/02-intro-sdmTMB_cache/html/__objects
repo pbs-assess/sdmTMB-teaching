@@ -1,0 +1,18 @@
+libs	
+unnamed-chunk-1	
+unnamed-chunk-2	
+unnamed-chunk-3	d
+make-mesh	d	mesh
+formulas1	
+formulas-smoothers	
+formulas-other	
+breakpt	
+make-breakpt	df	slope
+logistic	
+make-logistic	df	slope
+sim-tweedie	df	r1	r2
+unnamed-chunk-4	
+unnamed-chunk-5	
+iid-demo	mesh2	predictor_dat	sim_dat
+ar1-demo	sim_dat
+argdemo	
