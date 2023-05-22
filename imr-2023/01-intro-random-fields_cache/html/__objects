@@ -1,5 +1,5 @@
 libs	
-sim-rf-intro	mesh	predictor_dat	sim_dat
+sim-rf-intro	mesh	predictor_dat	sim_dat	.Random.seed
 sim-rf-intro-cor	mesh	predictor_dat	sim_dat
 gam-examples	
 matern-plot	df	x

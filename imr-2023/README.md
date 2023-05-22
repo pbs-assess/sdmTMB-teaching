@@ -9,9 +9,6 @@ Topics will include:
 * An introduction to the sdmTMB R package
 * Spatial random field GLMMs
 * Spatiotemporal random field GLMMs
-* Two-part delta or hurdle models for zero inflation
-* Time-varying and spatially varying coefficients
-* Forecasting
 * Index standardization
 * Model checking and comparison
 * Depending on attendee interest as gauged before the workshop, we can touch on
