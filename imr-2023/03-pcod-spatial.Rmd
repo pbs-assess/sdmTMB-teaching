@@ -1,5 +1,5 @@
 ---
-title: "Example: Spatial modeling of Pacific cod"
+title: "Introduction to spatial models with sdmTMB"
 subtitle: "IMR sdmTMB workshop"
 author: ""
 institute: ""
