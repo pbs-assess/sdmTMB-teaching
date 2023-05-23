@@ -24,13 +24,24 @@
 
 <https://github.com/pbs-assess/sdmTMB-teaching/tree/main/imr-2023/exercises>
 
-### Slides:
+### Schedule:
+
+3-day workshop from 9-12 (CET).
+-	09:00 - 10:30 : lecture (3 x 25 min)
+-	10:30 - 11:30: hands on exercises in groups (5-ish per group, also online)
+-	11:30 - 12:00: 30min feedback on exercise, Q&A
+
+
+Day 1 lecture: 
 
 1. [Introduction to random fields](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/01-intro-random-fields.html)
 
 2. [Introduction to sdmTMB and families](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/02-intro-sdmTMB.html)
 
 3. [Introduction to fitting spatial models](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/03-pcod-spatial.html)
+
+Day 2: 
+
 
 ### GitHub folder for these slides:
 
