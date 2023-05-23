@@ -16,3 +16,8 @@ pcod-st-plot-est3	~	aes	coord_fixed	est_trim	exp	facet_wrap	geom_raster	ggplot	p
 pcod-st-plot-non-rf	~	aes	coord_fixed	est_non_rf	exp	facet_wrap	geom_raster	ggplot	p	scale_fill_viridis_c	X	Y
 pcod-st-plot-omega	~	aes	coord_fixed	facet_wrap	geom_raster	ggplot	omega_s	p	scale_fill_gradient2	X	Y
 pcod-st-plot-eps	~	aes	coord_fixed	epsilon_st	facet_wrap	geom_raster	ggplot	p	scale_fill_gradient2	X	Y
+pcod-st-sims	$<-	all_grid	apply	dim	fit	predict	sd
+pcod-st-sims-plot	%>%	~	aes	c	coord_fixed	facet_wrap	filter	geom_raster	ggplot	p	scale_fill_viridis_c	sd	X	Y	year
+pcod-aniso	fit	update
+pcod-aniso-aic	AIC	fit	fit_aniso
+pcod-aniso-plot	fit_aniso	plot_anisotropy

@@ -10,6 +10,12 @@
 
 <https://pbs-assess.github.io/sdmTMB/index.html>
 
+### Who we are:
+NOAA: Eric Ward, Lewis Barnett
+DFO: Sean Anderson, Philina English
+IMR: Kotaro Ono, Brian Stock
+SLU: Max Lindmark
+
 ### Shared Google Docs notes and questions
 
 <https://docs.google.com/document/d/12ZVzOmjbBa8VVTK0tmaNEcN1eP93g6iagDM2c8sSsfo/edit?usp=sharing>
