@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("imr-2023/preamble.R"))
+source("preamble.R")
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
@@ -39,6 +39,8 @@ pcod %>%
   head()
 
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+
+pcod$fyear <- as.factor(pcod$year)# year factor
 ```
 ]
 
@@ -76,7 +78,7 @@ fit <- sdmTMB(
 
 ```{r pcod-spatial-rf-smoother, echo=TRUE, eval=FALSE}
 fit <- sdmTMB(
-  density ~ s(depth) + 0 + as.factor(year), #<<
+  density ~ s(depth) + 0 + fyear, #<<
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
@@ -90,7 +92,7 @@ fit <- sdmTMB(
 
 ```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
 fit <- sdmTMB(
-  density ~ s(depth, k = 5) + 0 + as.factor(year),
+  density ~ s(depth, k = 5) + 0 + fyear,
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
@@ -178,7 +180,11 @@ filter(pcod, year %in% c(2015, 2017)) %>%
 # Predicting on the survey grid
 
 ```{r pcod-st-pred, echo=TRUE}
-p <- predict(fit, newdata = qcs_grid)
+data("qcs_grid")
+all_grid <- replicate_df(qcs_grid, 
+            "year", unique(pcod$year))
+all_grid$fyear <- as.factor(all_grid$year)
+p <- predict(fit, newdata = all_grid)
 ```
 
 * `est`: Overall estimate in link space (log here)
@@ -270,7 +276,7 @@ By sampling from the joint precision matrix
 
 .small[
 ```{r pcod-st-sims, echo=TRUE}
-psims <- predict(fit, newdata = qcs_grid, nsim = 500) #<<
+psims <- predict(fit, newdata = all_grid, nsim = 50) #<<
 dim(psims)
 psims[1:3, 1:4]
 
