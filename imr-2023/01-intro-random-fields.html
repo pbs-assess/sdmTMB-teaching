@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Introduction to random fields</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Introduction to random fields
+]
+.subtitle[
+## IMR sdmTMB workshop
+]
+.author[
+### 
+]
+.date[
+### May 23–25 2023
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+&lt;!-- # Who we are --&gt;
+
+&lt;!-- &lt;img src="images/intro_slide.png" width="650px" class="center" /&gt; --&gt;
+&lt;!-- &lt;!-- * Eric Ward, Northwest Fisheries Science Center (Seattle) --&gt; --&gt;
+&lt;!-- &lt;!-- * Sean Anderson, Fisheries and Oceans Canada (Nanaimo) --&gt; --&gt;
+&lt;!-- &lt;!-- * Lewis Barnett, Alaska Fisheries Science Center (Seattle)  --&gt; --&gt;
+&lt;!-- &lt;!-- * Philina English, Fisheries and Oceans Canada (Nanaimo) --&gt; --&gt;
+
+&lt;!-- --- --&gt;
+
+# Plan for the 3-day course
+
+* Day 1: Intro to random fields, intro to sdmTMB, spatial models
+
+* Day 2: Spatiotemporal models
+
+* Day 3: Time-varying effects, spatially varying effects, index standardization
+
+---
+
+# Plan for the 3-day course
+
+* Each day: about 75 minutes of lectures, 5 minute break, ~60 minutes of exercises, ~25 minute regroup
+
+* Have questions? Use the [Google Doc](https://docs.google.com/document/d/12ZVzOmjbBa8VVTK0tmaNEcN1eP93g6iagDM2c8sSsfo/edit?usp=sharing), ask during any pause, or at the end of each day. Thanks!
+
+---
+
+# Motivating questions
+
+* Data often have spatial attributes
+
+* Ideal world:
+  * Plug spatial covariates into a GLM / GLMM
+  * Residuals are uncorrelated  
+  
+&lt;img src="01-intro-random-fields_files/figure-html/sim-rf-intro-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Reality
+  
+* Residual spatial autocorrelation
+
+&lt;img src="01-intro-random-fields_files/figure-html/sim-rf-intro-cor-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Modeling spatial autocorrelation
+
+* Need 'wiggly'/smooth surface for approximating all spatial variables missing from model ('latent' variables)
+
+* Several approaches exist
+  * 2D smooths in mgcv
+  * Random fields and the Stochastic Partial Differential Equation (SPDE)
+
+---
+
+# Spatial smoothing with GAMs (mgcv)
+
+
+```r
+gam(y ~ s(lon, lat) + s(time), ...)
+
+gam(y ~ s(lon, lat) + s(time) + 
+      ti(lon, lat, time, d=c(2,1)), ...)
+
+gam(y ~ s(lon, lat, by = "time") + 
+      s(time), ...)
+```
+
+---
+
+# Spatial smoothing with SPDE (INLA, inlabru)
+
+* SPDE differs in that it explicitly estimates meaningful parameters for spatial covariance function
+
+* SPDE and GAMs can produce the identical results
+
+
+.small[
+Miller, D.L., Glennie, R. &amp; Seaton, A.E. Understanding the Stochastic Partial Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020)
+]
+
+---
+
+# Matérn covariance
+
+Flexible, can be exponential or Gaussian shape
+
+&lt;img src="01-intro-random-fields_files/figure-html/matern-plot-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Predictive process models 
+
+* Estimate spatial field as random effects 
+
+* High dimensional datasets computationally challenging
+
+* Gaussian process predictive process models:
+  * Estimate values at a subset of locations in the time series
+  *   'knots', 'vertices', or 'control points'
+  * Use covariance function to interpolate from knots to locations of observations
+
+---
+
+# Predictive process models 
+
+* More knots (vertical dashed lines) = more wiggliness &amp; parameters to estimate
+
+&lt;img src="01-intro-random-fields_files/figure-html/show-gp-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Spatial data types
+
+* Lattice: gridded data, e.g. interpolated SST from satellite observations 
+
+--
+
+* Areal: data collected in neighboring spatial areas, e.g. commercial catch records by state / county
+
+--
+
+* Georeferenced: data where observations are associated with latitude and longitude 
+  * Locations may be unique or repeated (stations)
+---
+
+# Why is space important? 
+
+* Data covary spatially (data that are closer are more similar)
+
+--
+
+* Relationship between distance and covariance can be described with a spatial covariance function
+
+--
+
+* Covariance function in 2D may be
+  * isotropic (same covariance in each direction)
+  * anisotropic (different in each direction)
+
+&lt;!-- * Assumed stationary --&gt;
+
+---
+
+# What is a random field?
+
+
+
+&lt;img src="01-intro-random-fields_files/figure-html/random-field-demo-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+background-image: url("images/eagle.png")
+background-position: bottom right
+background-size: 35%
+
+# Random field
+
+&lt;img src="images/rf-wikipedia.png" width="550px" /&gt;
+
+---
+background-image: url("images/beaker.png")
+background-position: bottom right
+background-size: 35%
+
+# Random field
+
+* A 2 dimensional "Gaussian Process"
+
+--
+
+* A realization from a multivariate normal distribution with some covariance function
+
+---
+background-image: url("images/elmo.png")
+background-position: bottom right
+background-size: 30%
+
+# Random field
+
+* A way of estimating a wiggly surface to account for spatial and/or spatiotemporal correlation in data.
+
+--
+
+* Alternatively, a way of estimating a wiggly surface to account for "latent" or unobserved variables.
+
+--
+
+* As a bonus, it provides useful covariance parameter estimates: spatial variance and the distance at data points are effectively uncorrelated ("range")
+
+&lt;!-- TODO: include nugget / sill? Show slide with semivariogram image? --&gt;
+---
+
+# Many ways to simulate random fields
+
+* `RandomFields::RFsimulate()` simulates univariate / multivariate fields
+* `fields::sim.rf()` simulates random fields on a grid
+* `geoR::grf()` simulates random fields with irregular observations
+* `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
+* `sdmTMB::sdmTMB_simulate()` simulates univariate fields with `sdmTMB`
+
+???
+Homework: try to work through some of these yourself. Make some plots, and see how changing the covariance affects the smoothness of these fields.
+
+---
+
+# Effects of changing variance and range
+
+&lt;img src="01-intro-random-fields_files/figure-html/sim-rf-grid-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Effects of adding noise 
+
+* Large observation error looks like noise
+
+* `\(\sigma_{obs}\)` &gt;&gt; `\(\sigma_{O}\)`, `\(\sigma_{E}\)`
+
+&lt;img src="01-intro-random-fields_files/figure-html/sim-rf-large_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+ 
+---
+  
+# Moderate observation errors
+
+* `\(\sigma_{obs}\)` = `\(\sigma_{O}\)` = `\(\sigma_{E}\)`
+    
+&lt;img src="01-intro-random-fields_files/figure-html/sim-rf-med_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+  
+  
+---
+     
+# Small observation errors  
+    
+* `\(\sigma_{obs}\)` &lt;&lt; `\(\sigma_{O}\)`, `\(\sigma_{E}\)`
+    
+&lt;img src="01-intro-random-fields_files/figure-html/sim-rf-small_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Estimating random fields 
+
+.small[
+* Georeferenced data often involve 1000s or more points
+
+* Like in the 1-D setting, we need to approximate the spatial field 
+  * Options include nearest neighbor methods, covariance tapering, etc.
+
+* sdmTMB uses an approach from INLA
+  * for VAST users, this is the same
+  * INLA books:  
+    &lt;https://www.r-inla.org/learnmore/books&gt;
+]
+
+---
+
+# INLA and the SPDE approach
+
+.xsmall[
+* SPDE: stochastic partial differential equation
+
+* The solution to a specific SPDE is a Gaussian random field (GRF) with Matérn covariance
+
+* This, and sparse precision matrices, let us efficiently fit approximations to GRFs to large spatial datasets
+
+* INLA is software that performs data wrangling for SPDE estimation
+  * INLA also performs approximate Bayesian estimation
+  * sdmTMB uses INLA to wrangle matrices, but uses TMB for maximum likelihood estimation
+]
+
+.tiny[
+Lindgren, F., Rue, H., and Lindström, J. 2011. An explicit link between Gaussian fields and Gaussian Markov random fields: the stochastic partial differential equation approach. Journal of the Royal Statistical Society: Series B. 73(4): 423–498.
+]
+
+---
+
+# Introducing meshes
+
+Implementing the SPDE with INLA requires constructing a 'mesh'
+
+&lt;img src="01-intro-random-fields_files/figure-html/mesh-example-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Mesh construction
+
+.small[
+* A unique mesh is generally made for each dataset
+* Rules of thumb:
+  * More triangles = more computation time
+  * More triangles = more fine-scale spatial predictions
+  * Borders with coarser resolution reduce number of triangles
+  * Use minimum edge size to avoid meshes becoming too fine
+  * Want fewer vertices than data points
+  * Triangle edge size needs to be smaller than spatial range
+
+* "How to make a bad mesh?" [Haakon Bakka's book](https://haakonbakkagit.github.io/btopic114.html)
+]
+
+---
+
+# Building your own mesh
+
+* `INLA::inla.mesh.2d()`: lets many arguments be customized
+
+* `INLA::meshbuilder()`: Shiny app for constructing a mesh, provides R code
+
+* Meshes can include barriers / islands / coastlines with shapefiles
+
+* INLA books
+&lt;https://www.r-inla.org/learnmore/books&gt;
+
+---
+
+# Simplifying mesh construction in sdmTMB
+
+sdmTMB has a function `make_mesh()` to quickly construct a basic mesh
+
+Details in next set of slides
+
+---
+
+# Example: cutoff = 50km
+
+&lt;img src="01-intro-random-fields_files/figure-html/mesh-example4-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Example: cutoff = 25km
+
+&lt;img src="01-intro-random-fields_files/figure-html/mesh-example3-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+
+# Example: cutoff = 10km
+
+&lt;img src="01-intro-random-fields_files/figure-html/mesh-example2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

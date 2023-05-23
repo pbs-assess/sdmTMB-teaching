@@ -1,0 +1,6 @@
+libs	library
+unnamed-chunk-1	~	AIC	binomial	c	logLik	make_mesh	pcod	sdmTMB
+unnamed-chunk-2	sdmTMB
+unnamed-chunk-3	c	make_mesh	pcod
+unnamed-chunk-4	~	binomial	mesh	pcod	sdmTMB_cv
+cv	~	$	c	library	make_mesh	multisession	pcod	plan	sdmTMB_cv	tweedie
