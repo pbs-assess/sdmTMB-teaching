@@ -16,3 +16,8 @@ pcod-st-plot-est3
 pcod-st-plot-non-rf	
 pcod-st-plot-omega	
 pcod-st-plot-eps	
+pcod-st-sims	p	psims
+pcod-st-sims-plot	
+pcod-aniso	fit_aniso
+pcod-aniso-aic	
+pcod-aniso-plot	
