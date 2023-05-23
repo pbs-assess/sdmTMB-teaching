@@ -9,7 +9,7 @@ print-pcod-st-fit
 pcod-st-print2	
 resid1	rq_res	.Random.seed
 resid2	pcod
-pcod-st-pred	p	qcs_grid
+pcod-st-pred	all_grid	p	qcs_grid
 pcod-st-plot-est	
 pcod-st-plot-est2	max_est	p
 pcod-st-plot-est3	

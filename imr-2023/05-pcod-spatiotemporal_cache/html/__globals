@@ -9,7 +9,7 @@ print-pcod-st-fit	fit
 pcod-st-print2	
 resid1	fit	qqline	qqnorm	residuals	set.seed
 resid2	%>%	~	$<-	aes	c	coord_fixed	facet_wrap	filter	fit	geom_point	ggplot	resids	residuals	scale_colour_gradient2	X	Y	year
-pcod-st-pred	$	fit	pcod	predict	replicate_df	unique
+pcod-st-pred	$	$<-	as.factor	data	fit	pcod	predict	qcs_grid	replicate_df	unique
 pcod-st-plot-est	~	aes	coord_fixed	est	exp	facet_wrap	geom_raster	ggplot	p	scale_fill_viridis_c	X	Y
 pcod-st-plot-est2	>	$	est	if_else	mutate	quantile
 pcod-st-plot-est3	~	aes	coord_fixed	est_trim	exp	facet_wrap	geom_raster	ggplot	p	scale_fill_viridis_c	X	Y
