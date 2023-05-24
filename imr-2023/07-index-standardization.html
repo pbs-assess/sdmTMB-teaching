@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Area-weighted index standardization</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Area-weighted index standardization
+]
+.subtitle[
+## IMR sdmTMB workshop
+]
+.author[
+### 
+]
+.date[
+### May 23–25 2023
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# Why model-based index standardization?
+
+* Design-based methods (stratified means) are straightforward but assume perfect survey implementation
+
+--
+
+* Model-based approaches can account for (some) aspects of imperfect implementation
+
+--
+
+* Model-based approaches can leverage spatial correlation to improve precision
+
+--
+
+* Model-based approaches can integrate additional data sources, multiple gear types, accounting for gear calibration, etc.
+
+---
+
+# Design- vs. model-based estimators
+
+--
+
+* Design-based: fish are homogenously distributed within strata; noise comes from sampling
+
+--
+
+* Model-based: fish are distributed according to a mathematical model; noise from uncertainty in fish distribution and sampling
+
+---
+
+# Calculating an area-weighted population index
+
+1. Fit a sensible model: .blue[`sdmTMB()`]
+
+2. Predict on a grid covering the survey domain: .blue[`predict(..., newdata = ...)`]
+
+3. Sum up the density multiplied by cell area to calculate total abundance or biomass: .blue[`get_index()`]
+
+---
+
+# Fit a sensible model
+
+
+```r
+mesh &lt;- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit &lt;- sdmTMB(
+* density ~ 0 + as.factor(year),
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",
+  time = "year",
+* spatiotemporal = "iid",
+  silent = FALSE # show progress!
+)
+```
+
+---
+
+# Predict over the survey domain
+
+.small[
+
+```r
+nd &lt;- replicate_df(qcs_grid, "year", unique(pcod$year))
+qcs_grid &lt;- nd
+pred &lt;- predict(
+  fit, newdata = qcs_grid, return_tmb_object = TRUE
+)
+select(pred$data, year, X, Y, est) |&gt; 
+  head()
+#&gt;   year   X    Y      est
+#&gt; 1 2003 456 5636 1.639821
+#&gt; 2 2003 458 5636 1.682348
+#&gt; 3 2003 460 5636 1.724875
+#&gt; 4 2003 462 5636 1.767403
+#&gt; 5 2003 464 5636 1.889935
+#&gt; 6 2003 466 5636 2.361575
+```
+]
+
+---
+
+# Predict over the survey domain
+
+&lt;img src="07-index-standardization_files/figure-html/pcod-st-plot-est2-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Sum up the density multiplied by cell area
+
+(*and calculate standard errors)
+
+
+```r
+index &lt;- get_index(pred, area = 4, bias_correct = TRUE)
+head(index)
+#&gt;   year       est       lwr       upr  log_est        se
+#&gt; 1 2003  936175.6  653699.1 1340715.9 13.74956 0.1832462
+#&gt; 2 2004 1832130.4 1359020.1 2469942.7 14.42099 0.1524087
+#&gt; 3 2005 1757227.0 1224189.4 2522360.5 14.37925 0.1844208
+#&gt; 4 2007  452112.1  328785.5  621698.2 13.02169 0.1625155
+#&gt; 5 2009  722981.6  518712.7 1007691.5 13.49114 0.1694080
+#&gt; 6 2011 1357885.0 1028850.9 1792146.6 14.12144 0.1415770
+```
+
+---
+
+# The resulting standardized index
+
+.xsmall[
+
+```r
+ggplot(index, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  xlab('Year') + ylab('Biomass estimate (kg)')
+```
+
+&lt;img src="07-index-standardization_files/figure-html/pcod-st-index-plot-1.png" width="600px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Remember...
+
+There is *one* design-based index.
+
+--
+
+A good model-based estimated depends on the modeller constructing a reasonable model!
+
+--
+
+There are *many* possible model-based indexes. Thankfully, results are often (but not always!) qualitatively similar across configurations.
+
+
+.tiny[
+Commander, C.J.C, L.A.K. Barnett, E.J. Ward, S.C. Anderson, T.E. Essington. 2022. The shadow model: how and why small choices in spatially explicit species distribution models affect predictions. PeerJ. 10: e12783. &lt;https://doi.org/10.7717/peerj.12783&gt;
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
