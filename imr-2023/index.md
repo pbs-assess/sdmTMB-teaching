@@ -58,9 +58,11 @@ Day 3 lecture:
 
 7. [Index standardization](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/07-index-standardization.html)
 
-8. [Combining data from multiple surveys]()
+8. [Building a prediction grid](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/08-prediction-grid.html)
 
-9. [Time and spatially varying models](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/09-time-space-varying.html)
+9. [Combining data from multiple surveys](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/09-combining-surveys.html)
+
+10. [Time and spatially varying models](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/10-time-space-varying.html)
 
 
 ### GitHub folder for these slides:

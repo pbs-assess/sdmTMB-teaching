@@ -1,7 +1,13 @@
 plot_map <- function(dat, column) {
   ggplot(dat, aes_string("X", "Y", color = column)) +
     geom_point() +
-    facet_wrap(~year) +
+    facet_wrap(vars(fyear), nrow=2) +
+    coord_fixed() + theme_bw()
+}
+plot_map_fyear <- function(dat, column) {
+  ggplot(dat, aes_string("X", "Y", color = column)) +
+    geom_point() +
+    facet_wrap(vars(fyear), nrow=2) +
     coord_fixed() + theme_bw()
 }
 
@@ -199,7 +205,7 @@ plot_timeseries_compare <- function(df, val='index', facet.var='age', color.var=
     g <- g + ggplot2::scale_y_continuous(expand=c(0.01,0.01), limits = function(x) range(pretty(x)))
   }
   g <- g + ggplot2::geom_line() + ggplot2::geom_point() +
-    ggplot2::facet_wrap(ggplot2::vars(fvar), scales="free_y", ncol=3, strip.position = "top") +
+    ggplot2::facet_wrap(ggplot2::vars(fvar), ncol=1, strip.position = "top") +
     ggplot2::scale_x_continuous(expand=c(0.02,0.02), breaks = seq(min(df$Year),max(df$Year),2)) + # breaks=scales::breaks_extended(5)
     scale_colour_manual(values=cols, name='') + scale_linetype_manual(values=ltys, name='') +
     ggplot2::theme_bw() +

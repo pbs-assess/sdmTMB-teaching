@@ -156,7 +156,7 @@ tidy(fit4, "ran_pars", conf.int=T, digits=3) %>% print(n = Inf)
 # add spatial
 fit5 <- sdmTMB(formula = dens_over15cm ~ 0 + fyear + poly(BottomDepth, 2),
                data=dfc_south, 
-               time="fyear",
+               time="year",
                spatial='on',
                spatiotemporal='off',
                mesh=mesh, 
@@ -235,9 +235,9 @@ ggplot(df_coords, aes(lon, lat, fill=BottomDepth)) +
    geom_point() + theme_bw() 
 
 # need all covariates (bottom depth, year, X, Y)
-predgrid <- crossing(pred_grid, fyear=unique(dfc_south$fyear))
+predgrid <- crossing(pred_grid, year=unique(dfc_south$year))
+predgrid$fyear <- factor(predgrid$year)
 predgrid_geo <- crossing(df_coords, fyear=unique(dfc_south$fyear))
-colnames(predgrid) <- c('X','Y','BottomDepth','fyear')
 preds <- predict(fit5, newdata = predgrid, return_tmb_object = TRUE, type = "response")
 predgrid$est <- preds$data$est
 predgrid_geo$est <- predgrid$est
@@ -282,7 +282,7 @@ ggsave(plot = g, filename = file.path(plotdir,'preds_2years.png'), width = 10, h
 
 # index of abundance
 index <- get_index(preds, bias_correct = FALSE, level=0.9)
-index$year = as.integer(as.character(index$fyear))
+index$year = as.integer(as.character(index$year))
 g <- ggplot(index, aes(x=year, y=est)) + 
   ylab('Swept area index (cod biomass)')   +
   geom_ribbon(aes(x=year, ymin=lwr, ymax=upr), color=NA, alpha=.15) +
@@ -295,6 +295,8 @@ g <- ggplot(index, aes(x=year, y=est)) +
 png(file.path(plotdir, 'index_0.90ci.png'), units='in', width=10, height=6, res=150)
 print(g)
 dev.off()
+
+write.csv(index, file=file.path(plotdir, 'index_trawlsurvey_south.csv'), row.names = FALSE)
 
 # ----------------------------------------------------------------------------
 # compare to stox index
