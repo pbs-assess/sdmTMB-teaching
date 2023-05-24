@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Temporally / spatially varying coefficients with sdmTMB</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Temporally / spatially varying coefficients with sdmTMB
+]
+.subtitle[
+## IMR sdmTMB workshop
+]
+.author[
+### 
+]
+.date[
+### May 23–25 2023
+]
+
+---
+
+
+
+
+
+
+.small[
+# Why might we want time-varying effects?
+
+* Time-varying slopes: 
+  * To allow for evolving responses to covariates (e.g., species moving deeper over time)
+  
+  * Example use: [English et al. (2021) Fish and Fisheries](https://doi.org/10.1111/faf.12613)  
+    Modelled groundfish density with depth; didn't want to constrain fish if they were moving deeper when water was warmer
+  
+* Time-varying intercepts:
+  * To allow variable means across time with constraints
+  * To have a model to interpolate or forecast over time
+]
+
+---
+
+# Time-varying intercepts
+
+Several ways in sdmTMB:
+
+* factors: `as.factor(year)` (independent)
+* random effects: ` + (1 | year)` (drawn from normal distribution)
+* smooth: ` + s(year)`
+* as random walk (shown next)
+
+---
+
+#  Random walk covariates in sdmTMB
+
+Random walk:
+
+$$
+`\begin{aligned}
+x_t &amp;= x_{t-1} + \epsilon_t\\
+\epsilon &amp;\sim \mathrm{Normal(0, \sigma^2)}
+\end{aligned}`
+$$
+
+Defined by `time_varying` argument
+
+Takes a *one-sided* formula, e.g. `~ 1` or `~ 0 + depth`
+
+Note: initial coefficient is unconstrained, i.e. **do not place the same covariate in 
+the `formula` argument** (this includes the intercept)
+
+---
+
+# Time-varying intercept
+
+Note: a `0` or `-1` in formula for suppressing global intercept
+
+Otherwise, both the main effects and time-varying effects would have the same parameter and this can't be estimated.
+
+.small[
+
+```r
+mesh &lt;- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+fit &lt;- sdmTMB(
+  density ~ 0 + s(depth, k = 5), 
+* time_varying = ~ 1,
+  data = pcod, mesh = mesh,
+  time = "year",  
+  family = tweedie(link = "log")
+)
+```
+]
+
+---
+
+# Getting coefficients 
+
+Return with 
+
+.small[
+
+```r
+print(fit)
+```
+]
+
+.small[
+
+```r
+#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Formula: density ~ 0 + s(depth, k = 5)
+#&gt; Time column: "year"
+#&gt; ...
+*#&gt; Time-varying parameters:
+*#&gt;                  coef.est coef.se
+*#&gt; (Intercept)-2003     1.96    0.29
+*#&gt; (Intercept)-2004     2.31    0.27
+*#&gt; (Intercept)-2005     2.06    0.27
+*#&gt; ...
+*#&gt; (Intercept)-2015     2.07    0.27
+*#&gt; (Intercept)-2017     1.55    0.29
+#&gt; ...
+```
+]
+
+---
+
+# Getting coefficients 
+
+Or by digging into `fit$sd_report`
+
+(Not yet in `tidy.sdmTMB()`.)
+
+
+```r
+library(TMB)
+est &lt;- as.list(fit$sd_report, "Est")
+est_se &lt;- as.list(fit$sd_report, "Std. Error")
+cbind(est$b_rw_t, est_se$b_rw_t)
+#&gt;           [,1]      [,2]
+#&gt;  [1,] 1.958251 0.2889057
+#&gt;  [2,] 2.313664 0.2724793
+#&gt;  [3,] 2.064983 0.2707960
+#&gt;  [4,] 1.232808 0.3014059
+#&gt;  [5,] 1.511154 0.2758021
+#&gt;  [6,] 1.932893 0.2710203
+#&gt;  [7,] 2.159133 0.2672042
+#&gt;  [8,] 2.073629 0.2725238
+#&gt;  [9,] 1.549745 0.2933550
+```
+
+---
+
+# Other approaches to modeling time-varying intercepts
+
+.small[
+
+```r
+density ~ s(depth) + 0 + as.factor(year)
+```
+]
+.small[
+
+```r
+density ~ s(depth) + (1 | year)
+```
+]
+.small[
+
+```r
+density ~ s(depth) + s(year)
+```
+]
+---
+
+# These approaches are similar but subtly different
+
+&lt;img src="10-time-space-varying_files/figure-html/compare-fits-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+&lt;!-- &lt;img src="images/spidey.jpeg" width="650px" class="center" /&gt;  --&gt;
+
+&lt;!-- * H/T Eric Pederson --&gt;
+
+---
+
+# Time-varying coefficients
+
+Time-varying (random walk) effect of depth
+
+Intercept in this model NOT time-varying
+
+
+```r
+fit_tv &lt;- sdmTMB(
+  density ~ 1, 
+* time_varying = ~ 0 + depth_scaled + depth_scaled2,
+  data = pcod, mesh = mesh,
+  time = "year",
+  family = tweedie(link = "log"),
+  spatial = "on",
+  spatiotemporal = "iid",
+  silent = FALSE
+)
+```
+
+---
+
+# Time-varying coefficients
+
+Time-varying (random walk) effect of depth
+
+&lt;!-- To plot these, we make a data frame that contains all combinations of the time-varying covariate and time. This is easily created using `expand.grid()` or `tidyr::expand_grid()`. --&gt;
+
+&lt;img src="10-time-space-varying_files/figure-html/tv-depth-eff-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Time-varying coefficient notes
+
+* `time_varying` is a formula for coefficients that follow a random walk over time
+
+--
+
+* Make sure a coefficient isn't in both `formula` and `time_varying`, this includes the intercept
+
+--
+
+* The `time_varying` formula cannot have smoothers `s()` in it! Instead:
+  * Polynomials: `time_varying = ~ x + I(x^2)`
+  * `formula = s(depth, by = factor_year)` (independent smooths) 
+  * `formula = s(depth, year)` (2D smooth)
+
+
+&lt;!-- See the vignette [Intro to modelling with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/basic-intro.html) for more details. --&gt;
+
+---
+
+# What is a spatially varying coefficient?
+
+* Describes how the effect of a variable varies over space
+
+  * e.g., how does the temporal trend in fish density vary among locations?
+  
+  * e.g., how does fish distribution look when the PDO is high vs. low?
+  
+---
+
+# Mathematically
+
+Minimal model: 
+
+`$$g(u_{s}) = \omega_{s} + X_{\zeta}\zeta_{s}$$`
+* `\(g()\)` is an inverse link function and `\(u\)` a linear predictor 
+* `\(\omega_{s}\)` represents spatial field (intercept)  
+* `\(X_{\zeta}\)` is design matrix of covariates (usually varying by time, but constant in space)
+* `\(\zeta_{s}\)` is estimated spatially varying coefficient  
+* `sdmTMB` allows for multiple SVCs in the same model
+---
+
+# When might we want a spatially varying coefficient?
+
+* When we suspect non-local effects of a regional forcing, that varies spatially
+  * e.g., the influence of ENSO depends on latitude; influence of Bering Sea cold pool on pollock
+* Any variation in species-habitat relationships over space, spatial variation in density dependence, recruitment, etc
+  
+--
+
+* When the question requires evaluating change at fine spatial scales
+  * e.g., there is no directional trend in species distribution shifts at broad scales, due to nuanced or opposing patterns over space being obscured 
+---
+
+# Spatially varying coefficients in sdmTMB
+
+Spatially varying effect of time on cod density:
+
+
+```r
+pcod$year_scaled &lt;- as.numeric(scale(pcod$year))
+mesh &lt;- make_mesh(pcod, c("X", "Y"), cutoff = 10)
+fit &lt;- sdmTMB(
+  density ~ s(depth, k = 5) + year_scaled,
+* spatial_varying = ~ 0 + year_scaled,
+  data = pcod, 
+  mesh = mesh, 
+  time = "year",
+  family = tweedie(link = "log"),
+  spatiotemporal = "off"
+)
+```
+
+&lt;!-- See `zeta_s` in the output, which represents the coefficient varying in space. You'll want to ensure you set up your model such that it ballpark has a mean of 0 (e.g., by including it in `formula` too). --&gt;
+
+---
+
+# Local trends in cod population density
+
+&lt;img src="10-time-space-varying_files/figure-html/plot-zeta-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Scale-dependent interpretation of species distribution shifts
+
+&lt;img src="images/local_trend_COG_atf_ecography_2021.png" width="1000px" class="center" /&gt;
+
+.tiny[
+[Barnett, L.A.K., Ward, E.J. &amp; Anderson, S.C. Improving estimates of species distribution change by incorporating local trends. Ecography, 44: 427-439. (2021)](https://doi.org/10.1111/ecog.05176)
+]
+
+&lt;!-- To see how the interpretation of change in distribution depends on spatial scale, lets compare our fine-scale interpretation to a coarse-scale interpretation using a time series of the coastwide COG. These are results for arrowtooth flounder on the US west coast, where I am showing maps of the trend in population density over time, clusters of locations with similar trends, and the prediction of mean density over all years, which shows us that arrowtooth are most prevalent in the northern half of the region.  However, the trend map indicates that densities are mostly decreasing in the north and increasing in the central area toward the southern end of its core range.  Thus, it seems that arrowtooth are expanding southward as a traveling wave at the leading edge of the range.
+
+On the far right panel, you can see that the COG also indicates a southward shift, yet it is slight and only detectable in this case because of a narrow 95% CI.  From this alone it would be hard to say whether the change is really due to increased southward movement or productivity, or a decrease in productivity in the north. --&gt;
+
+--
+
+* Potential applied uses
+  * Determining spatial structure of assessment model inputs
+  * Determining quota allocation over space
+
+&lt;!-- --- --&gt;
+
+&lt;!-- # Spatially varying effect of NAO on Snowy Owls --&gt;
+
+&lt;!-- .small[ --&gt;
+&lt;!-- ```{r owl-fit, echo=TRUE, eval=FALSE} --&gt;
+&lt;!-- mesh &lt;- make_mesh(snow, c("X", "Y"), cutoff = 1.5) --&gt;
+&lt;!-- fit_owls &lt;- sdmTMB( --&gt;
+&lt;!--   count ~ 1 + nao + (1 | year_factor), --&gt;
+&lt;!--   spatial_varying = ~ 0 + nao, #&lt;&lt; --&gt;
+&lt;!--   family = nbinom2(link = "log"),  --&gt;
+&lt;!--   data = snow,  --&gt;
+&lt;!--   mesh = mesh, --&gt;
+&lt;!--   time = "year",  --&gt;
+&lt;!--   spatial = "on", --&gt;
+&lt;!--   spatiotemporal = "iid" --&gt;
+&lt;!-- ) --&gt;
+&lt;!-- ``` --&gt;
+&lt;!-- ] --&gt;
+
+&lt;!-- &lt;!-- Snowy Owls (*Bubo scandiacus*) breed on the arctic tundra and are irruptive migrants, meaning that they appear across the mid latitudes of North America in much greater numbers in some winters than others. --&gt;
+&lt;!-- The reasons for the interannual variation in the number of individuals migrating south are not well understood, but seem to be related to high abundances of food during the breeding season and therefore sharp increases in breeding ground population densities [@robillard2016].  --&gt;
+&lt;!-- The North Atlantic Oscillation Index (NAO) has been linked to productivity of both owls and their prey in Europe [@millon2014]. --&gt; --&gt;
+
+&lt;!-- &lt;!-- Description: spatially varying coefficient for effect of mean annual NAO (North Atlantic Oscillation) on counts of Snowy Owls observed on annual citizen science Christmas Bird Counts 1979--2020 in Canada and the US.  --&gt;
+
+&lt;!-- Our only fixed effect will be the NAO climate index (`nao`), but because of the wide spatial extent of these surveys, we also expect that the effect of NAO might not be consistent throughout North America. Therefore, the effect of NAO will also be allowed to vary spatially using this formula: `spatial_varying = ~ 0 + nao`. --&gt;
+
+&lt;!-- Because there does not appear to be much correlation between years, year will be included as a random factor: `(1 | year_factor)`, allowing the mean estimate for each of these spatiotemporal fields to vary.  --&gt;
+&lt;!-- --&gt; --&gt;
+
+&lt;!-- --- --&gt;
+
+&lt;!-- # Influence of NAO on Snowy Owls is greatest in southeast --&gt;
+
+&lt;!-- &lt;img src="images/owl-nao-effect.png" width="1000px" class="center" /&gt; --&gt;
+
+&lt;!-- &lt;!-- Interpretation: Points represent all count locations and circle area is scaled to the mean number of owls observed per year. We found a weak average positive effect of annual mean NAO on overall counts, but a southeast to northwest gradient in the intensity of the effect.This result is consistent with owls closest to the Atlantic coast and those migrating the furthest south being the most affected by NAO. (The effect is multiplicative on owl count per NAO unit) --&gt; --&gt;
+
+---
+
+# Application: coastal cod
+
+* Lots of previous work investigating variation in maturity and growth
+* All analyses have treated space as a factor (region)
+
+
+
+---
+
+# Coastal cod maturity at age
+
+
+```r
+fit &lt;- sdmTMB(maturity ~ z_depth + sex*age,
+               mesh = mesh,
+               spatial_varying = ~ age,
+                 family = binomial(),
+               spatial="on",
+               time="year",
+               spatiotemporal = "iid",
+               data = d)
+```
+
+---
+
+# Coastal cod maturity at age
+
+* Spatial coefficient on age strongly supported 
+* Pattern similar to distribution of coastal cod? 
+* Spatial range ~ 90km
+![](images/spatial_maturity_age.png)
+---
+
+# Coastal cod length at age
+
+* vonB growth complicated, Gompertz can be linearized
+
+
+```r
+fit &lt;- sdmTMB(log_length ~ z_depth + sex*age,
+               mesh = mesh,
+               spatial_varying = ~ age,
+               spatial="on",
+               time="year",
+               spatiotemporal = "iid",
+               data = d)
+```
+
+---
+
+# Coastal cod length at age
+
+* Spatial coefficient on age strongly supported 
+* Matern range ~ 43km
+![](images/spatial_length_age.png)
+
+---
+
+# Coastal cod condition factor
+
+* Ln(weight) v ln(length) regression
+
+
+```r
+fit &lt;- sdmTMB(log_weight ~ z_depth + sex*z_length,
+               mesh = mesh,
+               spatial_varying = ~ z_length,
+               spatial="on",
+               time="year",
+               spatiotemporal = "iid",
+               data = d)
+```
+
+---
+
+# Coastal cod condition factor
+
+* Spatial coefficient on length strongly supported 
+* Matern range ~ 44km
+![](images/spatial_length_weight.png)
+
+---
+
+# Tips and tricks
+
+* Unlike `time_varying`, likely *do* want the same coefficient in the main `formula` effects
+  * `spatial_varying` represents a random field with mean zero
+--
+
+* Predictor should be roughly mean zero and SD of 1 to help with estimation
+--
+
+* Used to be limited to one effect; now no limitations
+
+--
+
+See vignette: [Fitting spatial trend models with sdmTMB](https://pbs-assess.github.io/sdmTMB/articles/spatial-trend-models.html)
+
+See sdmTMB paper for Snowy Owl example led by Philina
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
