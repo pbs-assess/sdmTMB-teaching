@@ -224,3 +224,44 @@ m_cv$sum_loglik
 # of left-out data:
 m_cv$elpd
 ```
+
+---
+
+# Leave Future Out Cross Validation
+
+* Only forward looking 
+.small[
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB_cv( #<<
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  lfo = TRUE, #<<
+  lfo_forecast = 1, #<<
+  lfo_validations = 5 #<<
+)
+```
+
+---
+
+# Model stacking (weighting)
+
+* It might be of use for some applications to do model averaging
+
+* This is implemented in sdmTMB with `stacking`
+
+* [Yao et al. (2018)](doi:10.1214/17-BA1091)
+
+---
+
+# Model stacking (weighting)
+
+* If `m_cv_1`, `m_cv_2`, `m_cv_3` are all outputs from `sdmTMB_cv()` then  
+
+```{r echo=TRUE, eval=FALSE}
+models <- list(m_cv_1, m_cv_2, m_cv_3)
+weights <- sdmTMB_stacking(models)
+weights
+```
+

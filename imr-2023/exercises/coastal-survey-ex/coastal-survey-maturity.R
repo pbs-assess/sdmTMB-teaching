@@ -50,6 +50,10 @@ dfa <- dfa %>% rowwise() %>% mutate(depth = mean(c(bottomdepthstart, bottomdepth
 dfa$length_cm <- 100*dfa$length
 dfa$weight_kg <- dfa$individualweight 
 
+# sex: 1 = female, 2 = male, 3 = intersex, some NAs
+dfa$sex[dfa$sex == 3] = NA
+dfa$sex <- factor(dfa$sex, levels=1:2, labels=c('female','male'))
+
 # maturity data, define maturity as in assessments
 #   Q1-2: immature = 1, mature = 2:3, remove 4
 #   Q3-4: immature = 1, mature = 2:4
@@ -65,14 +69,17 @@ dfa.growth <- dplyr::filter(dfa, !is.na(length_cm) & !is.na(weight_kg)) # all ot
 
 # keep columns we'll use
 dfa.mat <- dfa.mat %>% select(serialnumber, year, date, quarter, lat, lon, depth, area, 
-                      stockarea, mat, maturationstage, age, length_cm, weight_kg)
+                      stockarea, mat, maturationstage, age, length_cm, weight_kg, sex)
 dfa.growth <- dfa.growth %>% select(serialnumber, year, date, quarter, lat, lon, depth, area, 
-                              stockarea, maturationstage, age, length_cm, weight_kg)
+                              stockarea, maturationstage, age, length_cm, weight_kg, sex)
 
 dim(dfa.mat)
 # [1] 27656    14
 dim(dfa.growth)
 # [1] 32200    13
+
+saveRDS(dfa.mat, here('data','survey_age_maturity.rds'))
+saveRDS(dfa.growth, here('data','survey_age_growth.rds'))
 
 # -----------------------------------------------------------------------------
 # map of spatiotemporal sample coverage by year
