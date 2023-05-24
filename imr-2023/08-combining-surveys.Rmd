@@ -67,7 +67,7 @@ fit <- sdmTMB(density ~ 1,
 
 fit <- sdmTMB(density ~ 1, 
               time="year",
-              spatiotemporal "ar1",
+              spatiotemporal = "ar1",
               ...)
 ```
 
@@ -116,7 +116,7 @@ ggplot(df, aes(X,Y, col=Survey)) +
 
 # Overlapping surveys and catchability
 
-```{r}
+```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(density ~ fyear + survey, ...)
 
 fit <- sdmTMB(density ~ fyear * survey, ...)
@@ -128,8 +128,159 @@ fit <- sdmTMB(density ~ s(year, by = survey), ...)
 
 # Overlapping surveys and catchability
 
-*Example: * combining trawl and acoustic surveys for pelagic species
+* Example: combining trawl and acoustic surveys for pelagic species
 
+* Surveys overlap in space/time, but sample different portions of population
+
+---
+
+# Simulation testing
+
+* Assume species has some depth affinity 
+```{r}
+set.seed(123)
+df <- data.frame(x = rnorm(10000, 500, 100))
+p1 <- ggplot(df, aes(x)) + 
+  geom_histogram(bins=100) + 
+  xlab("Depth") + ylab("Density")
+```
+
+---
+
+# Simulation testing
+
+* Layer on 2 surveys (acoustic, trawl) which might not overlap
+* Can we recover depth relationship?? 
+
+```{r}
+set.seed(123)
+df <- data.frame(x = rnorm(10000, 500, 100),
+                 y = abs(rnorm(1000, 0, 150)),
+                 z = rnorm(10000, 600, 50))
+p1 <- ggplot(df, aes(x)) + 
+  geom_histogram(bins=100) + 
+  xlab("Depth") + ylab("Density") + 
+  geom_histogram(aes(y), fill="red", bins=100, alpha=0.3) + 
+  geom_histogram(aes(z), fill="blue", bins=100, alpha=0.3)
+p1
+```
+
+---
+
+```{r eval=FALSE}
+set.seed(1)
+n_year <- 10
+n_pts <- 500
+predictor_dat <- data.frame(X = runif(n_pts*10, 0, 10), 
+                            Y = runif(n_pts*10, 0, 10), 
+                            year = sample(1:10, size=n_pts*n_year, replace=T))
+# about 300 knots
+mesh <- make_mesh(predictor_dat, 
+                  xy_cols = c("X", "Y"), 
+                  cutoff = 0.5)
+
+set.seed(123)
+bathy <- sdmTMB_simulate(
+    formula = ~ 1,
+    data = predictor_dat,
+    mesh = mesh,
+    range = 0.5,
+    sigma_O = 0.7,
+    sigma_E = 0,
+    phi = 0.001,
+    seed = 42,
+    B = c(log(1000)) 
+  )
+# convery log depth to depth
+bathy$observed <- exp(bathy$observed)
+
+predictor_dat <- dplyr::left_join(predictor_dat,
+                          bathy[,c("X","Y","observed")]) %>%
+  dplyr::rename(bottom_depth = observed)
+
+set.seed(123)
+predictor_dat$survey = sample(c("survey_1","survey_2"), 
+                              size=nrow(predictor_dat), 
+                              replace=T)
+
+# simulate depth -- used for vertical distribution
+predictor_dat$depth <- runif(nrow(predictor_dat), 0, predictor_dat$bottom_depth)
+
+# bottom trawl survey
+predictor_dat$depth[which(predictor_dat$survey=="survey_2")] = 
+  predictor_dat$bottom_depth[which(predictor_dat$survey=="survey_2")]
+
+# convert depth to log_depth
+predictor_dat$log_depth <- log(predictor_dat$depth)
+predictor_dat$log_depth2 <- predictor_dat$log_depth^2
+
+# convert depth to log_depth
+predictor_dat$log_depth <- log(predictor_dat$depth)
+predictor_dat$log_depth2 <- predictor_dat$log_depth^2
+
+
+fit_quad = function(par, x) {
+  s = seq(quantile(x,0.05), quantile(x,0.95), 
+          length.out=100)
+  pred = dnorm(s, mean = mean(x), sd = sd(x), log=FALSE)
+  # come up with quadratic approximation
+  a = par[1]
+  b = par[2]
+  c = par[3]
+  est = c*s*s + b*s + a
+  return (sum((pred-est)^2))
+}
+
+set.seed(123)
+q_pars <- matrix(0, n_year, 3)
+
+set.seed(123)
+mean_depth <- rnorm(1, 5, 0.5)
+
+  y <- rnorm(1000, mean = mean_depth, sd = 1)
+  # get quadratic parameters
+  o <- optim(runif(3), fit_quad, x = y)
+  q_pars[i,] = o$par
+  
+  mesh <- make_mesh(predictor_dat, 
+                  xy_cols = c("X", "Y"), 
+                  cutoff = 0.5)
+  
+  dat <- sdmTMB_simulate(
+    formula = ~ 1 + log_depth + log_depth2,
+    data = predictor_dat,
+    mesh = mesh,
+    range = 0.5,
+    sigma_O = 0.05,
+    sigma_E = 0.2,
+    phi = 0.1,
+    seed = 42,
+    B = c(o$par[1], o$par[2], o$par[3]) 
+  )  
+  
+    all_dat <- dat
+
+
+all_dat <- dplyr::left_join(all_dat, predictor_dat[,c("X","Y","survey","year")])
+
+survey_shallow <- dplyr::filter(all_dat,
+                                survey=="survey_1",
+                             log_depth < c(quantile(all_dat$log_depth,0.33))) %>%
+  dplyr::mutate(survey="shallow")
+
+# split off trawl survey. Downsample so rows are about the same as the surface survey
+survey_deep <- dplyr::filter(all_dat, 
+                             survey=="survey_2") %>%
+  dplyr::mutate(survey="deep")
+idx <- sample(1:nrow(survey_deep),size = nrow(survey_shallow), replace=FALSE)
+survey_deep <- survey_deep[idx,]
+
+# further make shallow affected by offset
+survey_shallow$observed <- survey_shallow$observed + 1.1
+# combined
+surveys <- rbind(survey_deep, survey_shallow)
+
+```
 
 
 ---
