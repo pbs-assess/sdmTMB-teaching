@@ -13,9 +13,35 @@ dfc <- cbind(dfc, df1[,c("Hsig.ave","Hbott.ave")])
 dfc$subarea <- as.factor(dfc$subarea)
 dfc$depth2 <- dfc$depth^2
 
-saveRDS(dfc, here('imr-2023','data','garn_ruse_cod_CAA.rds'))
+saveRDS(dfc, here('data','garn_ruse_cod_CAA.rds'))
 
-# individual age/length/weight data
-# interpolated weight from trawl survey length-weight relationship
+# ------------------------------------------------------------------------
+# get total biomass per net (simpler ex)
+# each fish has length, use coastal survey L-W to estimate weight by fish, sum by net
 # see C:/Users/a37789/Documents/coastal-cod/garn-ruse/code/5-index.R
-#   garn_ruse_alk_expanded_LW.rds
+#     C:/Users/a37789/Documents/coastal-cod/garn-ruse/code/01-prep-data.R
+df.ind <- readRDS(here('data','garn_ruse_alk_expanded_LW.rds'))
+df.haul <- readRDS(here('data','garn_ruse_catch_clean.rds'))
+
+df.ind$date <-  as.Date(substr(df.ind$stationstartdate, 1, nchar(df.ind$stationstartdate)-1), '%Y-%m-%d')
+df.ind$year <- as.numeric(format(df.ind$date,'%Y'))
+df.ind$haulid <- paste(df.ind$date, df.ind$serialnumber, sep="-")
+n.hauls <- dim(df.haul)[1]
+
+# # if you try to get biomass per net by summing across individual weights you will miss the nets with 0 catch
+# length(unique(df.ind$haulid))
+# n.hauls
+
+df.haul$biomass_kg <- 0 # total cod biomass per net
+for(i in 1:n.hauls){
+  cur_haul <- df.ind[which(df.ind$haulid == df.haul$haulid[i]),] # individuals for current haul
+  df.haul$biomass_kg[i] <- sum(cur_haul$individualweight)
+}
+# sum(df.haul$biomass_kg)
+# sum(df.ind$individualweight)
+
+df.haul <- df.haul %>% rowwise() %>% mutate(depth = mean(c(fishingdepthmin, fishingdepthmax), na.rm=TRUE)) %>% as.data.frame()
+df.haul$fyear <- as.factor(df.haul$year)
+df.haul <- df.haul %>% select(haulid, year, date, lat, lon, depth, subarea, site, biomass_kg, numbercod, gear, gear2)
+
+saveRDS(df.haul, here('data','garn_ruse_cod_biomass.rds'))
