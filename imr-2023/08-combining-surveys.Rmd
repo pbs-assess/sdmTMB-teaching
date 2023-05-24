@@ -1,0 +1,68 @@
+---
+title: "Combining data from multiple surveys"
+subtitle: "IMR sdmTMB workshop"
+author: ""
+institute: ""
+date: "May 23--25 2023"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source("preamble.R")
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(dplyr)
+library(sdmTMB)
+library(ggplot2)
+library(viridis)
+```
+
+# Combining surveys is a common challenge
+
+* Ideally overlapping in time - space
+
+* Otherwise some set of parameters need to be shared
+
+---
+
+# Combining surveys is a common challenge
+
+```{r}
+df = data.frame(Year = 1980:2020)
+set.seed(123)
+df$y <- cumsum(rnorm(nrow(df))) + 3
+df$y[15:25] = NA
+df$Survey <- c(rep("Survey 1",25), rep("Survey 2",16))
+ggplot(df, aes(Year,y, col=Survey)) + 
+  geom_line(linewidth=1) + 
+  geom_point(size=3) + 
+  theme_bw() + ylab("CPUE") + 
+  scale_color_viridis_d(end=0.8)
+```
+
+---
+
+# What sdmTMB cannot (yet) do
+
+* Combine surveys using multiple responses (counts, densities)
+
+--- 
+
+# Surveys as fixed effects
+
+
+
+---
+
+
+
