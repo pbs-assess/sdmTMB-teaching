@@ -1,7 +1,0 @@
-libs	library
-pcod-spatial-rf	~	binomial	c	make_mesh	pcod	sdmTMB
-unnamed-chunk-1	fit
-checksanity	fit	sanity
-unnamed-chunk-2	$	fit
-unnamed-chunk-3	$	fit	max
-unnamed-chunk-4	~	$	$<-	as.factor	binomial	mesh	sdmTMB
