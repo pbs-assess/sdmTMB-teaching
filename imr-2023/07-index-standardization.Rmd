@@ -16,7 +16,8 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("imr-2023/preamble.R"))
+# source(here::here("imr-2023/preamble.R"))
+source(paste0(getwd(), "/preamble.R"))
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
@@ -32,7 +33,7 @@ library(ggplot2)
 
 --
 
-* Model-based approaches can account for (some) aspects of imperfect implementation
+* Model-based approaches can account for (some) aspects of imperfect implementation (ref WKUSER2)
 
 --
 
@@ -56,7 +57,7 @@ library(ggplot2)
 
 ---
 
-# Calculating an area-weighted population index
+# Calculating an area-weighted population index using sdmTMB
 
 1. Fit a sensible model: .blue[`sdmTMB()`]
 
@@ -69,14 +70,15 @@ library(ggplot2)
 # Fit a sensible model
 
 ```{r pcod-st-fit, echo=TRUE, eval=TRUE, results='hide'}
+pcod$year_f <- as.factor(pcod$year)
 mesh <- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit <- sdmTMB(
-  density ~ 0 + as.factor(year), #<<
+  density ~ 0 + year_f, #<<
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
   spatial = "on",
-  time = "year",
+  time = "year_f",
   spatiotemporal = "iid", #<<
   silent = FALSE # show progress!
 )
@@ -86,10 +88,14 @@ fit <- sdmTMB(
 
 # Predict over the survey domain
 
+prediction grid needs to be much smaller than the estimated spatial range
 .small[
 ```{r pcod-st-index1, echo=TRUE, message=FALSE, warning=FALSE}
+qcs_grid1 <- purrr::map_dfr(seq_len(length(unique(pcod$year))), ~ qcs_grid)
+qcs_grid1$year = rep(unique(pcod$year), each=nrow(qcs_grid))
+qcs_grid1$year_f = as.factor(qcs_grid1$year)
 pred <- predict(
-  fit, newdata = qcs_grid, return_tmb_object = TRUE
+  fit, newdata = qcs_grid1, return_tmb_object = TRUE
 )
 select(pred$data, year, X, Y, est) |> 
   head()
@@ -107,7 +113,7 @@ max_est <- quantile(.p$est, 0.998)
 ggplot(.p, aes(X, Y, fill = exp(est_trim))) +
   geom_raster() +
   scale_fill_viridis_c(trans = "sqrt") +
-  facet_wrap(~year) +
+  facet_wrap(~year_f) +
   coord_fixed() +
   labs(fill = "Biomass density\n(kg/km^2)")
 ```
@@ -116,7 +122,7 @@ ggplot(.p, aes(X, Y, fill = exp(est_trim))) +
 
 # Sum up the density multiplied by cell area
 
-(*and calculate standard errors)
+(and calculate standard errors)
 
 ```{r pcod-index, echo=TRUE}
 index <- get_index(pred, area = 4, bias_correct = TRUE)
@@ -129,7 +135,7 @@ head(index)
 
 .xsmall[
 ```{r pcod-st-index-plot, echo=TRUE, fig.width=6, fig.asp=0.5, out.width="600px"}
-ggplot(index, aes(year, est)) + geom_line() +
+ggplot(index, aes(as.numeric(year_f), est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   xlab('Year') + ylab('Biomass estimate (kg)')
 ```
