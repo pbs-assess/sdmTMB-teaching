@@ -173,6 +173,20 @@ p1
 
 ---
 
+# Model in sdmTMB
+
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB(
+  observed ~ log_depth + log_depth2+ survey,
+  data = surveys, 
+  mesh = mesh,
+  spatiotemporal = "iid",
+  time="year"
+)
+```
+
+---
+
 ```{r eval=TRUE, echo=FALSE}
 set.seed(1)
 n_year <- 10
