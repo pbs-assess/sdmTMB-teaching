@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("imr-2023/preamble.R"))
+source("preamble.R")
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
@@ -88,6 +88,8 @@ fit <- sdmTMB(
 
 .small[
 ```{r pcod-st-index1, echo=TRUE, message=FALSE, warning=FALSE}
+nd <- replicate_df(qcs_grid, "year", unique(pcod$year))
+qcs_grid <- nd
 pred <- predict(
   fit, newdata = qcs_grid, return_tmb_object = TRUE
 )

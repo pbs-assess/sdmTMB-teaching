@@ -4,3 +4,4 @@ unnamed-chunk-2	sdmTMB
 unnamed-chunk-3	c	make_mesh	pcod
 unnamed-chunk-4	~	binomial	mesh	pcod	sdmTMB_cv
 cv	~	$	c	library	make_mesh	multisession	pcod	plan	sdmTMB_cv	tweedie
+unnamed-chunk-5	~	binomial	mesh	pcod	sdmTMB_cv

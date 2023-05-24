@@ -166,7 +166,7 @@ max(fit$gradients)
 
 --
 
-* So, small values are consistent with convergence (no hard rule, perhaps at least < 0.001 but depends on scale of likelihood)
+* So, small values are consistent with convergence (no hard rule, perhaps at least < 0.001 but depends on scale of log likelihood)
 
 ---
 
@@ -217,7 +217,7 @@ fit <- sdmTMB(
 
 Unfortunately, there is no "fit-for-all" mesh
 
-It all depends on data (distance between survey points, etc) but check that that estimated `Matern range > mesh size`
+It all depends on data (distance between survey points, etc) but check that the estimated `Matern range > mesh size (cutfoff)`
 
 ```{r eval = TRUE, echo=TRUE}
 #Spatial model fit by ML ['sdmTMB']
@@ -240,12 +240,14 @@ class: center, middle, inverse
 
 # Randomized quantile residuals - default
 
+.xsmall[
 ```{r resid1, echo=TRUE, out.width='500px', fig.width=6}
 set.seed(1)
 rq_res <- residuals(fit) 
 qqnorm(rq_res)
 qqline(rq_res)
 ```
+]
 
 .xsmall[
 Warning: these residuals are fast but might look off even if the model is fine. Also see MCMC residuals. See the ['Residual checking' vignette](https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html).
@@ -255,8 +257,8 @@ Warning: these residuals are fast but might look off even if the model is fine. 
 
 # Model residuals in space
 
-.small[
-```{r resid2, echo=FALSE, out.width='700px', fig.width=6}
+.xsmall[
+```{r resid2, echo=TRUE, out.width='700px', fig.width=6}
 pcod$resids <- residuals(fit)
 filter(pcod, year %in% c(2011, 2013, 2015, 2017)) %>% 
   ggplot(aes(X, Y, colour = resids)) + #<<
@@ -264,6 +266,22 @@ filter(pcod, year %in% c(2011, 2013, 2015, 2017)) %>%
   facet_wrap(~year) +
   scale_colour_gradient2() +
   coord_fixed()
+```
+]
+
+---
+
+# Model residuals in space (continue)
+
+.small[
+```{r resid3, echo=TRUE, out.width='700px', fig.width=6, eval=TRUE}
+pred_fixed <- fit$family$linkinv(predict(fit)$est)
+s_fit = DHARMa::createDHARMa(
+  simulatedResponse = simulate(fit, nsim=500) ,
+  observedResponse = pcod$present,
+  fittedPredictedResponse = pred_fixed
+)
+DHARMa::testSpatialAutocorrelation(s_fit, x= pcod$X, y=pcod$Y, plot=FALSE)
 ```
 ]
 
@@ -344,14 +362,19 @@ Options for starting simple:
 --
 
 * Consider the scale of the response and predictors
-  .xsmall[Keep parameters not too big or small]
+  .xsmall[Keep parameters not too big or small; standardizing variables?]
 
 --
 
-* Consider if observation error variance >> process variance   
+* Consider if observation error variance (phi) >> process variance (sigma_O and/or sigma_E)  
   .xsmall[Known to be problematic for state-space models]
   
+---
+
+# And a few more 
+
+* Make sure the estimated spatial range > mesh size (cut-off value)
+
 --
 
-* Make sure the estimated spatial range > mesh size 
-
+* large SE in the TMB `sdreport` might suggest overparametrization

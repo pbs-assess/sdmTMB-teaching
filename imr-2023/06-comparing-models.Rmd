@@ -224,3 +224,21 @@ m_cv$sum_loglik
 # of left-out data:
 m_cv$elpd
 ```
+
+---
+
+# Leave Future Out Cross Validation
+
+* Only forward looking 
+.small[
+```{r echo=TRUE, eval=FALSE}
+fit <- sdmTMB_cv( #<<
+  present ~ 1,
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  lfo = TRUE, #<<
+  lfo_forecast = 1, #<<
+  lfo_validations = 5 #<<
+)
+```

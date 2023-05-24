@@ -8,3 +8,4 @@ unnamed-chunk-4
 unnamed-chunk-5	
 resid1	rq_res	.Random.seed
 resid2	pcod
+resid3	pred_fixed	s_fit
