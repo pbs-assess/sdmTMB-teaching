@@ -1,0 +1,17 @@
+libs	library
+tv-int	~	c	make_mesh	pcod	sdmTMB	tweedie
+sum-fit1	fit	print
+unnamed-chunk-1	
+b-rw-est	$	as.list	cbind	fit	library
+unnamed-chunk-2	~
+unnamed-chunk-3	~
+unnamed-chunk-4	~
+compare-fits	~	$	$<-	aes	as.factor	data.frame	est	est_se	fit	geom_pointrange	ggplot	mean	mesh	model	pcod	position_dodge	predict	rbind	scale_colour_brewer	sdmTMB	tweedie	unique	year
+fit-tv-depth	~	mesh	pcod	sdmTMB	tweedie
+tv-depth-eff	^	$	$<-	aes	as.factor	c	coord_cartesian	depth	est	est_se	exp	expand.grid	fit_tv	geom_line	geom_ribbon	ggplot	labs	max	min	pcod	predict	seq	unique	year
+spat-varying-fit	~	$	$<-	as.numeric	c	make_mesh	scale	sdmTMB	tweedie
+plot-zeta	::	==	$	$<-	aes	fit	geom_raster	ggplot	mean	pcod	predict	replicate_df	scale_fill_gradient2	sd	unique	X	Y	year	zeta_s_year_scaled
+unnamed-chunk-5	~	glm
+unnamed-chunk-6	~	binomial	d	mesh	sdmTMB
+unnamed-chunk-7	~	d	mesh	sdmTMB
+unnamed-chunk-8	~	d	mesh	sdmTMB

@@ -1,0 +1,17 @@
+libs	
+tv-int	fit	mesh
+sum-fit1	
+unnamed-chunk-1	
+b-rw-est	est	est_se
+unnamed-chunk-2	
+unnamed-chunk-3	
+unnamed-chunk-4	
+compare-fits	fit_fc	fit_re	fit_sm	nd	newdf	pred	pred_fc	pred_fit	pred_re	pred_sm
+fit-tv-depth	fit_tv
+tv-depth-eff	nd	p
+spat-varying-fit	fit	mesh	pcod
+plot-zeta	nd	p	qcs_grid
+unnamed-chunk-5	
+unnamed-chunk-6	
+unnamed-chunk-7	
+unnamed-chunk-8	

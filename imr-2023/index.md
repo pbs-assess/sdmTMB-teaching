@@ -11,10 +11,10 @@
 <https://pbs-assess.github.io/sdmTMB/index.html>
 
 ### Who we are:
-NOAA: Eric Ward, Lewis Barnett
-DFO: Sean Anderson, Philina English
-IMR: Kotaro Ono, Brian Stock
-SLU: Max Lindmark
+- NOAA: Eric Ward, Lewis Barnett 
+- DFO: Sean Anderson, Philina English 
+- IMR: Kotaro Ono, Brian Stock 
+- SLU: Max Lindmark 
 
 ### Shared Google Docs notes and questions
 
@@ -46,7 +46,21 @@ Day 1 lecture:
 
 3. [Introduction to fitting spatial models](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/03-pcod-spatial.html)
 
-Day 2: 
+Day 2 lecture: 
+
+4. [Troubleshooting and diagnostics](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/04-troubleshooting.html)
+
+5. [Spatiotemporal models](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/05-pcod-spatiotemporal.html)
+
+6. [Model comparison](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/06-comparing-models.html)
+
+Day 3 lecture:
+
+7. [Index standardization](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/07-index-standardization.html)
+
+8. [Combining data from multiple surveys]()
+
+9. [Time and spatially varying models](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/09-time-space-varying.html)
 
 
 ### GitHub folder for these slides:
