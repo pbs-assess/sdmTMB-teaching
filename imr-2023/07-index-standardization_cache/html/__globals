@@ -1,6 +1,0 @@
-libs	library
-pcod-st-fit	~	c	make_mesh	pcod	sdmTMB	tweedie
-pcod-st-index1	$	est	fit	head	pcod	predict	replicate_df	select	unique	X	Y	year
-pcod-st-plot-est2	>	~	$	aes	coord_fixed	est	est_trim	exp	facet_wrap	geom_raster	ggplot	if_else	labs	mutate	pred	quantile	scale_fill_viridis_c	X	Y
-pcod-index	get_index	head	pred
-pcod-st-index-plot	aes	est	geom_line	geom_ribbon	ggplot	index	lwr	upr	xlab	year	ylab
