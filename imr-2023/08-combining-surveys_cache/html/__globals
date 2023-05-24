@@ -1,2 +1,5 @@
 libs	library
 unnamed-chunk-1	[<-	$	$<-	aes	c	cumsum	data.frame	geom_line	geom_point	ggplot	nrow	rep	rnorm	scale_color_viridis_d	set.seed	Survey	theme_bw	y	Year	ylab
+unnamed-chunk-2	~	sdmTMB
+unnamed-chunk-3	$<-	aes	data.frame	geom_point	ggplot	rbind	runif	scale_color_viridis_d	set.seed	Survey	theme_bw	X	Y
+unnamed-chunk-4	$<-	aes	data.frame	geom_point	ggplot	rbind	runif	scale_color_viridis_d	set.seed	Survey	theme_bw	X	Y

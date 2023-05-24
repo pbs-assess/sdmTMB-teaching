@@ -52,17 +52,95 @@ ggplot(df, aes(Year,y, col=Survey)) +
 
 ---
 
+# Combining surveys is a common challenge
+
+* Gaps in time may be smoothed if:
+* Assumption: equal catchability between surveys (scales intercept)
+* Reasonable to use smooth or time-varying coefficients  
+
+```{r eval=FALSE, echo=TRUE}
+fit <- sdmTMB(density ~ s(year), ...)
+
+fit <- sdmTMB(density ~ 1, 
+              time_varying = ~ 1,
+              time="year",...)
+
+fit <- sdmTMB(density ~ 1, 
+              time="year",
+              spatiotemporal "ar1",
+              ...)
+```
+
+---
+
+# Combining surveys is a common challenge
+
+* Ok if assumption of equal catchabilty is equal. 
+```{r warning=FALSE, message=FALSE}
+set.seed(123)
+df1 <- data.frame(X = runif(500, min=0,max=500),
+             Y = runif(500, min=0,max=500))
+df2 <- data.frame(X = runif(500, min=500,max=1000),
+             Y = runif(500, min=500,max=1000))
+df1$Survey = "Survey 1"
+df2$Survey = "Survey 2"
+
+df <- rbind(df1, df2)
+ggplot(df, aes(X,Y, col=Survey)) + 
+  geom_point() + 
+  theme_bw() + 
+  scale_color_viridis_d(end=0.8)
+```
+
+---
+
+# Overlapping surveys and catchability
+
+```{r warning=FALSE, message=FALSE}
+set.seed(123)
+df1 <- data.frame(X = runif(500, min=0,max=800),
+             Y = runif(500, min=0,max=800))
+df2 <- data.frame(X = runif(500, min=200,max=1000),
+             Y = runif(500, min=200,max=1000))
+df1$Survey = "Survey 1"
+df2$Survey = "Survey 2"
+
+df <- rbind(df1, df2)
+ggplot(df, aes(X,Y, col=Survey)) + 
+  geom_point() + 
+  theme_bw() + 
+  scale_color_viridis_d(end=0.8)
+```
+
+---
+
+# Overlapping surveys and catchability
+
+```{r}
+fit <- sdmTMB(density ~ fyear + survey, ...)
+
+fit <- sdmTMB(density ~ fyear * survey, ...)
+
+fit <- sdmTMB(density ~ s(year, by = survey), ...)
+```
+
+---
+
+# Overlapping surveys and catchability
+
+*Example: * combining trawl and acoustic surveys for pelagic species
+
+
+
+---
+
 # What sdmTMB cannot (yet) do
 
 * Combine surveys using multiple responses (counts, densities)
 
 --- 
 
-# Surveys as fixed effects
 
-
-
----
 
 
 
