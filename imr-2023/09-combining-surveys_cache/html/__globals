@@ -4,5 +4,6 @@ unnamed-chunk-2	~	sdmTMB
 unnamed-chunk-3	$<-	aes	data.frame	geom_point	ggplot	rbind	runif	scale_color_viridis_d	set.seed	Survey	theme_bw	X	Y
 unnamed-chunk-4	$<-	aes	data.frame	geom_point	ggplot	rbind	runif	scale_color_viridis_d	set.seed	Survey	theme_bw	X	Y
 unnamed-chunk-5	~	sdmTMB
-unnamed-chunk-6	aes	data.frame	geom_histogram	ggplot	rnorm	x
-unnamed-chunk-7	::	[<-	%>%	^	<	==	~	$	$<-	c	data.frame	dnorm	exp	i	log	log_depth	make_mesh	matrix	mean	nrow	observed	optim	quantile	rbind	return	rnorm	runif	sample	sd	sdmTMB_simulate	seq	set.seed	sum	survey	T	which
+unnamed-chunk-6	aes	c	coord_cartesian	data.frame	geom_histogram	ggplot	rnorm	set.seed	x	xlab	ylab
+unnamed-chunk-7	abs	aes	data.frame	geom_histogram	ggplot	rnorm	set.seed	x	xlab	y	ylab	z
+unnamed-chunk-8	::	[<-	%>%	^	<	==	~	$	$<-	c	data.frame	dnorm	exp	log	log_depth	make_mesh	mean	nrow	observed	optim	quantile	return	rnorm	runif	sample	sd	sdmTMB_simulate	seq	set.seed	sum	survey	T	which

@@ -54,10 +54,11 @@ ggplot(df, aes(Year,y, col=Survey)) +
 
 # Combining surveys is a common challenge
 
+.small[
 * Gaps in time may be smoothed if:
 * Assumption: equal catchability between surveys (scales intercept)
 * Reasonable to use smooth or time-varying coefficients  
-
+]
 ```{r eval=FALSE, echo=TRUE}
 fit <- sdmTMB(density ~ s(year), ...)
 
@@ -116,6 +117,8 @@ ggplot(df, aes(X,Y, col=Survey)) +
 
 # Overlapping surveys and catchability
 
+* Interactions between survey (or gears) and other fixed effects 
+
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB(density ~ fyear + survey, ...)
 
@@ -142,16 +145,19 @@ set.seed(123)
 df <- data.frame(x = rnorm(10000, 500, 100))
 p1 <- ggplot(df, aes(x)) + 
   geom_histogram(bins=100) + 
-  xlab("Depth") + ylab("Density")
+  xlab("Depth") + ylab("Density") + 
+  coord_cartesian(ylim=c(0,800))
+p1
 ```
 
 ---
 
 # Simulation testing
 
+.small[
 * Layer on 2 surveys (acoustic, trawl) which might not overlap
 * Can we recover depth relationship?? 
-
+]
 ```{r}
 set.seed(123)
 df <- data.frame(x = rnorm(10000, 500, 100),
@@ -167,7 +173,7 @@ p1
 
 ---
 
-```{r eval=FALSE}
+```{r eval=TRUE, echo=FALSE}
 set.seed(1)
 n_year <- 10
 n_pts <- 500
@@ -232,15 +238,12 @@ fit_quad = function(par, x) {
 }
 
 set.seed(123)
-q_pars <- matrix(0, n_year, 3)
-
-set.seed(123)
 mean_depth <- rnorm(1, 5, 0.5)
 
   y <- rnorm(1000, mean = mean_depth, sd = 1)
   # get quadratic parameters
   o <- optim(runif(3), fit_quad, x = y)
-  q_pars[i,] = o$par
+  q_pars = o$par
   
   mesh <- make_mesh(predictor_dat, 
                   xy_cols = c("X", "Y"), 
@@ -277,19 +280,19 @@ survey_deep <- survey_deep[idx,]
 
 # further make shallow affected by offset
 survey_shallow$observed <- survey_shallow$observed + 1.1
-# combined
-surveys <- rbind(survey_deep, survey_shallow)
 
 ```
 
+![](images/simulations.png)
 
 ---
 
 # What sdmTMB cannot (yet) do
 
 * Combine surveys using multiple responses (counts, densities)
-
---- 
+  * Delta / hurdle model is exception 
+  
+* Link models with different meshes
 
 
 

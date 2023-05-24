@@ -29,29 +29,43 @@ library(viridis)
 
 # Why do we need a prediction grid?
 
-* Generating index of abundance (over domain that the survey is represented by)
+* Generate some index of abundance
 
 * Making pretty maps!
 
 ---
 
-# Approach 1: mesh locations
+# Approach 1: at locations of data
 
-* We can predict to locations of mesh vertices
+```{r echo = TRUE, eval = FALSE}
+pred <- predict(fit)
+```
+
+* Why? evaluating residuals
+
+---
+
+# Approach 2: mesh locations
+
+* Predict to locations of mesh vertices
 
 * These are where random effects are estimated 
   * spatial fields
   * spatiotemporal fields
   * spatially varying coefficients
 
+* Why? Diagnostics / understanding mesh & uncertainties
+
 See [https://github.com/pbs-assess/sdmTMB/discussions/230](https://github.com/pbs-assess/sdmTMB/discussions/230)
 ---
 
-# Approach 2: regular grid
+# Approach 3: regular grid
 
 * see `qcs_grid` as example (4km grid)
 * generally built from survey design, excludes land
+* Why? Standardized index of abundance across survey domain
 
+See `?get_index`
 ```{r echo=FALSE, eval=TRUE}
 ggplot(qcs_grid, aes(X,Y, col = depth_scaled)) + 
   #geom_raster(alpha=0.5) + 
@@ -60,10 +74,20 @@ ggplot(qcs_grid, aes(X,Y, col = depth_scaled)) +
 
 ---
 
-# Approach 3: build it based on the locations of observations
+# Approach 4: grid based on the locations of observations
 
 * Things to consider: spatial grid cell size?
 * How many time steps should have observations?
+* Why? Domain grid not available, applicable
+  * e.g. rock / reef associated fishes
 
 Code: [https://github.com/pbs-assess/sdmTMB-teaching/blob/main/imr-2023/exercises/coastal-survey-ex/coastal-survey-index-south.R#L205](https://github.com/pbs-assess/sdmTMB-teaching/blob/main/imr-2023/exercises/coastal-survey-ex/coastal-survey-index-south.R#L205)
 
+---
+
+# Tips and tricks
+
+* Any prediction grid or dataframe will need to have values for all covariates
+  * Excamples: year, depth, temperature
+  * Random effects = exception, can be NA
+  
