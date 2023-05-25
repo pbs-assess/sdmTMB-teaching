@@ -246,6 +246,20 @@ print(plot_timeseries_compare(df=ind.df, addCI=TRUE, addCV=TRUE,
                               val='est', facet.var='Model', color.var='Model',
                               relative=FALSE, ytitle='Biomass index', yzero=TRUE))
 dev.off()
+
+# qq plots don't look great
+# look at mcmc residuals
+for(m in 1:n.mods){
+  set.seed(123)
+  samps <- sdmTMBextra::predict_mle_mcmc(fits_full[[m]], mcmc_iter = 301, mcmc_warmup = 200, nsim=50)
+  mcmc_res <- residuals(fits_full[[m]], type = "mle-mcmc", mcmc_samples = samps)
+  
+  png(file.path(plotdir, paste0('qqplot_mcmc_m',mods[m],'.png')), units='in', width=5, height=5, res=150)
+  qqnorm(mcmc_res)
+  abline(a = 0, b = 1)
+  dev.off()
+}
+
 # 
 # # For 'best' model plot
 # #  index at age, show larger CV in south years (fewer fish)
