@@ -17,4 +17,4 @@ ln_tau_E  2.33427324 0.41713737
 ln_kappa -2.25234536 0.26631581
 thetaf    0.15140319 0.04455944
 ln_phi    0.53115333 0.03050393
-Maximum gradient component: 5.166262e-08 
+Maximum gradient component: 4.90285e-09 
