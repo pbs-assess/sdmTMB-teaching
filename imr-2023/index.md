@@ -30,6 +30,8 @@
 
 <https://github.com/pbs-assess/sdmTMB-teaching/tree/main/imr-2023/exercises>
 
+
+[Slides for Day 3 Exercise](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/images/compare_coastaltrawl_shallownet_surveys.pptx)
 ### Schedule:
 
 3-day workshop from 9-12 (CET).
