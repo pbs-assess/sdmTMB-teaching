@@ -4,7 +4,7 @@
     <title>Introduction to spatial models with sdmTMB</title>
     <meta charset="utf-8" />
     <meta name="author" content="" />
-    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.25/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -261,9 +261,9 @@ tidy(fit)
 tidy(fit, "ran_pars", conf.int = TRUE)
 #&gt; # A tibble: 2 × 5
 #&gt;   term    estimate std.error conf.low conf.high
-#&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;lgl&gt;        &lt;dbl&gt;     &lt;dbl&gt;
-#&gt; 1 range      43.5  NA           28.4      66.8 
-#&gt; 2 sigma_O     1.65 NA            1.27      2.14
+#&gt;   &lt;chr&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+#&gt; 1 range      43.5      9.52     28.4      66.8 
+#&gt; 2 sigma_O     1.65     0.218     1.27      2.14
 ```
 
 ---

@@ -129,7 +129,7 @@ fit <- sdmTMB(
 One or more standard errors being `NaN` is a problem:
 
 .small[
-```{r, echo=TRUE, highlight.output=10}
+```{r, echo=TRUE, highlight.output=11}
 fit
 ```
 ]
@@ -281,7 +281,8 @@ s_fit = DHARMa::createDHARMa(
   observedResponse = pcod$present,
   fittedPredictedResponse = pred_fixed
 )
-DHARMa::testSpatialAutocorrelation(s_fit, x= pcod$X, y=pcod$Y, plot=FALSE)
+DHARMa::testSpatialAutocorrelation(s_fit, x= pcod$X, 
+                                   y=pcod$Y, plot=FALSE)
 ```
 ]
 

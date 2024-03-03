@@ -1,0 +1,23 @@
+libs	library
+unnamed-chunk-1	%>%	density	depth	head	library	pcod	present	select	X	Y	year
+unnamed-chunk-2	c	make_mesh	pcod	plot
+pcod-null	~	binomial	mesh	pcod	sdmTMB
+plotdepth	$	$<-	aes	depth	fit	geom_point	geom_smooth	ggplot	pcod	pred	predict	xlab	ylab
+pcod-spatial-rf-depth	~	binomial	mesh	pcod	sdmTMB
+checksanity	fit	sanity
+unnamed-chunk-3	fit
+unnamed-chunk-4	fit
+unnamed-chunk-5	fit
+unnamed-chunk-6	fit
+unnamed-chunk-7	fit	tidy
+unnamed-chunk-8	est	fit	omega_s	predict	select	X	Y
+unnamed-chunk-9	aes	coord_fixed	data	depth	filter	geom_raster	ggplot	qcs_grid	X	Y
+unnamed-chunk-10	depth	fit	head	nd	predict	select	X	Y
+unnamed-chunk-11	aes	coord_fixed	est	geom_raster	ggplot	p	plogis	scale_fill_viridis_c	X	Y
+unnamed-chunk-12	aes	coord_fixed	est_non_rf	geom_raster	ggplot	p	plogis	scale_fill_viridis_c	X	Y
+unnamed-chunk-13	aes	coord_fixed	geom_raster	ggplot	omega_s	p	scale_fill_gradient2	X	Y
+pcod-sp-depth-pred	~	$	$<-	data.frame	fit	plogis	predict	seq
+pcod-sp-depth-pred-plot	$	aes	c	coord_cartesian	est	geom_line	geom_ribbon	ggplot	lwr	nd	p	plogis	upr	xlab	ylab
+pcod-sp-depth-visreg	::	fit
+pcod-sp-depth-visreg-resp	::	fit
+pcod-sp-depth-ggeffects	::	fit	plot

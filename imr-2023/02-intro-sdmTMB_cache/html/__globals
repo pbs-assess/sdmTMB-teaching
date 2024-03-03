@@ -1,0 +1,17 @@
+libs	library
+unnamed-chunk-1	install.packages
+unnamed-chunk-2	::
+unnamed-chunk-3	::	c	data.frame
+make-mesh	$	c	data.frame	make_mesh	plot	runif
+formulas1	~
+formulas-smoothers	~
+formulas-other	~
+breakpt	~
+make-breakpt	<	$	$<-	aes	data.frame	geom_line	ggplot	ggtitle	ifelse	seq	x	xlab	y	ylab
+logistic	~
+make-logistic	$	$<-	aes	data.frame	exp	geom_line	ggplot	ggtitle	seq	x	xlab	y	ylab
+sim-tweedie	::	~	$	$<-	aes	c	coord_cartesian	data.frame	facet_wrap	geom_histogram	ggplot	length	paste	rep	set.seed	sort	y	ylab
+unnamed-chunk-4	~	dat	gaussian	mesh	sdmTMB
+unnamed-chunk-5	~	dat	gaussian	mesh	sdmTMB
+iid-demo	~	aes	c	coord_fixed	expand.grid	facet_wrap	gaussian	geom_raster	ggplot	guides	make_mesh	mu	scale_fill_gradient2	sdmTMB_simulate	seq	seq_len	vars	x	y	year
+ar1-demo	~	aes	coord_fixed	facet_wrap	gaussian	geom_raster	ggplot	guides	mesh2	mu	predictor_dat	scale_fill_gradient2	sdmTMB_simulate	vars	x	y	year

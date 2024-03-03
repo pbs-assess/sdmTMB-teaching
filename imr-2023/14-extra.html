@@ -4,7 +4,7 @@
     <title>Related packages, troubleshooting, tips</title>
     <meta charset="utf-8" />
     <meta name="author" content="" />
-    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.25/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -184,15 +184,15 @@ We could also look directly at output from TMB `TMB::sdreport()`:
 fit$sd_report
 #&gt; sdreport(.) result
 #&gt;               Estimate   Std. Error
-#&gt; b_j       4.166377e+01 24.316746449
-#&gt; b_j       2.349090e-02  0.002301342
-#&gt; b_j      -1.869077e-02  0.012088203
-*#&gt; b_j      -2.357973e-05          NaN
-#&gt; ln_tau_O  5.202341e-01  0.153542813
+#&gt; b_j       4.166376e+01 24.316746431
+#&gt; b_j       2.349096e-02  0.002301342
+#&gt; b_j      -1.869076e-02  0.012088203
+*#&gt; b_j      -2.357976e-05          NaN
+#&gt; ln_tau_O  5.202341e-01  0.153542815
 #&gt; ln_kappa -2.572805e+00  0.088995040
 *#&gt; Warning:
 *#&gt; Hessian of fixed effects was not positive definite.
-*#&gt; Maximum gradient component: 131.0941
+*#&gt; Maximum gradient component: 131.1179
 ```
 ]
 
@@ -206,7 +206,7 @@ Log likelihood gradient with respect to fixed effects:
 
 ```r
 max(fit$gradients)
-#&gt; [1] 0.0006426617
+#&gt; [1] 0.0006444363
 ```
 ]
 

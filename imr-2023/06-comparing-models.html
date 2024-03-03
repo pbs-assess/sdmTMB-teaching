@@ -4,7 +4,7 @@
     <title>Model selection with sdmTMB</title>
     <meta charset="utf-8" />
     <meta name="author" content="" />
-    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.25/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -227,11 +227,11 @@ mesh &lt;- make_mesh(pcod, c("X", "Y"), cutoff = 10)
 )
 # Sum of log likelihoods of left-out data:
 m_cv$sum_loglik
-#&gt; [1] -10724.77
+#&gt; [1] -22289.95
 # Expected log pointwise predictive density
 # of left-out data:
 m_cv$elpd
-#&gt; [1] -1.008203
+#&gt; NULL
 ```
 
 ---
@@ -252,6 +252,30 @@ m_cv$elpd
 * lfo_validations = 5
 )
 ```
+
+---
+
+# Model stacking (weighting)
+
+* It might be of use for some applications to do model averaging
+
+* This is implemented in sdmTMB with `stacking`
+
+* [Yao et al. (2018)](doi:10.1214/17-BA1091)
+
+---
+
+# Model stacking (weighting)
+
+* If `m_cv_1`, `m_cv_2`, `m_cv_3` are all outputs from `sdmTMB_cv()` then  
+
+
+```r
+models &lt;- list(m_cv_1, m_cv_2, m_cv_3)
+weights &lt;- sdmTMB_stacking(models)
+weights
+```
+
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

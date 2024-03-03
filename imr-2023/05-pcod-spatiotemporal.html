@@ -4,7 +4,7 @@
     <title>Example: Spatiotemporal modeling of Pacific cod</title>
     <meta charset="utf-8" />
     <meta name="author" content="" />
-    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.25/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -327,10 +327,10 @@ By sampling from the joint precision matrix
 dim(psims)
 #&gt; [1] 65826    50
 psims[1:3, 1:4]
-#&gt;            [,1]       [,2]       [,3]        [,4]
-#&gt; 2003 -5.3543066 -4.0923544 -4.5311643 -4.44570450
-#&gt; 2003  0.3355911  0.1761885  0.4031172  0.04149957
-#&gt; 2003  1.4531918  1.3356529  1.3666633  0.97159758
+#&gt;           [,1]      [,2]      [,3]      [,4]
+#&gt; 2003 -3.327548 -2.105384 -2.718930 -3.555146
+#&gt; 2003  2.056039  2.606377  1.703947  1.019264
+#&gt; 2003  3.102490  3.511679  2.837596  2.080360
 
 *p$sd &lt;- apply(psims, 1, sd)
 ```

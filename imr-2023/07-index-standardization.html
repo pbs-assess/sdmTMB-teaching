@@ -4,7 +4,7 @@
     <title>Area-weighted index standardization</title>
     <meta charset="utf-8" />
     <meta name="author" content="" />
-    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <script src="libs/header-attrs-2.25/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
   </head>
@@ -40,7 +40,7 @@ class: center, middle, inverse, title-slide
 
 --
 
-* Model-based approaches can account for (some) aspects of imperfect implementation
+* Model-based approaches can account for (some) aspects of imperfect implementation (ref WKUSER2)
 
 --
 
@@ -64,7 +64,7 @@ class: center, middle, inverse, title-slide
 
 ---
 
-# Calculating an area-weighted population index
+# Calculating an area-weighted population index using sdmTMB
 
 1. Fit a sensible model: .blue[`sdmTMB()`]
 
@@ -78,14 +78,15 @@ class: center, middle, inverse, title-slide
 
 
 ```r
+pcod$year_f &lt;- as.factor(pcod$year)
 mesh &lt;- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
 fit &lt;- sdmTMB(
-* density ~ 0 + as.factor(year),
+* density ~ 0 + year_f,
   data = pcod,
   mesh = mesh,
   family = tweedie(link = "log"),
   spatial = "on",
-  time = "year",
+  time = "year_f",
 * spatiotemporal = "iid",
   silent = FALSE # show progress!
 )
@@ -95,13 +96,15 @@ fit &lt;- sdmTMB(
 
 # Predict over the survey domain
 
+prediction grid needs to be much smaller than the estimated spatial range
 .small[
 
 ```r
-nd &lt;- replicate_df(qcs_grid, "year", unique(pcod$year))
-qcs_grid &lt;- nd
+qcs_grid1 &lt;- purrr::map_dfr(seq_len(length(unique(pcod$year))), ~ qcs_grid)
+qcs_grid1$year = rep(unique(pcod$year), each=nrow(qcs_grid))
+qcs_grid1$year_f = as.factor(qcs_grid1$year)
 pred &lt;- predict(
-  fit, newdata = qcs_grid, return_tmb_object = TRUE
+  fit, newdata = qcs_grid1, return_tmb_object = TRUE
 )
 select(pred$data, year, X, Y, est) |&gt; 
   head()
@@ -125,19 +128,19 @@ select(pred$data, year, X, Y, est) |&gt;
 
 # Sum up the density multiplied by cell area
 
-(*and calculate standard errors)
+(and calculate standard errors)
 
 
 ```r
 index &lt;- get_index(pred, area = 4, bias_correct = TRUE)
 head(index)
-#&gt;   year       est       lwr       upr  log_est        se
-#&gt; 1 2003  936175.6  653699.1 1340715.9 13.74956 0.1832462
-#&gt; 2 2004 1832130.4 1359020.1 2469942.7 14.42099 0.1524087
-#&gt; 3 2005 1757227.0 1224189.4 2522360.5 14.37925 0.1844208
-#&gt; 4 2007  452112.1  328785.5  621698.2 13.02169 0.1625155
-#&gt; 5 2009  722981.6  518712.7 1007691.5 13.49114 0.1694080
-#&gt; 6 2011 1357885.0 1028850.9 1792146.6 14.12144 0.1415770
+#&gt;   year_f       est       lwr       upr  log_est        se
+#&gt; 1   2003  936175.6  653699.1 1340715.9 13.74956 0.1832462
+#&gt; 2   2004 1832130.4 1359020.1 2469942.7 14.42099 0.1524087
+#&gt; 3   2005 1757227.0 1224189.4 2522360.5 14.37925 0.1844208
+#&gt; 4   2007  452112.1  328785.5  621698.2 13.02169 0.1625155
+#&gt; 5   2009  722981.6  518712.7 1007691.5 13.49114 0.1694080
+#&gt; 6   2011 1357885.0 1028850.9 1792146.6 14.12144 0.1415770
 ```
 
 ---
@@ -147,7 +150,7 @@ head(index)
 .xsmall[
 
 ```r
-ggplot(index, aes(year, est)) + geom_line() +
+ggplot(index, aes(as.numeric(year_f), est)) + geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   xlab('Year') + ylab('Biomass estimate (kg)')
 ```
