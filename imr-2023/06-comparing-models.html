@@ -137,20 +137,6 @@ Random effects include
 
 ---
 
-# ELPD
-
-Expected log pointwise predictive density
-
-Interpreted as theoretical expectation for new dataset  
-  
-ELPD: `\(\frac{\log ( \sum( \exp( \log L(y^*|\theta))))} {N}\)`,
-
-where: `\(y^*\)` are left-out data, `\(\theta\)` are parameters, and `\(N\)` is the number of left-out data points
-
-[Vehtari, Gelman, and Gabry (2017)](https://arxiv.org/abs/1507.04544)
-
----
-
 # Cross validation in sdmTMB
 
 
@@ -186,10 +172,6 @@ where: `\(y^*\)` are left-out data, `\(\theta\)` are parameters, and `\(N\)` is 
 - `fold_loglik`: sum of held out likelihoods for each fold
 
 - `sum_loglik`: sum across `fold_loglik`, or all data
-
-- `fold_elpd`: expected log predictive density for each fold
-
-- `elpd`: Expected log predictive density across all data
 
 ---
 
