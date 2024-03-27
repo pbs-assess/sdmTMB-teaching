@@ -304,11 +304,7 @@ Anisotropic range is best examined graphically:
 plot_anisotropy(fit_aniso)
 ```
 
-Notice how the correlation occurs over longer distances along the NW/SE plane
-than the NE/SW plane. In contrast, the correlation distance is constant in all
-dimensions in our initial (isotropic) model. In other words, if we were to make 
-a similar plot to the above for the isotropic model, it would be a circle 
-whose radius is the estimated spatial range.
+Notice how the correlation occurs over longer distances along the NW/SE plane than the NE/SW plane. In contrast, the correlation distance is constant in all dimensions in our initial (isotropic) model. In other words, if we were to make a similar plot to the above for the isotropic model, it would be a circle whose radius is the estimated spatial range.
 
 We can check the AIC of the 2 models:
 
@@ -450,8 +446,7 @@ fit_gam_s <- gam(
 )
 ```
 
-Visualize smooths, where the first plot shows the 1-D smooth on depth and 
-the second plot shows the 2-D (or bivariate) spatial smooth
+Visualize smooths, where the first plot shows the 1-D smooth on depth and the second plot shows the 2-D (or bivariate) spatial smooth
 
 ```{r}
 plot(fit_gam_s)
