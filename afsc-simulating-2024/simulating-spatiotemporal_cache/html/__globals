@@ -1,0 +1,31 @@
+libs	library
+sim-rf-intro	~	aes	c	data.frame	gaussian	geom_point	ggplot	guide_legend	guides	make_mesh	observed	runif	scale_color_gradient2	sdmTMB_simulate	set.seed	X	Y
+sim-rf-intro-cor	~	aes	c	data.frame	gaussian	geom_point	ggplot	guide_legend	guides	make_mesh	observed	runif	scale_color_gradient2	sdmTMB_simulate	set.seed	X	Y
+show-gp	$	$<-	::	[[	~	aes	as.matrix	c	coord_cartesian	data.frame	dist	element_blank	exp	geom_point	geom_smooth	geom_vline	ggplot	rnorm	seq	set.seed	theme	xlab	y	ylab
+sim-rf-dat	~	c	expand.grid	gaussian	make_mesh	sdmTMB_simulate	seq	seq_len
+random-field-demo	aes	coord_fixed	facet_wrap	geom_raster	ggplot	mu	scale_fill_gradient2	sim_dat	vars	x	y	year
+sim-rf-grid	$	$<-	~	==	aes	c	data.frame	expand.grid	facet_wrap	for	gaussian	geom_point	ggplot	if	make_mesh	nrow	observed	paste0	rbind	runif	scale_color_gradient2	sdmTMB_simulate	set.seed	X	Y
+sim-rf-large_phi	~	aes	c	data.frame	gaussian	geom_point	ggplot	make_mesh	observed	runif	scale_color_gradient2	sdmTMB_simulate	set.seed	X	Y
+sim-rf-med_phi	~	aes	gaussian	geom_point	ggplot	mesh	observed	predictor_dat	scale_color_gradient2	sdmTMB_simulate	X	Y
+sim-rf-small_phi	~	aes	gaussian	geom_point	ggplot	mesh	observed	predictor_dat	scale_color_gradient2	sdmTMB_simulate	X	Y
+formulas1	~
+formulas-smoothers	~
+formulas-other	~
+breakpt	~
+make-breakpt	$	$<-	<	aes	data.frame	geom_line	ggplot	ggtitle	ifelse	seq	x	xlab	y	ylab
+logistic	~
+make-logistic	$	$<-	aes	data.frame	exp	geom_line	ggplot	ggtitle	seq	x	xlab	y	ylab
+unnamed-chunk-1	~	dat	gaussian	mesh	sdmTMB
+unnamed-chunk-2	~	dat	gaussian	mesh	sdmTMB
+iid-demo	~	aes	c	coord_fixed	expand.grid	facet_wrap	gaussian	geom_raster	ggplot	guides	make_mesh	mu	scale_fill_gradient2	sdmTMB_simulate	seq	seq_len	vars	x	y	year
+ar1-demo	~	aes	coord_fixed	facet_wrap	gaussian	geom_raster	ggplot	guides	mesh2	mu	predictor_dat	scale_fill_gradient2	sdmTMB_simulate	vars	x	y	year
+pcod-mesh	c	make_mesh	pcod
+fit-ar1	~	c	mesh	pcod	sdmTMB	tweedie
+fit-rw	~	extra_years	mesh	pcod	sdmTMB	tweedie
+fit-rw-ar1	~	extra_years	mesh	pcod	sdmTMB	tweedie
+fit-sm	~	extra_years	mesh	pcod	sdmTMB	tweedie
+pred-all	$	%>%	::	^	~	c	data.frame	fit_ar1	fit_rw	fit_rw_ar1	fit_sm	list	mean	names<-	pcod	rename	set.seed	unique	Var1	Var2
+plot-time-comparison	$	aes	element_blank	est	est_se	exp	facet_wrap	filter	geom_line	geom_ribbon	geom_vline	ggplot	iter	max	pcod	pred_df	preds_df	sample	scale_y_log10	set.seed	theme	type	unique	vars	xlab	year	ylab
+pred-ar1-plot-eps	$	~	aes	coord_fixed	epsilon_st	facet_wrap	fit_ar1	geom_raster	ggplot	predict	qcs_grid	replicate_df	scale_fill_gradient2	unique	X	Y
+pred-rw-plot-eps	~	aes	coord_fixed	epsilon_st	facet_wrap	fit_rw	geom_raster	ggplot	grid	predict	scale_fill_gradient2	X	Y
+eps-se	$<-	~	aes	apply	coord_fixed	facet_wrap	fit_ar1	geom_raster	ggplot	labs	predict	sd	se	X	Y

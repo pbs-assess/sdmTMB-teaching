@@ -1,0 +1,89 @@
+/* .remark-slide-content {
+  font-size: 28px;
+}
+*/
+
+/* https://community.rstudio.com/t/using-multiple-font-sizes-for-code-chunks/26405/5 */
+
+
+/*
+.large .remark-code {
+  font-size: 80% !important;
+}
+.medium .remark-code {
+  font-size: 70% !important;
+}
+.small .remark-code {
+  font-size: 60% !important;
+}
+.tiny .remark-code {
+  font-size: 30% !important;
+}
+*/
+
+
+.huge {
+  font-size: 1.6em;
+  font-weight: 500;
+}
+
+.xlarge {
+  font-size: 1.25em;
+  font-weight: 400;
+}
+
+.large {
+  font-size: 1.1em;
+}
+
+.medium {
+  font-size: 1em;
+}
+
+.small {
+  font-size: .9em;
+}
+
+.xsmall {
+  font-size: .75em;
+}
+
+.tiny {
+  font-size: .6em;
+  font-weight: 200;
+}
+
+
+
+
+.huge .remark-code {
+  font-size: 120% !important;
+}
+
+.xlarge .remark-code {
+  font-size: 110% !important;
+}
+
+.large .remark-code {
+  font-size: 100% !important;
+}
+
+.medium .remark-code {
+  font-size: 90% !important;
+}
+
+.small .remark-code {
+  font-size: 80% !important;
+}
+
+.xsmall .remark-code {
+  font-size: 70% !important;
+}
+
+.tiny .remark-code {
+  font-size: 60% !important;
+}
+
+.blue .remark-inline-code {
+  color: #1e81b0 !important;
+}

@@ -1,0 +1,31 @@
+libs	
+sim-rf-intro	mesh	predictor_dat	sim_dat	.Random.seed
+sim-rf-intro-cor	mesh	predictor_dat	sim_dat
+show-gp	d	df	f1	f2	g1	g2	knots	x
+sim-rf-dat	mesh	predictor_dat	sim_dat
+random-field-demo	
+sim-rf-grid	grid_pars	i	mesh	predictor_dat	s	sim_dat
+sim-rf-large_phi	mesh	predictor_dat	sim_dat
+sim-rf-med_phi	sim_dat
+sim-rf-small_phi	sim_dat
+formulas1	
+formulas-smoothers	
+formulas-other	
+breakpt	
+make-breakpt	df	slope
+logistic	
+make-logistic	df	slope
+unnamed-chunk-1	
+unnamed-chunk-2	
+iid-demo	mesh2	predictor_dat	sim_dat
+ar1-demo	sim_dat
+pcod-mesh	mesh
+fit-ar1	extra_years	fit_ar1
+fit-rw	fit_rw
+fit-rw-ar1	fit_rw_ar1
+fit-sm	fit_sm
+pred-all	fits	newdf	pred_df	preds	preds_df
+plot-time-comparison	iters
+pred-ar1-plot-eps	grid	p_ar1
+pred-rw-plot-eps	p_rw
+eps-se	eps_est	grid

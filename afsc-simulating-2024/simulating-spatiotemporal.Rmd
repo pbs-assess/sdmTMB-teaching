@@ -1,5 +1,5 @@
 ---
-title: "Simulating from spatiotemporal models"
+title: "Simulating and forecasting from spatiotemporal models"
 subtitle: "Survey-centric R user group"
 author: ""
 institute: ""
@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source("afsc-simulating-2024/preamble.R")
+source(here::here("afsc-simulating-2024/preamble.R"))
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
@@ -26,9 +26,7 @@ library(sdmTMB)
 library(ggplot2)
 ```
 
----
-
-# Motivating questions
+# Why is space important? 
 
 * Data often have spatial attributes
 
@@ -71,6 +69,7 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
 # Reality
   
 * Residual spatial autocorrelation
+  * Data covary spatially (data that are closer are more similar)
 
 ```{r sim-rf-intro-cor, echo=FALSE, fig.asp=0.4}
 set.seed(123)
@@ -114,92 +113,14 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
 
 ---
 
-# Spatial smoothing with SPDE (INLA, inlabru)
-
-* SPDE differs from GAMs in that it explicitly estimates meaningful parameters for spatial covariance function
-
-* SPDE and GAMs can produce the identical results
-
-
-.small[
-Miller, D.L., Glennie, R. & Seaton, A.E. Understanding the Stochastic Partial Differential Equation Approach to Smoothing. JABES 25, 1–16 (2020)
-]
-
----
-
 # Predictive process models 
-
-* Estimate spatial field as random effects 
-
-* High dimensional datasets computationally challenging
 
 * Gaussian process predictive process models:
   * Estimate values at a subset of locations in the time series
   *   'knots', 'vertices', or 'control points'
   * Use covariance function to interpolate from knots to locations of observations
 
----
-
-# Predictive process models 
-
-* More knots (vertical dashed lines) = more wiggliness & parameters to estimate
-
-```{r show-gp, fig.height=4}
-x <- seq(1, 50)
-d <- as.matrix(dist(x, diag = TRUE))
-set.seed(123)
-df <- data.frame(
-  x = x,
-  true = c(spam::rmvnorm(1, mu = 0, Sigma = 1 * exp(-0.05 * d)))
-)
-df$y <- rnorm(df$true, df$true, 0.1)
-
-f1 <- mgcv::gam(y ~ s(x, k = 25, bs = "bs"), data = df)
-
-knots <- data.frame("x" = f1$smooth[[1]]$knots, ymin = 0, ymax = 1.0e10)
-g1 <- ggplot(df, aes(x, y)) +
-  geom_vline(data = knots, aes(xintercept = x), col = "grey20", size = 0.3, linetype = "dashed") +
-  geom_point(col = "red", alpha = 0.7) +
-  theme(panel.grid = element_blank()) +
-  xlab("") +
-  ylab("Observations") +
-  geom_smooth(
-    method = "gam",
-    formula = y ~ s(x, bs = "bs", k = 25)
-  ) +
-  coord_cartesian(xlim = c(0, 50))
-
-f2 <- mgcv::gam(y ~ s(x, k = 7, bs = "bs"), data = df)
-knots <- data.frame("x" = f2$smooth[[1]]$knots, ymin = 0, ymax = 1.0e10)
-
-g2 <- ggplot(df, aes(x, y)) +
-  geom_vline(data = knots, aes(xintercept = x), col = "grey20", size = 0.3, linetype = "dashed") +
-  geom_point(col = "red", alpha = 0.7) +
-  theme(panel.grid = element_blank()) +
-  xlab("") +
-  ylab("Observations") +
-  geom_smooth(method = "gam", formula = y ~ s(x, bs = "gp", k = 7)) +
-  coord_cartesian(xlim = c(0, 50))
-gridExtra::grid.arrange(g1, g2, ncol = 1)
-```
-
----
-
-# Why is space important? 
-
-* Data covary spatially (data that are closer are more similar)
-
---
-
-* Relationship between distance and covariance can be described with a spatial covariance function
-
---
-
-* Covariance function in 2D may be
-  * isotropic (same covariance in each direction)
-  * anisotropic (different in each direction)
-
-<!-- * Assumed stationary -->
+* Estimate spatial field as random effects (also called random fields)
 
 ---
 
@@ -236,15 +157,7 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
 ```
 
 ---
-background-image: url("images/eagle.png")
-background-position: bottom right
-background-size: 35%
 
-# Random field
-
-<img src="images/rf-wikipedia.png" width="550px" />
-
----
 background-image: url("images/beaker.png")
 background-position: bottom right
 background-size: 35%
@@ -258,6 +171,7 @@ background-size: 35%
 * A realization from a multivariate normal distribution with some covariance function
 
 ---
+
 background-image: url("images/elmo.png")
 background-position: bottom right
 background-size: 30%
@@ -284,6 +198,12 @@ background-size: 30%
 * `geoR::grf()` simulates random fields with irregular observations
 * `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
 * `sdmTMB::sdmTMB_simulate()` simulates univariate fields with `sdmTMB`
+
+---
+
+class: center, middle, inverse
+
+# Simulating from scratch with sdmTMB_simulate()
 
 ---
 
@@ -396,7 +316,6 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
   scale_color_gradient2()
 ```
   
-  
 ---
      
 # Small observation errors  
@@ -427,7 +346,7 @@ ggplot(sim_dat, aes(X, Y, col = observed)) +
 
 class: center, middle, inverse
 
-# Fitting the model: sdmTMB()
+# Simulating or projecting from a model fitted with sdmTMB()
 
 ---
 
@@ -450,124 +369,6 @@ fit <- sdmTMB(
 ```
 
 See `?sdmTMB`
-
----
-
-class: center, middle, inverse
-
-# Syntax: formulas for non-spatial model components
-
----
-
-# Formula interface
-
-sdmTMB uses a similar formula interface to widely used R packages  
-
-A formula is used to specify fixed effects and (optionally) random intercepts
-
-.small[
-```{r formulas1, echo=TRUE, eval=FALSE}
-# linear effect of x1:
-formula = y ~ x1
-
-# add smoother effect of x2:
-formula = y ~ x1 + s(x2)
-
-# add random intercept by group g:
-formula = y ~ x1 + s(x2) + (1 | g)
-```
-]
-
----
-
-# Smoothers (as in mgcv)
-
-.small[
-```{r formulas-smoothers, echo=TRUE, eval=FALSE}
-# smoother effect of x:
-formula = y ~ s(x)
-
-# basis dimension of 5:
-formula = y ~ s(x, k = 5)
-
-# bivariate smoother effect of x & y:
-formula = y ~ s(x, y)
-
-# smoother effect of x1 varying by x2:
-formula = y ~ s(x1, by = x2)
-
-# other kinds of mgcv smoothers:
-formula = ~ s(month, bs = "cc", k = 12)
-```
-
-Smoothers are penalized ('p-splines'), i.e. data determine 'wiggliness'
-]
-
----
-
-# Other common R formula options
-
-Polynomials and omitting the intercept:
-
-```{r formulas-other, echo=TRUE, eval=FALSE}
-# transformations using `I()` notation
-y ~ depth + I(depth^2)
-
-# polynomial functions using `poly`
-y ~ poly(depth, degree = 2)
-
-# omit intercept
-y ~ -1 + as.factor(year)
-y ~ 0 + as.factor(year)
-```
-
----
-
-# Breakpoint functions for threshold analyses
-
-```{r breakpt, echo=TRUE, eval=FALSE}
-cpue ~ breakpt(temperature)
-```
-
-```{r make-breakpt, out.width='400px', fig.width=5}
-df <- data.frame(x = seq(1, 100))
-slope <- 0.1
-df$y <- ifelse(df$x < 50, slope * df$x, slope * 50)
-ggplot(df, aes(x, y)) +
-  geom_line(col = "blue") +
-  xlab("Temperature") +
-  ylab("CPUE") +
-  ggtitle("Breakpoint function")
-```
-
-.tiny[
-Essington, T.E. S.C. Anderson, L.A.K. Barnett, H.M. Berger, S.A. Siedlecki, E.J. Ward. Advancing statistical models to reveal the effect of dissolved oxygen on the spatial distribution of marine taxa using thresholds and a physiologically based index. 2022. Ecography 2022(8): e06249. <https://doi.org/10.1111/ecog.06249>
-]
-
----
-
-# Logistic functions for threshold analyses
-
-```{r logistic, echo=TRUE, eval=FALSE}
-cpue ~ logistic(temperature)
-```
-
-```{r make-logistic, out.width='500px', fig.width=5}
-df <- data.frame(x = seq(1, 100))
-slope <- 0.1
-df$y <- 3.0 / (1 + exp(-0.1 * (df$x - 50)))
-ggplot(df, aes(x, y)) +
-  geom_line(col = "blue") +
-  xlab("Temperature") +
-  ylab("CPUE") +
-  ggtitle("Logistic function")
-```
-
----
-
-class: center, middle, inverse
-
-# Syntax: families and links
 
 ---
 
@@ -597,34 +398,7 @@ See `?sdmTMB::Families`
 
 ---
 
-class: center, middle, inverse
-
-# Syntax: spatial model components
-
----
-
-# Spatial vs. spatiotemporal fields -  notion
-
-* A spatial field can be thought of as a spatial intercept
-
-  * a wiggly spatial process that is constant in time.
-  e.g. areas that has on average a higher/lower animal density, constant "hot/cold-spot" 
-  
---
-
-* Spatiotemporal variation represents separate fields estimated for each time
-  slice (possibly correlated)
-  
-  * wiggly spatial processes that change through time.
-  e.g. inter-annual variability in "hot/cold-spot" locations
-
---
-
-* See [model description](https://pbs-assess.github.io/sdmTMB/articles/model-description.html) vignette for math notation
-
----
-
-# Spatial fields can be turned on/off
+# Spatial & spatiotemporal random fields
 
 * By default `sdmTMB()` estimates a spatial field  
 
@@ -647,29 +421,11 @@ fit <- sdmTMB(
 
 * If magnitude of spatiotemporal variability >> spatial variation
 
-* If confounded with other parameters (more later)
+* If confounded with other parameters
 
 ---
 
-# Spatiotemporal fields can be turned on/off
-
-* By default `sdmTMB()` estimates a spatiotemporal field if the `time` argument is specified
-
-```{r echo=TRUE, eval=FALSE}
-fit <- sdmTMB(
-  y ~ x,
-  family = gaussian(),
-  data = dat,
-  mesh = mesh,
-  time = "year", # column in `data` #<<
-  spatiotemporal = "iid", #<<
-  ...
-)
-```
-
----
-
-# Types of spatiotemporal fields
+# Spatiotemporal field options
 
 * None (`spatiotemporal = "off"`)
 
@@ -752,34 +508,21 @@ ggplot(sim_dat, aes(x, y, fill = mu)) +
 # Spatiotemporal fields
 
 * Why include spatiotemporal fields?
-
   * If the data are collected in both space and time *and* 
     there are 'latent' spatial processes that vary through time
-  * E.g., effect of water temperature on abundance if temperature wasn't in the model
-  * Represents all the missing variables that vary through time
+      * E.g., effect of water temperature on abundance if temperature wasn't in the model
 
 --
 
 * Why would a field be IID vs RW/AR1?
-
   * Do we expect hotspots to be independent with each time slice or adapt slowly over time?
-
----
-
-# Types of prediction we might be interested in 
-
-* Time  
-  * e.g., interpolating over missed survey year
-  * e.g., forecasting future year
-  
-* Extrapolating in space
-  * e.g., unsampled area (MPA, area beyond existing domain)
+  * Do we want to predict to missing or future years?
 
 ---
 
 class: center, middle, inverse
 
-# Forecasting in time
+# Forecasting or interpolating in time
 
 ---
 
@@ -931,11 +674,7 @@ ggplot(pred_df, aes(year, exp(est), ymin = exp(est - 2 * est_se), ymax = exp(est
 # AR(1) spatiotemporal fields evolve towards mean zero
 
 ```{r pred-ar1-plot-eps}
-one_yr <- dplyr::filter(qcs_grid, year == 2017)
-grid <- purrr::map_dfr(unique(fit_ar1$data$year), function(i) {
-  one_yr$year <- i
-  one_yr
-})
+grid <- replicate_df(qcs_grid, "year", unique(fit_ar1$data$year))
 p_ar1 <- predict(fit_ar1, newdata = grid)
 ggplot(p_ar1, aes(X, Y, fill = epsilon_st)) +
   geom_raster() +
@@ -959,26 +698,9 @@ ggplot(p_rw, aes(X, Y, fill = epsilon_st)) +
 
 ---
 
-# Spatiotemporal field uncertainty grows without data
-
-(Here AR(1) fields; random walk similar.)
-
-```{r eps-se}
-eps_est <- predict(fit_ar1, newdata = grid, nsim = 100, sims_var = "proj_epsilon_st_A_vec")
-grid$se <- apply(eps_est, 1, sd)
-ggplot(grid, aes(X, Y, fill = se)) +
-  geom_raster() +
-  facet_wrap(~year) +
-  coord_fixed() +
-  labs(fill = "Standard error\nof spatiotemporal field")
-```
-
----
-
-# Forecasting and interpolating in time summary
+# Forecasting or interpolating summary
 
 * Use `extra_time` argument to fill in or forecast  
-  .xsmall[(a more flexible interface for forecasting may be forthcoming)]
 * Need a model for time
 * AR(1) field processes revert towards mean
 * Random walk field processes do not revert towards mean
