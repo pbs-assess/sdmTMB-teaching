@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Simulating and forecasting from spatiotemporal models</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Simulating and forecasting from spatiotemporal models
+]
+.subtitle[
+## Survey-centric R user group
+]
+.author[
+###
+]
+.date[
+### April 17 2024
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# Why is space important?
+
+* Data often have spatial attributes
+
+* Ideal world:
+  * Plug spatial covariates into a GLM / GLMM
+  * Residuals are uncorrelated
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-intro-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Reality
+
+* Residual spatial autocorrelation
+  * Data covary spatially (data that are closer are more similar)
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-intro-cor-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Modeling spatial autocorrelation
+
+* Need 'wiggly'/smooth surface for approximating all spatial variables missing from model ('latent' variables)
+
+* Several approaches exist
+  * 2D smooths in mgcv
+  * Random fields and the Stochastic Partial Differential Equation (SPDE)
+
+---
+
+# Predictive process models
+
+* Gaussian process predictive process models:
+  * Estimate values at a subset of locations in the time series
+  *   'knots', 'vertices', or 'control points'
+  * Use covariance function to interpolate from knots to locations of observations
+
+* Estimate spatial field as random effects (also called random fields)
+
+---
+
+# What is a random field?
+
+
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/random-field-demo-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+background-image: url("images/beaker.png")
+background-position: bottom right
+background-size: 35%
+
+# Random field
+
+* A 2 dimensional "Gaussian Process"
+
+--
+
+* A realization from a multivariate normal distribution with some covariance function
+
+---
+
+background-image: url("images/elmo.png")
+background-position: bottom right
+background-size: 30%
+
+# Random field
+
+* A way of estimating a wiggly surface to account for spatial and/or spatiotemporal correlation in data.
+
+--
+
+* Alternatively, a way of estimating a wiggly surface to account for "latent" or unobserved variables.
+
+--
+
+* As a bonus, it provides useful covariance parameter estimates: spatial variance and the distance at data points are effectively uncorrelated ("range")
+
+&lt;!-- TODO: include nugget / sill? Show slide with semivariogram image? --&gt;
+---
+
+# Many ways to simulate random fields
+
+* `RandomFields::RFsimulate()` simulates univariate / multivariate fields
+* `fields::sim.rf()` simulates random fields on a grid
+* `geoR::grf()` simulates random fields with irregular observations
+* `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
+* `sdmTMB::sdmTMB_simulate()` simulates univariate fields with `sdmTMB`
+
+---
+
+class: center, middle, inverse
+
+# Simulating from scratch with sdmTMB_simulate()
+
+---
+
+# Effects of changing variance and range
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-grid-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Effects of adding noise
+
+* Large observation error looks like noise
+
+* `\(\sigma_{obs}\)` &gt;&gt; `\(\sigma_{O}\)`, `\(\sigma_{E}\)`
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-large_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Moderate observation errors
+
+* `\(\sigma_{obs}\)` = `\(\sigma_{O}\)` = `\(\sigma_{E}\)`
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-med_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Small observation errors
+
+* `\(\sigma_{obs}\)` &lt;&lt; `\(\sigma_{O}\)`, `\(\sigma_{E}\)`
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-small_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+class: center, middle, inverse
+
+# Simulating or projecting from a model fitted with sdmTMB()
+
+---
+
+# sdmTMB()
+
+Set up is similar to `glmmTMB()`. Common arguments:
+
+```r
+fit &lt;- sdmTMB(
+  formula,
+  data,
+  mesh,
+  time = NULL,
+  family = gaussian(link = "identity"),
+  spatial = c("on", "off"),
+  spatiotemporal = c("iid", "ar1", "rw", "off"),
+  silent = TRUE,
+  ...
+)
+```
+
+See `?sdmTMB`
+
+---
+
+# Families
+
+Many of the same families used in `glm()`, `glmmTMB()`, `mgcv::gam()` can be used here
+
+Includes:
+  `gaussian()`, `Gamma()`,
+  `binomial()`, `poisson()`, `Beta()`,
+  `student()`, `tweedie()`,
+  `nbinom1()`, `nbinom2()`,
+  `truncated_nbinom1()`, `truncated_nbinom2()`,
+  `delta_gamma()`, `delta_lognormal()`, `delta_beta()`, and more...
+
+All have `link` arguments
+
+See `?sdmTMB::Families`
+
+---
+
+# Decision tree for family choice
+
+.center[
+&lt;img src="images/family_diagram_highlighted.png" width="800px" height = "500px"/&gt;
+]
+
+---
+
+# Spatial &amp; spatiotemporal random fields
+
+* By default `sdmTMB()` estimates a spatial field
+
+
+```r
+fit &lt;- sdmTMB(
+  y ~ x,
+  family = gaussian(),
+  data = dat,
+  mesh = mesh,
+* spatial = "on",
+  ...
+)
+```
+
+---
+
+# Why *not* estimate a spatial field?
+
+* If shared process across time slices isn't of interest
+
+* If magnitude of spatiotemporal variability &gt;&gt; spatial variation
+
+* If confounded with other parameters
+
+---
+
+# Spatiotemporal field options
+
+* None (`spatiotemporal = "off"`)
+
+* Independent (`spatiotemporal = "iid"`)
+
+* Random walk (`spatiotemporal = "rw"`)
+
+* Autoregressive (`spatiotemporal = "ar1"`)
+
+---
+
+# Independent (IID) spatiotemporal fields
+
+.small[
+Useful if pattern changes much between years
+]
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/iid-demo-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# AR1 spatiotemporal fields
+
+.small[
+Useful if pattern are related between years.
+P.S: Random walk = AR1 with 1.0 correlation
+]
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/ar1-demo-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Spatiotemporal fields
+
+* Why include spatiotemporal fields?
+  * If the data are collected in both space and time *and*
+    there are 'latent' spatial processes that vary through time
+      * E.g., effect of water temperature on abundance if temperature wasn't in the model
+
+--
+
+* Why would a field be IID vs RW/AR1?
+  * Do we expect hotspots to be independent with each time slice or adapt slowly over time?
+  * Do we want to predict to missing or future years?
+
+---
+
+class: center, middle, inverse
+
+# Forecasting or interpolating in time
+
+---
+
+# Predicting to missing/future years
+
+* Need a model for time: e.g., can't predict with years as factors
+
+* Options:
+  * AR(1) or random walk random fields
+  * Time-varying intercept
+  * Smoother on year (`s(year)`)
+  * Ignore time (fixed)
+  * Some combination of these
+
+---
+
+# AR(1) spatiotemporal field
+
+
+
+.small[
+
+```r
+# missing and forecasted years:
+extra_years &lt;- c(
+  2006, 2008, 2010, 2012, 2014, 2016,
+  2018:2025
+)
+fit_ar1 &lt;- sdmTMB(
+  density ~ depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Random walk spatiotemporal field
+
+.small[
+
+```r
+fit_rw &lt;- sdmTMB(
+  density ~ depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "RW",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Random walk intercept + AR(1) fields
+
+.small[
+
+```r
+fit_rw_ar1 &lt;- sdmTMB(
+  density ~ 0 + depth_scaled + depth_scaled2,
+  time = "year",
+* time_varying = ~1,
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Smoother on year + AR(1) fields
+
+.small[
+
+```r
+fit_sm &lt;- sdmTMB(
+* density ~ s(year) + depth_scaled + depth_scaled2,
+  time = "year",
+* extra_time = extra_years,
+* spatiotemporal = "AR1",
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "off",
+  silent = FALSE
+)
+```
+]
+
+---
+
+# Comparing predicted density at a point in space
+
+.xsmall[Vertical dashed lines indicate observations]
+
+
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/plot-time-comparison-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# AR(1) spatiotemporal fields evolve towards mean zero
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/pred-ar1-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Random walk fields do not evolve towards mean
+
+&lt;img src="simulating-spatiotemporal_files/figure-html/pred-rw-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Forecasting or interpolating summary
+
+* Use `extra_time` argument to fill in or forecast
+* Need a model for time
+* AR(1) field processes revert towards mean
+* Random walk field processes do not revert towards mean
+* Smoothers should be used with caution when forecasting
+  .xsmall[(they continue whatever the basis functions were doing)]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
