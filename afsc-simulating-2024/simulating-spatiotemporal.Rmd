@@ -1,8 +1,7 @@
 ---
 title: "Simulating and forecasting from spatiotemporal models"
 subtitle: "Survey-centric R user group"
-author: ""
-institute: ""
+author: "Lewis Barnett"
 date: "April 17 2024"
 output:
   xaringan::moon_reader:
@@ -197,7 +196,8 @@ background-size: 30%
 * `fields::sim.rf()` simulates random fields on a grid
 * `geoR::grf()` simulates random fields with irregular observations
 * `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
-* `sdmTMB::sdmTMB_simulate()` simulates univariate fields with `sdmTMB`
+* `sdmTMB::sdmTMB_simulate()` simulates univariate fields from scratch with `sdmTMB`
+* `sdmTMB::simulate()` simulates from models fitted with `sdmTMB`
 
 ---
 
@@ -412,6 +412,26 @@ fit <- sdmTMB(
   ...
 )
 ```
+
+---
+
+# Simulate from a fitted model
+
+.xsmall[
+```{r echo=TRUE, eval=FALSE}
+sims <- simulate(
+  fit,
+  nsim = 1, # how many sets of predicted density at fitted values
+  params = c("mle", "mvn"), # MLE or draws from joint precision matrix 
+  model = c(NA, 1, 2), # which delta model component to simulate from
+  re_form = NULL, # or ~0 or NA to simulate new random effects
+  mcmc_samples = NULL, # get MCMC samples with sdmTMBextra package
+  ...
+)
+```
+]
+
+See `?sdmTMB::simulate`
 
 ---
 

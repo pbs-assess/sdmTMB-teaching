@@ -16,7 +16,7 @@ make-breakpt	$	$<-	<	aes	data.frame	geom_line	ggplot	ggtitle	ifelse	seq	x	xlab	y
 logistic	~
 make-logistic	$	$<-	aes	data.frame	exp	geom_line	ggplot	ggtitle	seq	x	xlab	y	ylab
 unnamed-chunk-1	~	dat	gaussian	mesh	sdmTMB
-unnamed-chunk-2	~	dat	gaussian	mesh	sdmTMB
+unnamed-chunk-2	c	fit	simulate
 iid-demo	~	aes	c	coord_fixed	expand.grid	facet_wrap	gaussian	geom_raster	ggplot	guides	make_mesh	mu	scale_fill_gradient2	sdmTMB_simulate	seq	seq_len	vars	x	y	year
 ar1-demo	~	aes	coord_fixed	facet_wrap	gaussian	geom_raster	ggplot	guides	mesh2	mu	predictor_dat	scale_fill_gradient2	sdmTMB_simulate	vars	x	y	year
 pcod-mesh	c	make_mesh	pcod

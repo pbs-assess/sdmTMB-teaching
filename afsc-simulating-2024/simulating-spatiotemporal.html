@@ -3,7 +3,7 @@
   <head>
     <title>Simulating and forecasting from spatiotemporal models</title>
     <meta charset="utf-8" />
-    <meta name="author" content="" />
+    <meta name="author" content="Lewis Barnett" />
     <script src="libs/header-attrs-2.21/header-attrs.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
     <link rel="stylesheet" href="theme.css" type="text/css" />
@@ -19,7 +19,7 @@ class: center, middle, inverse, title-slide
 ## Survey-centric R user group
 ]
 .author[
-###
+### Lewis Barnett
 ]
 .date[
 ### April 17 2024
@@ -34,20 +34,20 @@ class: center, middle, inverse, title-slide
 
 
 
-# Why is space important?
+# Why is space important? 
 
 * Data often have spatial attributes
 
 * Ideal world:
   * Plug spatial covariates into a GLM / GLMM
-  * Residuals are uncorrelated
-
+  * Residuals are uncorrelated  
+  
 &lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-intro-1.png" width="700px" style="display: block; margin: auto;" /&gt;
 
 ---
 
 # Reality
-
+  
 * Residual spatial autocorrelation
   * Data covary spatially (data that are closer are more similar)
 
@@ -65,7 +65,7 @@ class: center, middle, inverse, title-slide
 
 ---
 
-# Predictive process models
+# Predictive process models 
 
 * Gaussian process predictive process models:
   * Estimate values at a subset of locations in the time series
@@ -123,7 +123,8 @@ background-size: 30%
 * `fields::sim.rf()` simulates random fields on a grid
 * `geoR::grf()` simulates random fields with irregular observations
 * `glmmfields::sim_glmmfields()` simulates random fields with/without extreme values
-* `sdmTMB::sdmTMB_simulate()` simulates univariate fields with `sdmTMB`
+* `sdmTMB::sdmTMB_simulate()` simulates univariate fields from scratch with `sdmTMB`
+* `sdmTMB::simulate()` simulates from models fitted with `sdmTMB`
 
 ---
 
@@ -139,28 +140,28 @@ class: center, middle, inverse
 
 ---
 
-# Effects of adding noise
+# Effects of adding noise 
 
 * Large observation error looks like noise
 
 * `\(\sigma_{obs}\)` &gt;&gt; `\(\sigma_{O}\)`, `\(\sigma_{E}\)`
 
 &lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-large_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
-
+ 
 ---
-
+  
 # Moderate observation errors
 
 * `\(\sigma_{obs}\)` = `\(\sigma_{O}\)` = `\(\sigma_{E}\)`
-
+    
 &lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-med_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
-
+  
 ---
-
-# Small observation errors
-
+     
+# Small observation errors  
+    
 * `\(\sigma_{obs}\)` &lt;&lt; `\(\sigma_{O}\)`, `\(\sigma_{E}\)`
-
+    
 &lt;img src="simulating-spatiotemporal_files/figure-html/sim-rf-small_phi-1.png" width="700px" style="display: block; margin: auto;" /&gt;
 
 ---
@@ -198,15 +199,15 @@ See `?sdmTMB`
 Many of the same families used in `glm()`, `glmmTMB()`, `mgcv::gam()` can be used here
 
 Includes:
-  `gaussian()`, `Gamma()`,
-  `binomial()`, `poisson()`, `Beta()`,
-  `student()`, `tweedie()`,
+  `gaussian()`, `Gamma()`, 
+  `binomial()`, `poisson()`, `Beta()`, 
+  `student()`, `tweedie()`, 
   `nbinom1()`, `nbinom2()`,
   `truncated_nbinom1()`, `truncated_nbinom2()`,
   `delta_gamma()`, `delta_lognormal()`, `delta_beta()`, and more...
-
+  
 All have `link` arguments
-
+  
 See `?sdmTMB::Families`
 
 ---
@@ -221,7 +222,7 @@ See `?sdmTMB::Families`
 
 # Spatial &amp; spatiotemporal random fields
 
-* By default `sdmTMB()` estimates a spatial field
+* By default `sdmTMB()` estimates a spatial field  
 
 
 ```r
@@ -234,6 +235,27 @@ fit &lt;- sdmTMB(
   ...
 )
 ```
+
+---
+
+# Simulate from a fitted model
+
+.xsmall[
+
+```r
+sims &lt;- simulate(
+  fit,
+  nsim = 1, # how many sets of predicted density at fitted values
+  params = c("mle", "mvn"), # MLE or draws from joint precision matrix 
+  model = c(NA, 1, 2), # which delta model component to simulate from
+  re_form = NULL, # or ~0 or NA to simulate new random effects
+  mcmc_samples = NULL, # get MCMC samples with sdmTMBextra package
+  ...
+)
+```
+]
+
+See `?sdmTMB::simulate`
 
 ---
 
@@ -272,7 +294,7 @@ Useful if pattern changes much between years
 # AR1 spatiotemporal fields
 
 .small[
-Useful if pattern are related between years.
+Useful if pattern are related between years.                 
 P.S: Random walk = AR1 with 1.0 correlation
 ]
 
@@ -283,7 +305,7 @@ P.S: Random walk = AR1 with 1.0 correlation
 # Spatiotemporal fields
 
 * Why include spatiotemporal fields?
-  * If the data are collected in both space and time *and*
+  * If the data are collected in both space and time *and* 
     there are 'latent' spatial processes that vary through time
       * E.g., effect of water temperature on abundance if temperature wasn't in the model
 
@@ -305,7 +327,7 @@ class: center, middle, inverse
 
 * Need a model for time: e.g., can't predict with years as factors
 
-* Options:
+* Options: 
   * AR(1) or random walk random fields
   * Time-varying intercept
   * Smoother on year (`s(year)`)
@@ -430,11 +452,11 @@ fit_sm &lt;- sdmTMB(
 
 # Forecasting or interpolating summary
 
-* Use `extra_time` argument to fill in or forecast
+* Use `extra_time` argument to fill in or forecast  
 * Need a model for time
 * AR(1) field processes revert towards mean
 * Random walk field processes do not revert towards mean
-* Smoothers should be used with caution when forecasting
+* Smoothers should be used with caution when forecasting  
   .xsmall[(they continue whatever the basis functions were doing)]
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
