@@ -1,0 +1,22 @@
+Fixed effect parameters:
+      
+# A tibble: 10 × 5
+   term         estimate std.error conf.low conf.high
+   <chr>           <dbl>     <dbl>    <dbl>     <dbl>
+ 1 year2013       -0.916     0.267   -1.44    -0.393 
+ 2 year2015       -1.69      0.525   -2.72    -0.664 
+ 3 year2016       -0.841     0.215   -1.26    -0.419 
+ 4 year2017       -0.382     0.433   -1.23     0.466 
+ 5 year2018       -0.296     0.187   -0.663    0.0700
+ 6 year2019       -0.918     0.457   -1.81    -0.0214
+ 7 year2020       -1.16      0.226   -1.60    -0.720 
+ 8 year2021       -1.23      0.477   -2.16    -0.292 
+ 9 year2022       -1.53      0.257   -2.03    -1.03  
+10 subareaSouth   -0.391     0.403   -1.18     0.400 
+
+Random effect parameters:
+      
+# A tibble: 1 × 5
+  term  estimate std.error conf.low conf.high
+  <chr>    <dbl> <lgl>        <dbl>     <dbl>
+1 phi       1.61 NA            1.20      2.16

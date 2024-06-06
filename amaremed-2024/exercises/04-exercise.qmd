@@ -1,0 +1,20 @@
+---
+title: "Exercise 04: Applications to Mediterranean data: environmental covariates, dealing with complex land barriers"
+format: html
+editor: visual
+execute: 
+  echo: true
+  eval: true
+---
+
+```{r, message=FALSE, warning=FALSE}
+#| echo=FALSE
+library(sdmTMB)
+library(dplyr)
+library(ggplot2)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+theme_set(theme_light())
+```
+
+# 

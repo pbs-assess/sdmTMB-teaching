@@ -1,0 +1,11 @@
+libs	library
+pcod-spatial-rf	~	binomial	c	make_mesh	pcod	sdmTMB
+unnamed-chunk-1	fit
+unnamed-chunk-2	$	fit
+unnamed-chunk-3	$	fit	max
+checksanity	fit	sanity
+unnamed-chunk-4	~	$	$<-	as.factor	binomial	mesh	sdmTMB
+unnamed-chunk-5	$	c	dist	fit	quantile
+resid1	fit	qqline	qqnorm	residuals	set.seed
+resid2	%>%	~	$<-	aes	c	coord_fixed	facet_wrap	filter	fit	geom_point	ggplot	resids	residuals	scale_colour_gradient2	X	Y	year
+resid3	::	$	fit	pcod	predict	simulate
