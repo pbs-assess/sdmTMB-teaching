@@ -1,0 +1,24 @@
+Fixed effect parameters:
+      
+# A tibble: 12 × 5
+   term                      estimate std.error conf.low conf.high
+   <chr>                        <dbl>     <dbl>    <dbl>     <dbl>
+ 1 year2013                    -1.74      0.323   -2.37     -1.10 
+ 2 year2015                    -1.77      0.343   -2.44     -1.09 
+ 3 year2016                    -2.10      0.323   -2.74     -1.47 
+ 4 year2017                    -0.985     0.327   -1.63     -0.343
+ 5 year2018                    -1.95      0.324   -2.59     -1.32 
+ 6 year2019                    -1.14      0.328   -1.78     -0.494
+ 7 year2020                    -1.90      0.319   -2.53     -1.28 
+ 8 year2021                    -2.40      0.348   -3.08     -1.72 
+ 9 year2022                    -1.94      0.321   -2.57     -1.32 
+10 subareaSouth                -1.13      0.397   -1.90     -0.346
+11 gearTrammel (37 mm, garn)    0.103     0.256   -0.398     0.605
+12 gearFyke (ruse)              2.66      0.189    2.29      3.03 
+
+Random effect parameters:
+      
+# A tibble: 1 × 5
+  term  estimate std.error conf.low conf.high
+  <chr>    <dbl> <lgl>        <dbl>     <dbl>
+1 phi      0.976 NA           0.801      1.19
