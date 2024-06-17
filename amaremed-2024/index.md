@@ -1,6 +1,6 @@
 # AMARE-MED Workshop 2024
 
-July 28--2 August 2024
+July 28--3 August 2024
 
 ### sdmTMB:
 
@@ -40,10 +40,12 @@ July 28--2 August 2024
 
 10. [Time and spatially varying models](https://pbs-assess.github.io/sdmTMB-teaching/amaremed-2024/10-time-space-varying.html)
 
-11. [Barrier models](https://pbs-assess.github.io/sdmTMB-teaching/amaremed-2024/11-barrier-models.html)
+11. [Forecasting](https://pbs-assess.github.io/sdmTMB-teaching/amaremed-2024/11-forecasting.html)
 
-12. [Forecasting](https://pbs-assess.github.io/sdmTMB-teaching/amaremed-2024/12-forecasting.html)
+12. [Barrier models](https://pbs-assess.github.io/sdmTMB-teaching/amaremed-2024/12-barrier-models.html)
+
+13. [Priors](https://pbs-assess.github.io/sdmTMB-teaching/amaremed-2024/13-priors.html)
 
 ### GitHub folder for these slides:
 
-<https://github.com/pbs-assess/sdmTMB-teaching>
+<https://github.com/pbs-assess/sdmTMB-teaching/amaremed-2024>
