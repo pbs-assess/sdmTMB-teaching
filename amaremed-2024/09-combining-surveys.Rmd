@@ -1,9 +1,9 @@
 ---
 title: "Combining data from multiple surveys"
-subtitle: "IMR sdmTMB workshop"
+subtitle: "AMARE-MED workshop"
 author: ""
 institute: ""
-date: "May 23--25 2023"
+date: "July 28--August 3 2023"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
