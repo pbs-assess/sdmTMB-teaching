@@ -69,13 +69,13 @@ If successful, you should see this:
 ```
 Spatial model fit by ML ['sdmTMB']
 Formula: density ~ s(depth)
-Mesh: pcod_mesh_2011
+Mesh: pcod_mesh_2011 (isotropic covariance)
 Data: pcod_2011
 Family: tweedie(link = 'log')
  
             coef.est coef.se
 (Intercept)     2.16    0.34
-sdepth        -20.26   32.63
+sdepth         -1.94    3.13
 
 Smooth terms:
            Std. Dev.
@@ -83,7 +83,7 @@ sds(depth)     13.07
 
 Dispersion parameter: 13.68
 Tweedie p: 1.58
-Matern range: 16.84
+Matérn range: 16.84
 Spatial SD: 2.20
 ML criterion at convergence: 2937.789
 
