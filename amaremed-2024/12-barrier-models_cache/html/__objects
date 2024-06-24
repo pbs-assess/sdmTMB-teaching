@@ -1,0 +1,16 @@
+libs	
+inla-mesh	
+load-crabs	crabs
+unnamed-chunk-1	
+unnamed-chunk-17	
+unnamed-chunk-18	crs_utm10	map_data	puso
+proj-plot	survey
+mesh	crabs	mesh	surv_utm_coords
+plot-mesh	
+unnamed-chunk-2	crs_utm10	map_data	puso
+barrier	barrier_mesh
+plot-barrier	mesh_df_land	mesh_df_water
+fit-model1	fit_barrier
+fit-model2	fit
+show-reg	
+show-barrier	

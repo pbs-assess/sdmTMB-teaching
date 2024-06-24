@@ -1,5 +1,5 @@
 libs	
-pcod-st-fit	fit	mesh	pcod	.Random.seed
+pcod-st-fit	fit	mesh	pcod
 pcod-st-index1	pred	qcs_grid1
 pcod-st-plot-est2	.p	max_est
 pcod-index	index

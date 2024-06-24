@@ -1,0 +1,12 @@
+libs	library
+unnamed-chunk-1	sdmTMB	sdmTMBpriors
+unnamed-chunk-2	~	binomial	c	make_mesh	normal	pcod	sdmTMB	sdmTMBpriors
+unnamed-chunk-3	fit_prior	tidy
+unnamed-chunk-4	~	binomial	mesh	pcod	sdmTMB
+unnamed-chunk-5	fit	tidy
+unnamed-chunk-6	~	b_loc	b_Sigma	binomial	mesh	mvnormal	pcod	sdmTMB	sdmTMBpriors
+unnamed-chunk-7	pc_matern
+unnamed-chunk-8	::
+unnamed-chunk-9	~	binomial	mesh	pc_matern	pcod	sdmTMB	sdmTMBpriors
+unnamed-chunk-10	pc_matern	sdmTMBpriors
+unnamed-chunk-11	~	c	list	sdmTMB	sdmTMBcontrol

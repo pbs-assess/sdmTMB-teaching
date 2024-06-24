@@ -2,3 +2,6 @@ ggplot2
 dplyr
 sdmTMB
 TMB
+nlme
+mgcv
+future

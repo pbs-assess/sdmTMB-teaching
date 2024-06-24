@@ -118,4 +118,5 @@ You can install development version of sdmTMB from GitHub. This requires a C++ c
 
 ```{r, eval=FALSE}
 remotes::install_github("pbs-assess/sdmTMB", dependencies = TRUE)
+remotes::install_github("pbs-assess/sdmTMBextra", dependencies = TRUE)
 ```

@@ -3,7 +3,7 @@ title: "Model selection with sdmTMB"
 subtitle: "AMARE-MED workshop"
 author: ""
 institute: ""
-date: "July 28--August 3 2023"
+date: "July 28--August 3 2024"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]

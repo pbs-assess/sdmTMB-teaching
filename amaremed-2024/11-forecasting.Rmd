@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("imr-2023/preamble.R"))
+source(here::here("preamble.R"))
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
@@ -192,7 +192,7 @@ ggplot(pred_df, aes(year, exp(est), ymin = exp(est - 2 * est_se), ymax = exp(est
 # AR(1) spatiotemporal fields evolve towards mean zero
 
 ```{r pred-ar1-plot-eps}
-one_yr <- dplyr::filter(qcs_grid, year == 2017)
+one_yr <- dplyr::filter(qcs_grid)
 grid <- purrr::map_dfr(unique(fit_ar1$data$year), function(i) {
   one_yr$year <- i
   one_yr

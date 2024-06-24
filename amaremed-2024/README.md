@@ -19,3 +19,5 @@ While all examples will use sdmTMB, similarly structured models can be fit with 
 Preprint describing sdmTMB: https://doi.org/10.1101/2022.03.24.485545
 
 sdmTMB documentation site: https://pbs-assess.github.io/sdmTMB
+
+[Slides and materials](https://pbs-assess.github.io/sdmTMB-teaching/amaremed-2024/index.html)

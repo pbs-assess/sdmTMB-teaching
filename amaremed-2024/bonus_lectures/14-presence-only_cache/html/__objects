@@ -1,0 +1,14 @@
+libs	
+dat	dat
+plot-trees	
+make-zeros	res	zeros
+bind-dat	all_dat	dat	mesh	zeros
+mesh-viz	all_dat
+make-iwlr	all_dat	nW
+iwlr-fit	fit
+make-dwpr	all_dat	n_zeros	tot_area
+fit-dwpr	fit
+plot-rf	p
+plot-link	
+inc-points-auc	all_dat	area	dat	fit2	mesh	res	rocr	zeros
+auc-highres-mesh	all_dat	area	dat	fit3	mesh	res	rocr	zeros

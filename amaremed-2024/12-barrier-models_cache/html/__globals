@@ -1,0 +1,16 @@
+libs	library
+inla-mesh	inla.mesh.2d	poly
+load-crabs	$	$<-	::	aes	as.factor	geom_point	ggplot	lat	lon	present	readRDS
+unnamed-chunk-1	::
+unnamed-chunk-17	::
+unnamed-chunk-18	::	c	sf_use_s2	suppressMessages	suppressWarnings
+proj-plot	%>%	::	c	crabs	geom_sf	ggplot	puso
+mesh	$<-	c	make_mesh	st_coordinates	survey
+plot-mesh	mesh	plot
+unnamed-chunk-2	::	c	sf_use_s2	suppressMessages	suppressWarnings
+barrier	add_barrier_mesh	mesh	puso
+plot-barrier	$	barrier_mesh	geom_sf	ggplot	puso
+fit-model1	~	barrier_mesh	binomial	crabs	sdmTMB
+fit-model2	~	binomial	crabs	mesh	sdmTMB
+show-reg	fit	tidy
+show-barrier	fit_barrier	tidy

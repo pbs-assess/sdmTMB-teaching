@@ -1,0 +1,14 @@
+libs	library
+dat	$	::	data.frame
+plot-trees	aes	coord_cartesian	dat	geom_point	ggplot	x	y
+make-zeros	expand.grid	seq
+bind-dat	$	$<-	c	make_mesh	rbind
+mesh-viz	$	$<-	::	aes	as.factor	coord_equal	fpres	geom_point	ggplot	guide_legend	guides	mesh	x	y
+make-iwlr	$	$<-	^
+iwlr-fit	$	~	all_dat	binomial	mesh	sdmTMB
+make-dwpr	$	$<-	==	dat	diff	ifelse	length	range	which
+fit-dwpr	$	~	all_dat	mesh	poisson	sdmTMB
+plot-rf	aes	coord_fixed	fit	geom_raster	ggplot	omega_s	predict	scale_fill_gradient2	x	y	zeros
+plot-link	aes	coord_fixed	est	geom_raster	ggplot	p	scale_fill_viridis_c	x	y
+inc-points-auc	$	$<-	::	@	[[	[<-	~	==	c	data.frame	diff	expand.grid	length	make_mesh	plogis	poisson	predict	range	rbind	sdmTMB	seq	which
+auc-highres-mesh	$	$<-	::	@	[[	[<-	~	==	c	data.frame	diff	expand.grid	length	make_mesh	plogis	poisson	predict	range	rbind	sdmTMB	seq	which

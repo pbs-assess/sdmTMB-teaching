@@ -16,7 +16,7 @@ unnamed-chunk-10	depth	fit	head	nd	predict	select	X	Y
 unnamed-chunk-11	aes	coord_fixed	est	geom_raster	ggplot	p	plogis	scale_fill_viridis_c	X	Y
 unnamed-chunk-12	aes	coord_fixed	est_non_rf	geom_raster	ggplot	p	plogis	scale_fill_viridis_c	X	Y
 unnamed-chunk-13	aes	coord_fixed	geom_raster	ggplot	omega_s	p	scale_fill_gradient2	X	Y
-pcod-sp-depth-pred	~	$	$<-	data.frame	fit	plogis	predict	seq
+pcod-sp-depth-pred	$	$<-	~	data.frame	fit	plogis	predict	seq
 pcod-sp-depth-pred-plot	$	aes	c	coord_cartesian	est	geom_line	geom_ribbon	ggplot	lwr	nd	p	plogis	upr	xlab	ylab
 pcod-sp-depth-visreg	::	fit
 pcod-sp-depth-visreg-resp	::	fit

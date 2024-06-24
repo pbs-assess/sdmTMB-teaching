@@ -1,6 +1,6 @@
 libs	library
-pcod-st-fit	~	$	$<-	as.factor	c	make_mesh	sdmTMB	tweedie
-pcod-st-index1	::	~	$	$<-	as.factor	est	fit	head	length	nrow	pcod	predict	qcs_grid	rep	select	seq_len	unique	X	Y	year
-pcod-st-plot-est2	>	~	$	aes	coord_fixed	est	est_trim	exp	facet_wrap	geom_raster	ggplot	if_else	labs	mutate	pred	quantile	scale_fill_viridis_c	X	Y
+pcod-st-fit	$	$<-	~	as.factor	c	make_mesh	sdmTMB	tweedie
+pcod-st-index1	$	$<-	::	~	as.factor	est	fit	head	length	nrow	pcod	predict	qcs_grid	rep	select	seq_len	unique	X	Y	year
+pcod-st-plot-est2	$	~	>	aes	coord_fixed	est	est_trim	exp	facet_wrap	geom_raster	ggplot	if_else	labs	mutate	pred	quantile	scale_fill_viridis_c	X	Y
 pcod-index	get_index	head	pred
 pcod-st-index-plot	aes	as.numeric	est	geom_line	geom_ribbon	ggplot	index	lwr	upr	xlab	year_f	ylab

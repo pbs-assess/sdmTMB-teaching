@@ -3,3 +3,7 @@ dplyr
 sdmTMB
 viridisLite
 viridis
+nlme
+mgcv
+future
+TMB

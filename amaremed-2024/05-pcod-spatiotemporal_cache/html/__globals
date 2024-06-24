@@ -1,5 +1,5 @@
 libs	c	library	make_mesh	pcod
-unnamed-chunk-1	%>%	$	$<-	as.factor	c	density	depth	head	make_mesh	present	select	X	Y	year
+unnamed-chunk-1	$	$<-	%>%	as.factor	c	density	depth	head	make_mesh	present	select	X	Y	year
 pcod-spatial-rf-reminder	~	binomial	mesh	pcod	sdmTMB
 pcod-spatial-rf-density	~	mesh	pcod	sdmTMB	tweedie
 pcod-spatial-rf-smoother	~	mesh	pcod	sdmTMB	tweedie
@@ -8,10 +8,10 @@ sanity1	fit	sanity
 print-pcod-st-fit	fit
 pcod-st-print2	
 resid1	fit	qqline	qqnorm	residuals	set.seed
-resid2	%>%	~	$<-	aes	c	coord_fixed	facet_wrap	filter	fit	geom_point	ggplot	resids	residuals	scale_colour_gradient2	X	Y	year
+resid2	$<-	%>%	~	aes	c	coord_fixed	facet_wrap	filter	fit	geom_point	ggplot	resids	residuals	scale_colour_gradient2	X	Y	year
 pcod-st-pred	$	$<-	as.factor	data	fit	pcod	predict	qcs_grid	replicate_df	unique
 pcod-st-plot-est	~	aes	coord_fixed	est	exp	facet_wrap	geom_raster	ggplot	p	scale_fill_viridis_c	X	Y
-pcod-st-plot-est2	>	$	est	if_else	mutate	quantile
+pcod-st-plot-est2	$	>	est	if_else	mutate	quantile
 pcod-st-plot-est3	~	aes	coord_fixed	est_trim	exp	facet_wrap	geom_raster	ggplot	p	scale_fill_viridis_c	X	Y
 pcod-st-plot-non-rf	~	aes	coord_fixed	est_non_rf	exp	facet_wrap	geom_raster	ggplot	p	scale_fill_viridis_c	X	Y
 pcod-st-plot-omega	~	aes	coord_fixed	facet_wrap	geom_raster	ggplot	omega_s	p	scale_fill_gradient2	X	Y

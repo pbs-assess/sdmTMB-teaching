@@ -1,0 +1,11 @@
+libs	library
+pcod-mesh	c	make_mesh	pcod
+fit-ar1	~	c	mesh	pcod	sdmTMB	tweedie
+fit-rw	~	extra_years	mesh	pcod	sdmTMB	tweedie
+fit-rw-ar1	~	extra_years	mesh	pcod	sdmTMB	tweedie
+fit-sm	~	extra_years	mesh	pcod	sdmTMB	tweedie
+pred-all	$	%>%	::	^	~	c	data.frame	fit_ar1	fit_rw	fit_rw_ar1	fit_sm	list	mean	names<-	pcod	rename	set.seed	unique	Var1	Var2
+plot-time-comparison	$	aes	element_blank	est	est_se	exp	facet_wrap	filter	geom_line	geom_ribbon	geom_vline	ggplot	iter	max	pcod	pred_df	preds_df	sample	scale_y_log10	set.seed	theme	type	unique	vars	xlab	year	ylab
+pred-ar1-plot-eps	$	$<-	::	~	aes	coord_fixed	epsilon_st	facet_wrap	fit_ar1	geom_raster	ggplot	predict	qcs_grid	scale_fill_gradient2	unique	X	Y
+pred-rw-plot-eps	~	aes	coord_fixed	epsilon_st	facet_wrap	fit_rw	geom_raster	ggplot	grid	predict	scale_fill_gradient2	X	Y
+eps-se	$<-	~	aes	apply	coord_fixed	facet_wrap	fit_ar1	geom_raster	ggplot	labs	predict	sd	se	X	Y

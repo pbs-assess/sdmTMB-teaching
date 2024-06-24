@@ -16,11 +16,13 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("imr-2023/preamble.R"))
+source(here::here("preamble.R"))
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
 ```{r libs, include=FALSE}
+#remotes::install_github("pbs-assess/sdmTMBextra", dependencies = TRUE)
+library(sdmTMBextra)
 library(dplyr)
 library(sdmTMB)
 library(ggplot2)
@@ -79,7 +81,7 @@ Presence/absence of Dungeness crabs:
 
 .small[
 ```{r load-crabs, echo=FALSE, fig.asp=0.5}
-crabs <- readRDS(here::here("noaa-psaw-2022/data/crabs.rds"))
+crabs <- readRDS(here::here("data/crabs.rds"))
 crabs$present <- as.factor(crabs$crab)
 
 ggplot(crabs, aes(lon, lat, col = present)) +
@@ -100,6 +102,8 @@ map_data <- rnaturalearth::ne_countries(
   scale = "large",
   returnclass = "sf"
 )
+
+sf_use_s2(FALSE)
 
 puso <- suppressWarnings(suppressMessages(
   sf::st_crop(
