@@ -3,9 +3,9 @@
 
 touse <- c("here","tidyverse","sdmTMB")
 lapply(touse, require, character.only=TRUE, quietly=TRUE)
-source(here('amaremed-2024','exercises','03b-imr-garn-ruse-ex','helper-functions.R'))
-plotdir <- here('amaremed-2024','exercises','03b-imr-garn-ruse-ex','plots','biomass-dg')
-resdir <- here('amaremed-2024','exercises','03b-imr-garn-ruse-ex','results','biomass-dg')
+source(here('amaremed-2024','exercises','04a-imr-garn-ruse-ex','helper-functions.R'))
+plotdir <- here('amaremed-2024','exercises','04a-imr-garn-ruse-ex','plots','biomass-dg')
+resdir <- here('amaremed-2024','exercises','04a-imr-garn-ruse-ex','results','biomass-dg')
 if(!dir.exists(plotdir)) dir.create(plotdir, recursive=TRUE)
 if(!dir.exists(resdir)) dir.create(resdir, recursive=TRUE)
 

@@ -4,8 +4,8 @@
 
 touse <- c("here","tidyverse","sdmTMB","sf","viridis","ggOceanMaps")
 lapply(touse, require, character.only=TRUE, quietly=TRUE)
-plotdir <- here('amaremed-2024','exercises','03c-combine-surveys','plots')
-resdir <- here('amaremed-2024','exercises','03c-combine-surveys','results')
+plotdir <- here('amaremed-2024','exercises','04b-combine-surveys','plots')
+resdir <- here('amaremed-2024','exercises','04b-combine-surveys','results')
 if(!dir.exists(plotdir)) dir.create(plotdir, recursive=TRUE)
 if(!dir.exists(resdir)) dir.create(resdir, recursive=TRUE)
 
@@ -275,9 +275,9 @@ print(g)
 dev.off()
 
 # compare to individual indices
-index_trawl <- read.csv('amaremed-2024/exercises/03a-imr-coastal-survey-ex/plots/south/index_trawlsurvey_south.csv')
+index_trawl <- read.csv('amaremed-2024/exercises/03-imr-coastal-survey-ex/plots/south/index_trawlsurvey_south.csv')
 index_trawl$label = 'Trawl index'
-index_garnruse <- readRDS('amaremed-2024/exercises/03b-imr-garn-ruse-ex/results/biomass-dg/inds_m2.rds')
+index_garnruse <- readRDS('amaremed-2024/exercises/04a-imr-garn-ruse-ex/results/biomass-dg/inds_m2.rds')
 index_garnruse$label = 'Garn ruse index'
 index$label = 'Combined'
 
