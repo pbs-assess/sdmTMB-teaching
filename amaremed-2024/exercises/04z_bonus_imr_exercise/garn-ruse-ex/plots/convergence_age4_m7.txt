@@ -1,9 +1,0 @@
-hessian_ok :  TRUE 
-eigen_values_ok :  TRUE 
-nlminb_ok :  TRUE 
-range_ok :  TRUE 
-gradients_ok :  TRUE 
-se_magnitude_ok :  FALSE 
-se_na_ok :  TRUE 
-sigmas_ok :  TRUE 
-all_ok :  FALSE 
