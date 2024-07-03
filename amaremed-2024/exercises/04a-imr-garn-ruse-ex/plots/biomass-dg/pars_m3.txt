@@ -21,7 +21,7 @@ Random effect parameters:
       
 # A tibble: 3 × 5
   term    estimate std.error conf.low conf.high
-  <chr>      <dbl> <lgl>        <dbl>     <dbl>
-1 range     19.0   NA         9.37        38.4 
-2 sigma_O    1.03  NA         0.745        1.43
-3 sigma_E    0.162 NA         0.00102     25.8 
+  <chr>      <dbl>     <dbl>    <dbl>     <dbl>
+1 range     19.0       6.82   9.37        38.4 
+2 sigma_O    1.03      0.172  0.745        1.43
+3 sigma_E    0.162     0.418  0.00102     25.8 

@@ -2,7 +2,7 @@
 # data: coastal trawl survey
 #   note: we have more maturity samples from shallow net survey and reference fleet, could also include
 
-touse <- c("here","tidyverse","sdmTMB","sf","rnaturalearth","viridis","ggOceanMaps")
+touse <- c("here","tidyverse","sdmTMB","sf","rnaturalearth","viridis","ggOceanMaps","ggspatial")
 lapply(touse, require, character.only=TRUE, quietly=TRUE)
 plotdir <- here('amaremed-2024','exercises','03-imr-coastal-survey-ex','plots')
 resdir <- here('amaremed-2024','exercises','03-imr-coastal-survey-ex','results')

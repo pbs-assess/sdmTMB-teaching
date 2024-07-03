@@ -2,7 +2,7 @@
 #   coastal trawl survey
 #   shallow net / garn ruse survey
 
-touse <- c("here","tidyverse","sdmTMB","sf","viridis","ggOceanMaps")
+touse <- c("here","tidyverse","sdmTMB","sf","viridis","ggOceanMaps","ggspatial")
 lapply(touse, require, character.only=TRUE, quietly=TRUE)
 plotdir <- here('amaremed-2024','exercises','04b-combine-surveys','plots')
 resdir <- here('amaremed-2024','exercises','04b-combine-surveys','results')
@@ -56,8 +56,8 @@ fit0 <- sdmTMB(formula = dens ~ 0 + survey + fyear + gear + depth:survey,
                mesh=mesh,
                family = tweedie(link = "log"),
                control = sdmTMBcontrol(newton_loops = 1))
-sanity(fit0)
 
+# due to data limitations, we instead fit a simpler model
 fit0 <- sdmTMB(formula = dens ~ 0 + fyear + gear,
                data=df,
                time="year",
@@ -215,7 +215,7 @@ ggplot(df_coords, aes(lon, lat)) +
 predgrid <- crossing(pred_grid, year=unique(df$year))
 predgrid$gear <- 'Trawl'
 predgrid$fyear <- factor(predgrid$year)
-predgrid_geo <- crossing(df_coords, year=unique(df$year))
+predgrid_geo <- crossing(df_coords, fyear=unique(df$year))
 preds <- predict(fit3, newdata = predgrid, return_tmb_object = TRUE, type = "response")
 predgrid$est <- preds$data$est
 predgrid_geo$est <- predgrid$est
