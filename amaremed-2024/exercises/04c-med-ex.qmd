@@ -1,0 +1,56 @@
+---
+title: "Exercise 04c: Applications to Mediterranean data"
+format: html
+editor: visual
+execute: 
+  echo: true
+  eval: true
+---
+
+```{r, message=FALSE, warning=FALSE}
+#| echo=FALSE
+library(sdmTMB)
+library(dplyr)
+library(ggplot2)
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+theme_set(theme_light())
+```
+
+# 
+
+# Species Overlap
+
+Bhattacharyya's coefficient, calculated on the full dataset of simulations.
+
+```{r}
+bhat_sims <- function(sims_df1,sims_df2){
+  
+  p1 <- sims_df1 %>%
+    group_by(year,esm) %>% 
+    mutate(across(contains('sim'),function(x) exp(x)/sum(exp(x),na.rm=T))) %>%
+    left_join(roms_ports_match,by=c('latitude','longitude')) %>% 
+    filter(!is.na(port_name)) %>% 
+    pivot_longer(contains('sim'),names_to='sim',values_to='p_p1') %>% 
+    dplyr::select(year,esm,port_name,longitude,latitude,sim,p_p1) %>% 
+    ungroup()
+  
+  p2 <- sims_df2 %>%
+    group_by(year,esm) %>%
+    mutate(across(contains('sim'),function(x) exp(x)/sum(exp(x),na.rm=T))) %>% 
+    left_join(roms_ports_match,by=c('latitude','longitude')) %>% 
+    filter(!is.na(port_name)) %>% 
+    pivot_longer(contains('sim'),names_to='sim',values_to='p_p2') %>% 
+    dplyr::select(year,esm,port_name,longitude,latitude,sim,p_p2) %>% 
+    ungroup()
+  
+  pjoint <- p1 %>% 
+    left_join(p2,by=c('year','esm','longitude','latitude','port_name','sim')) %>% 
+    group_by(year,esm,port_name,sim) %>% 
+    summarise(bhat=sum(sqrt(p_p1*p_p2))) %>% 
+    ungroup()
+  
+  pjoint
+
+}
+```
