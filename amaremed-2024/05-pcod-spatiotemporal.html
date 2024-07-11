@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Example: Spatiotemporal modeling of Pacific cod</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Example: Spatiotemporal modeling of Pacific cod
+]
+.subtitle[
+## AMARE-MED workshop
+]
+.author[
+### 
+]
+.date[
+### July 28–August 3 2023
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# Extending to a spatiotemporal model
+
+Reminder, the Pacific Cod dataset:
+
+.small[
+
+```r
+pcod %&gt;% 
+  select(year, X, Y, depth, density, present) %&gt;% 
+  head()
+#&gt; # A tibble: 6 × 6
+#&gt;    year     X     Y depth density present
+#&gt;   &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+#&gt; 1  2003  446. 5793.   201   113.        1
+#&gt; 2  2003  446. 5800.   212    41.7       1
+#&gt; 3  2003  449. 5802.   220     0         0
+#&gt; 4  2003  437. 5802.   197    15.7       1
+#&gt; 5  2003  421. 5771.   256     0         0
+#&gt; 6  2003  418. 5772.   293     0         0
+
+mesh &lt;- make_mesh(pcod, xy_cols = c("X", "Y"), cutoff = 10)
+
+pcod$fyear &lt;- as.factor(pcod$year)# year factor
+```
+]
+
+---
+
+# Our previous spatial model fit
+
+
+```r
+fit &lt;- sdmTMB(
+  present ~ poly(log(depth), 2),
+  data = pcod,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+  spatial = "on"
+)
+```
+
+---
+
+# Switching to density
+
+
+```r
+fit &lt;- sdmTMB(
+* density ~ poly(log(depth), 2),
+  data = pcod,
+  mesh = mesh,
+* family = tweedie(link = "log"),
+  spatial = "on"
+)
+```
+
+---
+
+# Switching to a smoother + annual mean
+
+
+```r
+fit &lt;- sdmTMB(
+* density ~ s(depth) + 0 + fyear,
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on"
+)
+```
+
+---
+
+# Adding spatiotemporal fields
+
+
+```r
+fit &lt;- sdmTMB(
+  density ~ s(depth, k = 5) + 0 + fyear,
+  data = pcod,
+  mesh = mesh,
+  family = tweedie(link = "log"),
+  spatial = "on",
+* time = "year",
+* spatiotemporal = "iid",
+  silent = FALSE # show progress!
+)
+```
+
+---
+
+# Inspecting model convergence
+
+.small[
+
+```r
+sanity(fit)
+#&gt; ✔ Non-linear minimizer suggests successful convergence
+#&gt; ✔ Hessian matrix is positive definite
+#&gt; ✔ No extreme or very small eigenvalues detected
+#&gt; ✔ No gradients with respect to fixed effects are &gt;= 0.001
+#&gt; ✔ No fixed-effect standard errors are NA
+#&gt; ✔ No standard errors look unreasonably large
+#&gt; ✔ No sigma parameters are &lt; 0.01
+#&gt; ✔ No sigma parameters are &gt; 100
+#&gt; ✔ Range parameter doesn't look unreasonably large
+```
+]
+
+---
+
+# Inspecting the model fit
+
+.small[
+
+```r
+fit
+```
+
+
+```r
+#&gt; Spatiotemporal model fit by ML ['sdmTMB']
+#&gt; Formula: density ~ s(depth) + 0 + as.factor(year)
+#&gt; Time column: "year"
+#&gt; Mesh: mesh
+#&gt; Data: pcod
+#&gt; Family: tweedie(link = 'log')
+#&gt;                     coef.est coef.se
+*#&gt; as.factor(year)2003     1.79    0.29
+*#&gt; as.factor(year)2004     2.36    0.27
+#&gt; ...
+#&gt; 
+#&gt; Dispersion parameter: 10.78
+#&gt; Tweedie p: 1.49
+*#&gt; Matern range: 12.85
+#&gt; Spatial SD: 1.81
+*#&gt; Spatiotemporal SD: 1.78
+#&gt; ML criterion at convergence: 6246.433
+```
+]
+
+---
+
+# Model residuals
+
+.xsmall[
+Warning: these residuals are fast but might look off even if the model is fine. Also see MCMC residuals. See the ['Residual checking' vignette](https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html) and the example in the exercises.
+]
+
+
+```r
+set.seed(1)
+rq_res &lt;- residuals(fit) # randomized quantile residuals
+qqnorm(rq_res);qqline(rq_res)
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/resid1-1.png" width="500px" style="display: block; margin: auto;" /&gt;
+
+---
+
+&lt;!-- TODO: slides on other types of residuals --&gt;
+
+# Model residuals in space
+
+.small[
+
+```r
+pcod$resids &lt;- residuals(fit)
+filter(pcod, year %in% c(2015, 2017)) %&gt;% 
+* ggplot(aes(X, Y, colour = resids)) +
+  geom_point() +
+  facet_wrap(~year) +
+  scale_colour_gradient2() +
+  coord_fixed()
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/resid2-1.png" width="500px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Predicting on the survey grid
+
+
+```r
+data("qcs_grid")
+all_grid &lt;- replicate_df(qcs_grid, 
+            "year", unique(pcod$year))
+all_grid$fyear &lt;- as.factor(all_grid$year)
+p &lt;- predict(fit, newdata = all_grid)
+```
+
+* `est`: Overall estimate in link space (log here)
+* `est_non_rf`: Estimate of non-random-field components
+* `est_rf`: Estimate of random-field components
+* `omega_s`: Spatial random field
+* `epsilon_st`: **Spatiotemporal random field**
+
+---
+
+# Plotting overall predictions
+
+.xsmall[
+
+```r
+ggplot(p, aes(X, Y, fill = exp(est))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt") +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/pcod-st-plot-est-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting overall predictions (truncated)
+
+.xsmall[
+
+```r
+max_est &lt;- quantile(p$est, 0.999)
+p &lt;- mutate(p, est_trim = if_else(est &gt; max_est, max_est, est))
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/pcod-st-plot-est3-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting main effect contributions
+
+.xsmall[
+
+```r
+ggplot(p, aes(X, Y, fill = exp(est_non_rf))) +
+  geom_raster() +
+  scale_fill_viridis_c(trans = "sqrt") +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/pcod-st-plot-non-rf-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting spatial random effects
+
+.xsmall[
+
+```r
+ggplot(p, aes(X, Y, fill = omega_s)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/pcod-st-plot-omega-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Plotting spatiotemporal random effects
+
+.xsmall[
+
+```r
+ggplot(p, aes(X, Y, fill = epsilon_st)) +
+  geom_raster() +
+  scale_fill_gradient2() +
+  facet_wrap(~year) +
+  coord_fixed()
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/pcod-st-plot-eps-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Visualizing spatial uncertainty
+
+By sampling from the joint precision matrix
+
+.small[
+
+```r
+*psims &lt;- predict(fit, newdata = all_grid, nsim = 50)
+dim(psims)
+#&gt; [1] 65826    50
+psims[1:3, 1:4]
+#&gt;            [,1]      [,2]      [,3]       [,4]
+#&gt; 2003 -0.8978267 -1.214634 -2.182262 -0.8885782
+#&gt; 2003  2.9058302  3.068939  2.444928  3.0944307
+#&gt; 2003  3.7086629  3.906269  3.469855  3.7604198
+
+*p$sd &lt;- apply(psims, 1, sd)
+```
+]
+
+---
+
+# Visualizing spatial uncertainty
+
+.small[
+
+```r
+filter(p, year %in% c(2013, 2015, 2017)) %&gt;% 
+  ggplot(aes(X, Y, fill = sd)) +
+  geom_raster() +
+  facet_wrap(~year) +
+  scale_fill_viridis_c(trans = "log10") +
+  coord_fixed()
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/pcod-st-sims-plot-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Considering anisotropy
+
+* Default is isotropic: correlation decays in all directions at same rate
+* Anisotropic: directionally dependent spatial correlation
+
+
+```r
+fit_aniso &lt;- update(fit, anisotropy = TRUE)
+```
+
+
+```r
+AIC(fit, fit_aniso)
+#&gt;           df      AIC
+#&gt; fit       16 12524.87
+#&gt; fit_aniso 18 12528.46
+```
+
+.xsmall[
+* Not favoured here; often important on narrow continental shelves
+]
+
+---
+
+# Plotting anisotropy
+
+.small[
+Plot shows range in all directions from zero in the center
+
+
+```r
+plot_anisotropy(fit_aniso)
+```
+
+&lt;img src="05-pcod-spatiotemporal_files/figure-html/pcod-aniso-plot-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
