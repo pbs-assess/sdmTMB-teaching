@@ -103,8 +103,11 @@ merl_kg$fyear <- as.factor(merl_kg$year)
 mesh.merl_kg <- make_mesh(merl_kg, c("X.utm_km", "Y.utm_km"), cutoff = 10)
 plot(mesh.merl_kg)
 
-# lets compare models going from high to low complexity of spatiotemporal structure
+# compare models going from high to low complexity of spatiotemporal structure ----
 # (as an idditional exercise, you can do the same comparing models with different variables)
+
+# first, most complex model takes several minutes to fit
+# (consider reducing mesh complexity to increase speed)
 fit.data_kgkm2 <- sdmTMB(
   kg_km2 ~ 0+s(tmp_bot)+s(poc_bot)+s(depth)+fyear,
   #spatial_varying = ~ 0 + scaled_year, # I tried to apply the temporal trend, but it's very expensive from the calculation time
@@ -171,6 +174,18 @@ grid_1516$X.utm_km <- grid_1516$X.utm/1000
 grid_1516$Y.utm_km <- grid_1516$Y.utm/1000
 grid_1516$fyear <- as.factor(grid_1516$year)
 
+# Normalize/scale predictor variables on grid
+grid_1516$depth <- scale(grid_1516$depth)
+grid_1516$tmp_bot <- scale(grid_1516$tmp_bot)
+grid_1516$sal_bot <- scale(grid_1516$sal_bot)
+grid_1516$tmp.sur <- scale(grid_1516$tmp.sur)
+grid_1516$O2_bot <- scale(grid_1516$O2_bot)
+grid_1516$chl_int <- scale(grid_1516$chl_int)
+grid_1516$poc_int <- scale(grid_1516$poc_int)
+grid_1516$poc_bot <- scale(grid_1516$poc_bot)
+grid_1516$NO3_bot <- scale(grid_1516$NO3_bot)
+grid_1516$PO4_bot <- scale(grid_1516$PO4_bot)
+
 pred.grid <- predict(fit.data_kgkm2,grid_1516[grid_1516$year<=2021,],type='response',return_tmb_object = TRUE)
 max.est_kg <- round(max(pred.grid$data$est),2)
 #saveRDS(pred.grid,'amaremed-2024/exercises/04c-med-ex/pred.grid_kg.rds')
@@ -204,7 +219,7 @@ p.ind.kg
 ggsave("amaremed-2024/exercises/04c-med-ex/plots/p.ind.kg.png", plot=p.ind.kg, width=7,height=7)
 
 # get and plot center of gravity in km eastings and northings
-cog.kg_merl <- get_cog(pred.grid, level = 0.8, area, format = "wide")
+cog.kg_merl <- get_cog(pred.grid, level = 0.8, area = 1, format = "wide")
 p.cog.kg <- ggplot(cog.kg_merl, aes(est_x, est_y, colour = year)) +
   geom_point() +
   geom_linerange(aes(xmin = lwr_x, xmax = upr_x)) +
@@ -315,13 +330,24 @@ p2 <- pred.grid.pape$data %>%
   rename(est_pape = est)
 
 pjoint <- p1 %>%
-  left_join(p2,by=index) %>%
+  left_join(p2,by=c("year","index")) %>%
   group_by(year) %>%
-  summarise(bhat=sum(sqrt(est_merl*est_pape))) %>%
-  ungroup()
+  mutate(bhat=sum(sqrt(est_merl*est_pape))) %>%
+  summarize(mean_bhat = mean(bhat, na.rm = TRUE))
 pjoint
 
-plot(pjoint$year, pjoint$bhat)
+## NOTE: I may have butchered this particular overlap metric but you get the gist,
+## also, I suspect these values may be very high because of the difference in
+## the scale of abundance between the hake and shrimp. There are probably easy
+## ways to standardize that for the comparison (e.g., at the coarsest scale you
+## might compare the predictions for each species based on overlap in their probability
+## of occurrence or some other habitat suitability metric
+#jpeg("amaremed-2024/exercises/04c-med-ex/plots/overlap_index.png")
+plot(pjoint$year, pjoint$mean_bhat, type = "l",
+     pch = 16, frame = FALSE,
+     xlab = "Year", ylab = "Bhattacharyyya coefficient of spatial overlap", col = "blue")
+#dev.off()
+
 
 # EXERCISE: calculate and plot index of abundance and COG for shrimp
 
