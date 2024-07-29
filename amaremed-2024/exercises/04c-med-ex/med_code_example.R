@@ -345,7 +345,7 @@ pjoint
 #jpeg("amaremed-2024/exercises/04c-med-ex/plots/overlap_index.png")
 plot(pjoint$year, pjoint$mean_bhat, type = "l",
      pch = 16, frame = FALSE,
-     xlab = "Year", ylab = "Bhattacharyyya coefficient of spatial overlap", col = "blue")
+     xlab = "Year", ylab = "Spatial overlap of biomass", col = "blue")
 #dev.off()
 
 
