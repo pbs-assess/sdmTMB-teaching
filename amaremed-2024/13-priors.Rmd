@@ -1,6 +1,6 @@
 ---
 title: "Priors and parameter bounds"
-subtitle: "AMARE-MED workshop"
+subtitle: "AMARE-MED workshop: sdmTMB"
 author: ""
 institute: ""
 date: "July 28--August 2 2024"
@@ -16,7 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-source(here::here("amaremed-2024","preamble.R"))
+source("preamble.R")
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 

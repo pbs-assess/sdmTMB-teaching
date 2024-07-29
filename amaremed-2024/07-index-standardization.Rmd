@@ -1,9 +1,9 @@
 ---
 title: "Area-weighted index standardization"
-subtitle: "AMARE-MED workshop"
+subtitle: "AMARE-MED workshop: sdmTMB"
 author: ""
 institute: ""
-date: "July 28--August 3 2024"
+date: "July 28--August 2 2024"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
@@ -16,8 +16,7 @@ output:
 <!-- Build with: xaringan::inf_mr() -->
 
 ```{r preamble, include=FALSE, cache=FALSE}
-# source(here::here("imr-2023/preamble.R"))
-source(paste0(getwd(), "/preamble.R"))
+source("preamble.R")
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 

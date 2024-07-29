@@ -1,9 +1,9 @@
 ---
 title: "Introduction to random fields"
-subtitle: "AMARE-MED workshop"
+subtitle: "AMARE-MED workshop: sdmTMB"
 author: ""
 institute: ""
-date: "July 28--August 3 2024"
+date: "July 28--August 2 2024"
 output:
   xaringan::moon_reader:
     css: ["xaringan-themer.css", "theme.css"]
