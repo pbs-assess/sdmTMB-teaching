@@ -87,10 +87,3 @@
 .blue .remark-inline-code {
   color: #1e81b0 !important;
 }
-
-.title-slide {
-  background-image: ![](images/Logo AMARE-MED complete.png);
-  background-position: 100% 0%; ## just start changing this
-  background-size: 300px;
-  padding-left: 100px;  /* delete this for 4:3 aspect ratio */
-}
