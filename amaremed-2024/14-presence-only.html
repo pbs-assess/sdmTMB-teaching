@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Spatial modeling of presence-only data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Spatial modeling of presence-only data
+]
+.subtitle[
+## AMARE-MED workshop: sdmTMB
+]
+.author[
+### 
+]
+.date[
+### July 28–August 2 2024
+]
+
+---
+
+
+&lt;!-- Build with: xaringan::inf_mr() --&gt;
+
+
+
+
+
+# Spatial patterning of trees: bei dataset
+
+* Barro Colorado Island = classic in ecology
+  * Hubbell's (2001) unified neutral theory of biodiversity
+  
+
+
+&lt;img src="14-presence-only_files/figure-html/plot-trees-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+
+---
+
+# Pseudo-absences  
+
+* Georeferenced locations of trees, no 0s  
+
+* Need to generate 0s: how?
+  * quadrature points ([Renner et al. 2015](https://doi.org/10.1111/2041-210X.12352))  
+  
+* Strategy?
+  * generate regularly spaced or random?
+  * Large enough so that predictive performance does not change as more are added
+
+---
+  
+# Pseudo-absences from sdmTMB
+
+* Example of uniform grid strategy
+
+
+```r
+res &lt;- 5
+zeros &lt;- expand.grid(
+  x = seq(0, 1000, by = res),
+  y = seq(0, 500, by = res)
+)
+```
+
+---
+
+# Bind the observed and pseudo-zeros together
+
+.small[
+
+```r
+dat$present &lt;- 1
+zeros$present &lt;- 0
+all_dat &lt;- rbind(dat, zeros)
+
+mesh &lt;- make_mesh(
+  all_dat,
+  xy_cols = c("x", "y"),
+  cutoff = 25 # min. distance
+)
+
+mesh$mesh$n # extract number of vertices/knots
+#&gt; [1] 678
+```
+]
+
+---
+
+# Combined data 
+
+* blue dots are data; red grid dots are quadrature points
+* grey triangles are from the SPDE mesh
+
+.small[
+&lt;img src="14-presence-only_files/figure-html/mesh-viz-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Infinitely Weighted Logistic Regression (IWLR)
+
+* [Fithian &amp; Hastie (2013)](https://doi.org/10.1214/13-AOAS667)
+
+
+```r
+nW &lt;- 1.0e6
+all_dat$wt &lt;- nW^(1 - all_dat$present)
+```
+
+* weights can be passed into model of choice
+  * `glm()`, `glmmTMB()`, etc.
+  * adding random fields makes this a "spatial log-Gaussian Cox process"
+
+---
+
+# IWLR &amp; sdmTMB
+
+* convergence may be affected by size of pseudo-absences    
+* intercept and log-likelihood affected by `nW`
+
+```r
+fit &lt;- sdmTMB(
+  present ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = binomial(link = "logit"),
+* weights = all_dat$wt
+)
+```
+
+---
+
+# Downweighted Poisson Regression (DWPR)
+
+* Similar to IWLR, uses different weights
+* Doesn't have same arbitrary effects on intercept, likelihood  
+
+
+```r
+# small values at presence locations
+all_dat$wt &lt;- 1e-6
+
+# pseudo-absences: area per quadrature point
+tot_area &lt;- diff(range(dat$x)) * diff(range(dat$y))
+n_zeros &lt;- length(which(all_dat$present == 0))
+
+all_dat$wt &lt;- ifelse(all_dat$present == 1,
+  1e-6, tot_area / n_zeros
+)
+```
+
+---
+
+# DWPR &amp; sdmTMB
+
+
+```r
+fit &lt;- sdmTMB(
+  present / wt ~ 1,
+  data = all_dat,
+  mesh = mesh,
+  family = poisson(link = "log"),
+* weights = all_dat$wt
+)
+```
+
+---
+
+# Plotting spatial random effects
+
+.small[
+&lt;img src="14-presence-only_files/figure-html/plot-rf-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Predictions in link (log) space
+
+.xsmall[
+&lt;img src="14-presence-only_files/figure-html/plot-link-1.png" width="700px" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+# Does adding more pseudo-absences improve performance?
+
+* Increase 0s from ~ 20K to 30K
+
+* AUC similar (other criteria could be used) 
+
+
+```
+#&gt; [1] 0.8162974
+```
+
+---
+
+# What about using a higher resolution mesh?
+
+* Change cutoff from 25 to 15
+
+* Knots change from ~700 to ~1750
+
+* Marginal gains in AUC with finer mesh
+  * Note: it's not adding more pseudo-absences but changing the mesh that's more important here  
+  
+
+```
+#&gt; [1] 0.8451722
+```
+
+---
+
+# Benefits of pseudo-absence modeling
+
+* Estimate of spatial range isn't sensitive to choice of raster / lattice resolution
+* Doesn't require wrangling raw data (e.g. aggregating to larger cell size to model counts)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
