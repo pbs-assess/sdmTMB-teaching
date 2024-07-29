@@ -3,7 +3,7 @@ xaringanthemer::style_mono_accent(
   header_font_google = xaringanthemer::google_font("Raleway"),
   text_font_google = xaringanthemer::google_font("Open Sans"),
   code_font_google = xaringanthemer::google_font("Fira Mono"),
-  title_slide_background_image = "images/logo-sdmTMB.png",
+  title_slide_background_image = "amaremed-2024/images/Logo AMARE-MED complete.png",
   title_slide_background_size = "14%",
   title_slide_background_position = "50% 90%",
   base_font_size = "20px",
