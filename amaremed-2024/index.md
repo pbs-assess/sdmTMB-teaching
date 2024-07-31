@@ -52,4 +52,4 @@ July 28--3 August 2024
 
 ### Main GitHub folder:
 
-<https://github.com/pbs-assess/sdmTMB-teaching/amaremed-2024>
+<https://github.com/pbs-assess/sdmTMB-teaching/tree/main/amaremed-2024>
