@@ -172,26 +172,26 @@ cv_depth <- sdmTMB_cv(
 )
 ```
 
-These are the expected log predictive densities (ELPD) for each fold. Larger (more positive) values are better. This gives us an idea of the variance of these values across folds.
+These are the predictive densities for each fold. Larger (more positive) values are better. This gives us an idea of the variance of these values across folds.
 
 ```{r}
-cv_intercept$fold_elpd
-cv_depth$fold_elpd
+cv_intercept$fold_loglik
+cv_depth$fold_loglik
 
 # check each fold between the two models:
-cv_depth$fold_elpd - cv_intercept$fold_elpd
+cv_depth$fold_loglik - cv_intercept$fold_loglik
 ```
 
-These are the expected log predictive densities for all left out data combined.
+These are the sum of the predictive densities for all left out data combined.
 
 ```{r}
-cv_intercept$elpd
-cv_depth$elpd
+cv_intercept$sum_loglik
+cv_depth$sum_loglik
 ```
 
 ### Exercise:
 
-1.  Which model does ELPD suggest has better out-of-sample predictive performance?
+1.  Which model does the loglik suggest has better out-of-sample predictive performance?
 2.  How consistent is that result across folds?
 3.  Try changing the 'seed' value above (same value for both). Is the same model selected?
 4.  This cross validation created the folds randomly. Which argument in `?sdmTMB_cv` would let you assign IDs to the folds to create spatially blocked cross validation?
@@ -386,23 +386,9 @@ qqnorm(dat$resid)
 qqline(dat$resid)
 ```
 
-These don't look great, *but*, this is largely a function of error from the Laplace approximation on the random effects (see [Thygesen et al. 2017](https://doi.org/10.1007/s10651-017-0372-4)). MCMC-based are a better approach, but are slower. The following line of code will take a while to run and will require rstan and tmbstan. You may *not* want to run it. There's a whole vignette on residual checking with sdmTMB here: <https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html> It's an active area of research.
+These don't look great, *but*, this is largely a function of error from the Laplace approximation on the random effects (see [Thygesen et al. 2017](https://doi.org/10.1007/s10651-017-0372-4)). MCMC-based are a better approach, but are slower. There's a whole vignette on residual checking with sdmTMB here: <https://pbs-assess.github.io/sdmTMB/articles/residual-checking.html> It's an active area of research.
 
-```{r, eval=FALSE}
-# warning: will take a couple minutes and requires rstan!
-# see ?residuals.sdmTMB
-set.seed(1)
-dat$resid_mcmc <- residuals(
-  fit, 
-  type = "mle-mcmc", 
-  mcmc_iter = 201, 
-  mcmc_warmup = 200
-)
-qqnorm(dat$resid_mcmc)
-qqline(dat$resid_mcmc)
-```
-
-We can simulate new observations from the model and check properties of the simulation compared to the observed data:
+Further, we can simulate new observations from the model and check properties of the simulation compared to the observed data:
 
 ```{r}
 s <- simulate(fit, nsim = 100)
