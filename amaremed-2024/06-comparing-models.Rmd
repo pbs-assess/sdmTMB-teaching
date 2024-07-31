@@ -212,7 +212,6 @@ m_cv$elpd
 # Leave Future Out Cross Validation
 
 * Only forward looking 
-.small[
 ```{r echo=TRUE, eval=FALSE}
 fit <- sdmTMB_cv( #<<
   present ~ 1,
