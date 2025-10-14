@@ -11,7 +11,7 @@ I'm hoping you could cover:
 
 This will help participants understand what sdmTMB can do and how to apply it to their own work.
 
-The schedule is flexible, so please let me know your availability. I'm hoping to arrange 2-3 short presentation sessions.
+The schedule is flexible, so please let me know your availability. I'm hoping to group presentations into 2-3 short sessions.
 
 Thanks!
 Sean
