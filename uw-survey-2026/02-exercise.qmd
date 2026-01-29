@@ -101,7 +101,7 @@ ggplot() + inlabru::gg(mesh$mesh) + coord_fixed() +
 
 # Fitting a spatial model
 
-The most basic model we could fit would be a model with a single spatial random field, and no covariates. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging to monitor progress.
+The most basic model we could fit would be a model with a single spatial random field, and no covariates. This is similar to what we were fitting yesterday. Using `silent = FALSE` lets us see what is happening, but it's awkward when running code in Rmd/Quarto chunks (with the default RStudio setting to 'Show output inline for all R Markdown document') so we will comment it out in most cases here. But it is a good idea to use it if models are running slowly or not converging to monitor progress.
 
 ```{r, results='hide', warning=FALSE}
 fit_spatial <- sdmTMB(
@@ -188,10 +188,10 @@ head(wcvi_grid)
 wcvi_grid$log_depth <- log(wcvi_grid$depth)
 ```
 
-We want to then to expand our grid to every year we want to predict on:
+We can use this fancy line of purrr code to expand our grid to every year we want to predict on:
 
 ```{r}
-grid <- replicate_df(wcvi_grid, "year", unique(dat$year))
+grid <- purrr::map_dfr(unique(dat$year), ~ tibble(wcvi_grid, year = .x))
 grid$year_factor <- as.factor(grid$year)
 head(grid)
 ```

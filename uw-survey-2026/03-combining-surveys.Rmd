@@ -212,7 +212,7 @@ cor(index$est, index2$est)
 ```{r}
 index$model <- "No catchability"
 index2$model <- "Catchability"
-bind_rows(index, index2) |> 
+rbind(index, index2) |> 
   ggplot(aes(year, est, fill=model, col = model)) + 
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha=0.4) + 
   geom_line() + xlab("Year") + ylab("Estimate")
@@ -240,12 +240,12 @@ tidy(fit2, "ran_pars")
 ```{r echo=FALSE}
 pred$data$model <- "No catchability"
 pred2$data$model <- "Catchability"
-p1 <- bind_rows(pred$data, pred2$data) |> 
+p1 <- rbind(pred$data, pred2$data) |> 
   dplyr::filter(year == 2024) |>
   ggplot(aes(X, Y, fill=omega_s1, col = omega_s1)) + 
   geom_point() + 
   facet_wrap(~ model)
-p2 <- bind_rows(pred$data, pred2$data) |> 
+p2 <- rbind(pred$data, pred2$data) |> 
   dplyr::filter(year == 2024) |>
   ggplot(aes(X, Y, fill=omega_s2, col = omega_s2)) + 
   geom_point() + 
@@ -294,7 +294,7 @@ ai <- dplyr::filter(arrowtooth,
 ebs <- dplyr::filter(arrowtooth, 
                     survey_name == "eastern Bering Sea",
                     year %in% c(2006, 2012, 2016, 2022))
-arrow2 <- bind_rows(ai, ebs)
+arrow2 <- rbind(ai, ebs)
 ```
 
 ---
@@ -452,8 +452,6 @@ ggplot(index5, aes(Year, est)) +
   geom_line() + ylab("Estimate")
 
 ```
-
----
 
 # Summary
 
