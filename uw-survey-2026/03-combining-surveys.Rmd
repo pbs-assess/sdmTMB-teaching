@@ -175,6 +175,17 @@ fit2 <- update(fit,
         formula = catch_weight ~ 0 + fyear + survey_name)
 ```
 
+---
+
+# Recall
+
+With linear mixed models, we could fit
+
+$Y \sim N(\mu, \sigma)$
+
+OR 
+
+$Y = \mu + \epsilon, \epsilon \sim N(0, \sigma)$
 
 ---
 
@@ -452,6 +463,8 @@ ggplot(index5, aes(Year, est)) +
   geom_line() + ylab("Estimate")
 
 ```
+
+---
 
 # Summary
 
