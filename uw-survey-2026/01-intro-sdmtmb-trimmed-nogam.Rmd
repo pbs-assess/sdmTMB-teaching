@@ -88,7 +88,7 @@ library(mgcv)
 
 ---
 
-# sdmTMB highlights
+# [sdmTMB](https://sdmtmb.github.io/sdmTMB/) highlights
 
 An R package for spatially explicit predictive-process GLMMs (Generalized Linear Mixed Effect Models)
 
@@ -516,7 +516,7 @@ fit <- sdmTMB(
 
 ---
 
-# Fit a model for index standardization of cod data
+# Fit a model for index standardization of cod data in Queen Charlotte Sound
 
 Omit intercept and include an annual mean in formula to derive annual index from coefficients
 

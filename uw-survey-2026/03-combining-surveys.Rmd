@@ -359,7 +359,7 @@ head(index4)
 * Case study data: Triennial and annual bottom trawl survey from USA west coast
 
 * These surveys overlap spatially (slightly) and both occurred 2003-2004
-```{r eval=TRUE, echo=TRUE}
+```{r eval=TRUE, echo=TRUE, message=FALSE}
 remotes::install_github("pfmc-assessments/nwfscSurvey")
 
 catch_wcgbts <- nwfscSurvey::pull_catch(survey = 
