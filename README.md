@@ -2,6 +2,8 @@
 
 Links to material from workshops on sdmTMB.
 
+January 11-13 2026: DFO Halifax workshop: see <https://github.com/sdmTMB/sdmTMB-DSAF-2026>
+
 November 4-6 2025: DFO TESA: see <https://github.com/pbs-assess/sdmTMB-TESA-2025>
 
 [March 23-25, 2023 slides](https://pbs-assess.github.io/sdmTMB-teaching/imr-2023/)
